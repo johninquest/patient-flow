@@ -8,6 +8,9 @@ export interface RentEntry {
     recorded_by: string;
     created: string;
     updated: string;
+    // Joined tenant data (from API)
+    tenant_first_name?: string;
+    tenant_last_name?: string;
 }
 
 export interface RentEntryCreate {

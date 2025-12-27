@@ -168,8 +168,8 @@
                 {#each rentEntries as entry}
                     <tr class="hover:bg-neutral-50">
                         <td class="px-4 py-3 text-sm font-medium text-neutral-900">
-                            {#if entry.expand?.tenant}
-                                {entry.expand.tenant.first_name} {entry.expand.tenant.last_name}
+                            {#if entry.tenant_first_name && entry.tenant_last_name}
+                                {entry.tenant_first_name} {entry.tenant_last_name}
                             {:else}
                                 —
                             {/if}
