@@ -4,11 +4,12 @@
     import { page } from '$app/stores';
     import { Button, Card, Input, Table, EmptyState, ConfirmDialog } from '$lib/components';
     import Tooltip from '$lib/components/Tooltip.svelte';
-    import { unitService, tenantService } from '$lib/services';
+    import { unitService, tenantService, propertyService } from '$lib/services';
     import { t } from '$lib/i18n';
-    import type { Unit, Tenant } from '$lib/types';
+    import type { Unit, Tenant, Property } from '$lib/types';
 
     let unit = $state<Unit | null>(null);
+    let property = $state<Property | null>(null);
     let tenants = $state<Tenant[]>([]);
     let loading = $state(true);
     let saving = $state(false);
@@ -50,6 +51,9 @@
                 unit_number: unit.unit_number,
                 unit_name: unit.unit_name ?? ''
             };
+
+            // Load property details
+            property = await propertyService.getById(unit.property);
 
             // Load tenants assigned to this unit
             const allTenants = await tenantService.getByProperty(unit.property);
@@ -190,9 +194,9 @@
                         <div>
                             <dt class="text-sm font-medium text-neutral-500">Property</dt>
                             <dd class="mt-1 text-neutral-900">
-                                {#if unit.expand?.property}
+                                {#if property}
                                     <a href="/properties/{unit.property}" class="text-brand-600 hover:text-brand-700 underline">
-                                        {unit.expand.property.name}
+                                        {property.name}
                                     </a>
                                 {:else}
                                     —

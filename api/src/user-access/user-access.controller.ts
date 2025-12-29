@@ -42,9 +42,15 @@ export class UserAccessController {
     return this.userAccessService.findUserByEmail(email);
   }
 
+  @Post('claim-pending')
+  async claimPendingAccess(@CurrentUser() user: any) {
+    const count = await this.userAccessService.claimPendingAccess(user.id);
+    return { claimed: count };
+  }
+
   @Post()
   grantAccess(
-    @Body() data: { user: string; property: string; role: string },
+    @Body() data: { email: string; property: string; role: string },
     @CurrentUser() user: any,
   ) {
     return this.userAccessService.grantAccess(data, user.id);

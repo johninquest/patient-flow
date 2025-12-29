@@ -65,22 +65,33 @@
         }
     }
 
+    function getUserDisplay(access: UserAccess): { name: string; email: string; isPending: boolean } {
+        const isPending = !!access.pending_email;
+        
+        if (isPending) {
+            return {
+                name: access.pending_email || 'Pending User',
+                email: access.pending_email || '',
+                isPending: true
+            };
+        }
+        
+        return {
+            name: access.user_name || access.user_email || 'Unknown User',
+            email: access.user_email || '',
+            isPending: false
+        };
+    }
+
     function getUserInitial(access: UserAccess): string {
-        const name = access.user_name || access.user_email || '?';
-        return name[0].toUpperCase();
-    }
-
-    function getUserName(access: UserAccess): string {
-        return access.user_name || access.user_email || 'Unknown';
-    }
-
-    function getUserEmail(access: UserAccess): string {
-        return access.user_email || '';
+        const display = getUserDisplay(access);
+        return display.name[0]?.toUpperCase() || '?';
     }
 
     function getRevokeTargetName(): string {
         if (!revokeTarget) return 'this user';
-        return revokeTarget.user_name || revokeTarget.user_email || 'this user';
+        const display = getUserDisplay(revokeTarget);
+        return display.name;
     }
 </script>
 
@@ -93,6 +104,7 @@
 {:else}
     <div class="divide-y divide-gray-200">
         {#each accessList as access (access.id)}
+            {@const display = getUserDisplay(access)}
             <div class="py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -101,11 +113,18 @@
                         </span>
                     </div>
                     <div>
-                        <p class="text-sm font-medium text-gray-900">
-                            {getUserName(access)}
-                        </p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-medium text-gray-900">
+                                {display.name}
+                            </p>
+                            {#if display.isPending}
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                    Pending
+                                </span>
+                            {/if}
+                        </div>
                         <p class="text-xs text-gray-500">
-                            {getUserEmail(access)}
+                            {display.email}
                         </p>
                     </div>
                 </div>
@@ -115,7 +134,7 @@
                         <Select
                             value={access.role}
                             options={roleOptions}
-                            disabled={updating === access.id}
+                            disabled={updating === access.id || display.isPending}
                             onchange={(value) => handleRoleChange(access, value)}
                         />
                         <Button

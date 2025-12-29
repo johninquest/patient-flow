@@ -52,6 +52,10 @@
         const parts = [access.property_city, access.property_country].filter(Boolean);
         return parts.join(', ') || '';
     }
+
+    function getGranterName(access: UserAccess): string {
+        return access.granted_by_name || access.granted_by_email || 'Someone';
+    }
 </script>
 
 <svelte:head>
@@ -148,14 +152,17 @@
 
                 <!-- Shared Access Section -->
                 {#if sharedAccess.length > 0}
+                    <!-- Visual separator -->
+                    <div class="border-t border-gray-200 my-8"></div>
+                    
                     <section>
-                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Shared With You</h2>
+                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Shared With Me ({sharedAccess.length})</h2>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {#each sharedAccess as access (access.id)}
                                 <a href="/properties/{access.property}" class="block hover:shadow-md transition-shadow rounded-lg">
                                     <Card>
-                                        <div class="flex items-start justify-between">
-                                            <div>
+                                        <div class="flex items-start justify-between mb-2">
+                                            <div class="flex-1">
                                                 <h3 class="font-medium text-neutral-900">
                                                     {getPropertyName(access)}
                                                 </h3>
@@ -168,6 +175,9 @@
                                                 {access.role}
                                             </span>
                                         </div>
+                                        <p class="text-xs text-gray-500 mt-2">
+                                            Shared by {getGranterName(access)}
+                                        </p>
                                     </Card>
                                 </a>
                             {/each}

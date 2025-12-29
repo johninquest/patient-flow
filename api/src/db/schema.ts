@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, decimal, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, decimal, uuid, unique, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
@@ -113,10 +113,21 @@ export const expenses = pgTable("expenses", {
 
 export const user_access = pgTable("user_access", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
-  user: text("user").notNull().references(() => user.id, { onDelete: "cascade" }),
+  user: text("user").references(() => user.id, { onDelete: "cascade" }), // Made nullable
+  pending_email: text("pending_email"), // New field
   property: uuid("property").notNull().references(() => properties.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'manager' | 'viewer'
   granted_by: text("granted_by").notNull().references(() => user.id),
   created: timestamp("created").defaultNow().notNull(),
   updated: timestamp("updated").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Unique constraint: one pending invitation per email+property
+  pendingEmailPropertyUnique: unique("user_access_pending_email_property_unique")
+    .on(table.pending_email, table.property)
+    .nullsNotDistinct(),
+  // Check constraint: either user or pending_email must be set (not both, not neither)
+  userOrPendingCheck: check(
+    "user_access_user_or_pending",
+    sql`(${table.user} IS NOT NULL AND ${table.pending_email} IS NULL) OR (${table.user} IS NULL AND ${table.pending_email} IS NOT NULL)`
+  ),
+}));

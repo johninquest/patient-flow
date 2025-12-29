@@ -40,10 +40,17 @@ export const userAccessService = {
     },
 
     /**
-     * Grant access to a user
+     * Grant access to a user by email
      */
-    async grantAccess(data: Omit<UserAccessCreate, 'granted_by'>): Promise<UserAccess> {
+    async grantAccess(data: UserAccessCreate): Promise<UserAccess> {
         return api.post<UserAccess>('/user-access', data);
+    },
+
+    /**
+     * Claim pending access invitations (call after login)
+     */
+    async claimPendingAccess(): Promise<{ claimed: number }> {
+        return api.post<{ claimed: number }>('/user-access/claim-pending', {});
     },
 
     /**

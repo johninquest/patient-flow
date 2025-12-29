@@ -6,8 +6,9 @@ import {
 } from '@nestjs/common';
 import { db } from '../db';
 import { user_access, properties, user } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { isPropertyOwner } from '../common/access.util';
+import { alias } from 'drizzle-orm/pg-core';
 
 @Injectable()
 export class UserAccessService {
@@ -17,10 +18,14 @@ export class UserAccessService {
       throw new ForbiddenException('Only property owners can view access list');
     }
 
+    // Create a proper alias for the granter user
+    const granter = alias(user, 'granter');
+
     const accessList = await db
       .select({
         id: user_access.id,
         user: user_access.user,
+        pending_email: user_access.pending_email,
         property: user_access.property,
         role: user_access.role,
         granted_by: user_access.granted_by,
@@ -28,19 +33,26 @@ export class UserAccessService {
         updated: user_access.updated,
         user_name: user.name,
         user_email: user.email,
+        granted_by_name: granter.name,
+        granted_by_email: granter.email,
       })
       .from(user_access)
-      .innerJoin(user, eq(user_access.user, user.id))
+      .leftJoin(user, eq(user_access.user, user.id))
+      .innerJoin(granter, eq(user_access.granted_by, granter.id))
       .where(eq(user_access.property, propertyId));
 
     return accessList;
   }
 
   async getMyAccess(userId: string) {
+    // Create a proper alias for the granter user
+    const granter = alias(user, 'granter');
+
     const accessList = await db
       .select({
         id: user_access.id,
         user: user_access.user,
+        pending_email: user_access.pending_email,
         property: user_access.property,
         role: user_access.role,
         granted_by: user_access.granted_by,
@@ -49,9 +61,12 @@ export class UserAccessService {
         property_name: properties.name,
         property_city: properties.city,
         property_country: properties.country,
+        granted_by_name: granter.name,
+        granted_by_email: granter.email,
       })
       .from(user_access)
       .innerJoin(properties, eq(user_access.property, properties.id))
+      .innerJoin(granter, eq(user_access.granted_by, granter.id))
       .where(eq(user_access.user, userId));
 
     return accessList;
@@ -90,7 +105,7 @@ export class UserAccessService {
   }
 
   async grantAccess(
-    data: { user: string; property: string; role: string },
+    data: { email: string; property: string; role: string },
     grantedBy: string,
   ) {
     const isOwner = await isPropertyOwner(data.property, grantedBy);
@@ -98,33 +113,114 @@ export class UserAccessService {
       throw new ForbiddenException('Only property owners can grant access');
     }
 
-    // Check if access already exists
-    const [existing] = await db
+    // Check if user exists
+    const existingUser = await this.findUserByEmail(data.email);
+
+    if (existingUser) {
+      // User exists - check if they already have access
+      const [existing] = await db
+        .select()
+        .from(user_access)
+        .where(
+          and(
+            eq(user_access.property, data.property),
+            eq(user_access.user, existingUser.id),
+          ),
+        )
+        .limit(1);
+
+      if (existing) {
+        throw new BadRequestException('User already has access to this property');
+      }
+
+      // Grant immediate access
+      const [access] = await db
+        .insert(user_access)
+        .values({
+          user: existingUser.id,
+          pending_email: null,
+          property: data.property,
+          role: data.role,
+          granted_by: grantedBy,
+        })
+        .returning();
+
+      return access;
+    } else {
+      // User doesn't exist - check for existing pending invitation
+      const [existingPending] = await db
+        .select()
+        .from(user_access)
+        .where(
+          and(
+            eq(user_access.property, data.property),
+            eq(user_access.pending_email, data.email.toLowerCase()),
+          ),
+        )
+        .limit(1);
+
+      if (existingPending) {
+        throw new BadRequestException(
+          'A pending invitation already exists for this email. Please update or revoke the existing invitation.',
+        );
+      }
+
+      // Create pending access
+      const [access] = await db
+        .insert(user_access)
+        .values({
+          user: null,
+          pending_email: data.email.toLowerCase(),
+          property: data.property,
+          role: data.role,
+          granted_by: grantedBy,
+        })
+        .returning();
+
+      return access;
+    }
+  }
+
+  async claimPendingAccess(userId: string): Promise<number> {
+    // Get user's email
+    const [currentUser] = await db
+      .select({ email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!currentUser?.email) {
+      return 0;
+    }
+
+    // Find all pending invitations for this email
+    const pendingInvitations = await db
       .select()
       .from(user_access)
       .where(
         and(
-          eq(user_access.property, data.property),
-          eq(user_access.user, data.user),
+          eq(user_access.pending_email, currentUser.email.toLowerCase()),
+          isNull(user_access.user),
         ),
-      )
-      .limit(1);
+      );
 
-    if (existing) {
-      throw new BadRequestException('User already has access to this property');
+    if (pendingInvitations.length === 0) {
+      return 0;
     }
 
-    const [access] = await db
-      .insert(user_access)
-      .values({
-        user: data.user,
-        property: data.property,
-        role: data.role,
-        granted_by: grantedBy,
-      })
-      .returning();
+    // Activate each pending invitation
+    for (const invitation of pendingInvitations) {
+      await db
+        .update(user_access)
+        .set({
+          user: userId,
+          pending_email: null,
+          updated: new Date(),
+        })
+        .where(eq(user_access.id, invitation.id));
+    }
 
-    return access;
+    return pendingInvitations.length;
   }
 
   async updateAccess(id: string, data: { role: string }, userId: string) {
@@ -145,7 +241,7 @@ export class UserAccessService {
 
     const [updated] = await db
       .update(user_access)
-      .set({ role: data.role })
+      .set({ role: data.role, updated: new Date() })
       .where(eq(user_access.id, id))
       .returning();
 

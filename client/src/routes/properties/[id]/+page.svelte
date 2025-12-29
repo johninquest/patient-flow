@@ -283,21 +283,49 @@
         </Card>
     {:else if property}
         <div class="space-y-6">
-            <!-- Header -->
-            <div class="flex items-start justify-between">
-                <div class="flex items-center gap-3">
-                    <!-- ...existing back button... -->
+            <!-- Header with Back Button -->
+            <div class="mb-6">
+                <button
+                    onclick={() => goto('/properties')}
+                    class="mb-4 inline-flex items-center gap-1.5 text-sm text-neutral-600 transition-colors hover:text-brand-500"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Properties
+                </button>
+
+                <div class="flex items-start justify-between gap-4 flex-wrap">
                     <div>
-                        <h1 class="text-2xl font-bold text-neutral-900">{property.name}</h1>
-                        <p class="text-neutral-500">{property.city}, {property.country}</p>
+                        <h1 class="text-3xl font-bold text-neutral-900">{property.name}</h1>
+                        <p class="text-neutral-600 mt-2">
+                            {[property.city, property.country].filter(Boolean).join(', ')}
+                            {#if property.construction_year}
+                                • Built {property.construction_year}
+                            {/if}
+                        </p>
                     </div>
-                </div>
-                <div class="flex gap-2">
-                    {#if canEdit}
-                        <Button variant="secondary" onclick={() => goto(`/properties/${property?.id}/edit`)}>
-                            Edit Property
-                        </Button>
-                    {/if}
+
+                    <div class="flex gap-2 items-start">
+                        {#if canManageAccess}
+                            <Button variant="secondary" onclick={() => grantAccessModalOpen = true}>
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                                Share
+                            </Button>
+                        {/if}
+                        {#if canEdit}
+                            <Button variant="secondary" onclick={() => goto(`/properties/${property?.id}/edit`)}>
+                                Edit Property
+                            </Button>
+                        {/if}
+                        {#if userRole === 'owner'}
+                            <Button variant="danger" onclick={() => property && confirmDelete('property', property.id, property.name)}>
+                                Delete
+                            </Button>
+                        {/if}
+                    </div>
                 </div>
             </div>
 
@@ -343,7 +371,6 @@
                         {/snippet}
                     </EmptyState>
                 {:else}
-                    <!-- Changed: Removed negative margins for better mobile experience -->
                     <div class="overflow-x-auto">
                         <Table columns={unitColumns}>
                             {#each units as unit}
@@ -353,8 +380,10 @@
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-1">
                                             <Button variant="ghost" size="sm" onclick={() => goto(`/units/${unit.id}`)}>View</Button>
-                                            <Button variant="ghost" size="sm" onclick={() => openUnitModal(unit)}>Edit</Button>
-                                            <Button variant="ghost" size="sm" onclick={() => confirmDelete('unit', unit.id, unit.unit_number)}>Delete</Button>
+                                            {#if canEdit}
+                                                <Button variant="ghost" size="sm" onclick={() => openUnitModal(unit)}>Edit</Button>
+                                                <Button variant="ghost" size="sm" onclick={() => confirmDelete('unit', unit.id, unit.unit_number)}>Delete</Button>
+                                            {/if}
                                         </div>
                                     </td>
                                 </tr>
@@ -378,11 +407,12 @@
                 {#if tenants.length === 0}
                     <EmptyState title="No tenants" description="Add tenants to this property">
                         {#snippet action()}
-                            <Button size="sm" onclick={() => openTenantModal()}>Add Tenant</Button>
+                            {#if canEdit}
+                                <Button size="sm" onclick={() => openTenantModal()}>Add Tenant</Button>
+                            {/if}
                         {/snippet}
                     </EmptyState>
                 {:else}
-                    <!-- Changed: Removed negative margins for better mobile experience -->
                     <div class="overflow-x-auto">
                         <Table columns={tenantColumns}>
                             {#each tenants as tenant}
@@ -405,8 +435,10 @@
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-1">
                                             <Button variant="ghost" size="sm" onclick={() => goto(`/tenants/${tenant.id}`)}>View</Button>
-                                            <Button variant="ghost" size="sm" onclick={() => openTenantModal(tenant)}>Edit</Button>
-                                            <Button variant="ghost" size="sm" onclick={() => confirmDelete('tenant', tenant.id, `${tenant.first_name} ${tenant.last_name}`)}>Delete</Button>
+                                            {#if canEdit}
+                                                <Button variant="ghost" size="sm" onclick={() => openTenantModal(tenant)}>Edit</Button>
+                                                <Button variant="ghost" size="sm" onclick={() => confirmDelete('tenant', tenant.id, `${tenant.first_name} ${tenant.last_name}`)}>Delete</Button>
+                                            {/if}
                                         </div>
                                     </td>
                                 </tr>
@@ -416,22 +448,18 @@
                 {/if}
             </Card>
 
-            <!-- Shared Access Section (Owner Only) - Moved to bottom -->
+            <!-- Shared Access Section (Owner Only) -->
             {#if canManageAccess}
                 <Card>
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="mb-4">
                         <h2 class="text-lg font-semibold text-neutral-900">Shared Access</h2>
-                        <Button onclick={() => grantAccessModalOpen = true}>
-                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Grant Access
-                        </Button>
+                        <p class="text-sm text-gray-600 mt-1">Manage who can access this property</p>
                     </div>
                     
                     <AccessList 
                         {accessList}
                         canManage={true}
+                        loading={false}
                         onupdated={loadAccessList}
                         onrevoked={loadAccessList}
                     />

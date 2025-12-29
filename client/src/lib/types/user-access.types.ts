@@ -1,4 +1,4 @@
-import type { RecordModel } from 'pocketbase';
+// import type { RecordModel } from 'pocketbase';
 
 export type AccessRole = 'manager' | 'viewer';
 
@@ -17,7 +17,8 @@ export interface UserAccessProperty {
 
 export interface UserAccess {
     id: string;
-    user: string;
+    user: string | null; // Now nullable
+    pending_email?: string | null; // New field
     property: string;
     role: AccessRole;
     granted_by: string;
@@ -26,6 +27,9 @@ export interface UserAccess {
     // Joined user data (from API)
     user_name?: string | null;
     user_email?: string;
+    // Joined granter data (from API)
+    granted_by_name?: string | null;
+    granted_by_email?: string;
     // Joined property data (from API)
     property_name?: string;
     property_city?: string;
@@ -33,10 +37,9 @@ export interface UserAccess {
 }
 
 export interface UserAccessCreate {
-    user: string;
+    email: string; // Changed from user: string
     property: string;
     role: AccessRole;
-    granted_by?: string;
 }
 
 export interface UserAccessUpdate {
