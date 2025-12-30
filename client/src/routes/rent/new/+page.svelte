@@ -5,6 +5,7 @@
     import Tooltip from '$lib/components/Tooltip.svelte';
     import { rentService, propertyService, tenantService } from '$lib/services';
     import { getCurrencyByCountry } from '$lib/types/currency.types';
+    import { paymentMethods, type PaymentMethod } from '$lib/types';
     import { validateRentEntry } from '$lib/validation';
     import { t } from '$lib/i18n';
     import type { Property, Tenant } from '$lib/types';
@@ -14,6 +15,7 @@
         amount: number;
         payment_date: string;
         rent_month: string;
+        payment_method: PaymentMethod;
         notes: string;
     }
 
@@ -37,6 +39,7 @@
         amount: 0,
         payment_date: new Date().toISOString().split('T')[0],
         rent_month: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`,
+        payment_method: 'cash',
         notes: ''
     });
 
@@ -210,6 +213,7 @@
                         <div class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">{error}</div>
                     {/if}
 
+                    <!-- Property Select -->
                     <Select
                         label="Property"
                         value={selectedPropertyId}
@@ -222,6 +226,7 @@
                         required
                     />
 
+                    <!-- Tenant Select -->
                     {#if selectedPropertyId}
                         {#if loadingTenants}
                             <div class="flex items-center gap-2 text-neutral-500 text-sm">
@@ -255,6 +260,7 @@
                     {/if}
 
                     <div class="grid gap-4 sm:grid-cols-2">
+                        <!-- Amount -->
                         <div class="space-y-1.5">
                             <label for="amount" class="block text-sm font-medium text-neutral-700">
                                 Amount {#if getCurrencyCode()}<span class="text-neutral-500 font-normal">({getCurrencyCode()})</span>{/if} <span class="text-red-500">*</span>
@@ -274,6 +280,7 @@
                             {/if}
                         </div>
 
+                        <!-- Payment Date -->
                         <div class="space-y-1.5">
                             <label for="payment_date" class="block text-sm font-medium text-neutral-700">
                                 Payment Date <span class="text-red-500">*</span>
@@ -292,6 +299,17 @@
                         </div>
                     </div>
 
+                    <!-- Payment Method -->
+                    <Select
+                        label="Payment Method"
+                        bind:value={formData.payment_method}
+                        options={paymentMethods}
+                        onchange={() => clearFieldError('payment_method')}
+                        error={fieldErrors.payment_method}
+                        required
+                    />
+
+                    <!-- Rent Month -->
                     <fieldset class="space-y-1.5">
                         <legend class="block text-sm font-medium text-neutral-700">
                             Rent Month <span class="text-red-500">*</span>
@@ -315,6 +333,7 @@
                         {/if}
                     </fieldset>
 
+                    <!-- Notes -->
                     <div class="space-y-1.5">
                         <label for="notes" class="block text-sm font-medium text-neutral-700">Notes</label>
                         <textarea

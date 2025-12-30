@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsNotEmpty, IsIn } from 'class-validator';
 
 export class CreateRentDto {
   @IsString()
@@ -16,6 +16,11 @@ export class CreateRentDto {
   @IsString()
   @IsNotEmpty()
   rent_month: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(['cash', 'bank_transfer', 'mobile_money'])
+  payment_method: string;
 
   @IsString()
   @IsOptional()

@@ -6,6 +6,7 @@ interface RentEntryData {
     amount: number;
     payment_date: string;
     rent_month: string;
+    payment_method: string;
 }
 
 export function validateRentEntry(data: RentEntryData, propertyId: string): ValidationResult {
@@ -42,6 +43,13 @@ export function validateRentEntry(data: RentEntryData, propertyId: string): Vali
         errors.rent_month = 'Rent month is required';
     } else if (!isValidRentMonth(data.rent_month)) {
         errors.rent_month = 'Invalid rent month';
+    }
+
+    // Payment method
+    if (!data.payment_method) {
+        errors.payment_method = 'Payment method is required';
+    } else if (!['cash', 'bank_transfer', 'mobile_money'].includes(data.payment_method)) {
+        errors.payment_method = 'Invalid payment method';
     }
 
     return {

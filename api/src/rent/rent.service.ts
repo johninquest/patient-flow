@@ -4,14 +4,17 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { db } from '../db';
-import { rent_entries, tenants, properties, user_access } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { rent_entries, tenants, user } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { canAccessProperty, canEditProperty } from '../common/access.util';
 import { CreateRentDto } from './dto/create-rent.dto';
 import { UpdateRentDto } from './dto/update-rent.dto';
-import { canAccessProperty, canEditProperty } from '../common/access.util';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class RentService {
+  constructor(private readonly activityService: ActivityService) {}
+
   async findByProperty(propertyId: string, userId: string) {
     const canAccess = await canAccessProperty(propertyId, userId);
     if (!canAccess) {
@@ -109,6 +112,13 @@ export class RentService {
       throw new ForbiddenException('Access denied');
     }
 
+    // Get user info for activity log
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
     const [entry] = await db
       .insert(rent_entries)
       .values({
@@ -116,10 +126,22 @@ export class RentService {
         amount: data.amount.toString(),
         payment_date: new Date(data.payment_date),
         rent_month: data.rent_month,
+        payment_method: data.payment_method,
         notes: data.notes,
         recorded_by: userId,
       })
       .returning();
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'rent_entry',
+      entity_id: entry.id,
+      action: 'create',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: tenant.property,
+    });
 
     return entry;
   }
@@ -150,17 +172,44 @@ export class RentService {
       throw new ForbiddenException('Access denied');
     }
 
-    const updateData: any = {};
-    if (data.amount !== undefined) updateData.amount = data.amount.toString();
-    if (data.payment_date) updateData.payment_date = new Date(data.payment_date);
-    if (data.rent_month) updateData.rent_month = data.rent_month;
-    if (data.notes !== undefined) updateData.notes = data.notes;
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // Calculate changes
+    const changes = this.activityService.calculateChanges(
+      entry,
+      data,
+      ['amount', 'payment_date', 'rent_month', 'payment_method', 'notes'],
+    );
 
     const [updated] = await db
       .update(rent_entries)
-      .set(updateData)
+      .set({
+        ...data,
+        amount: data.amount?.toString(),
+        payment_date: data.payment_date ? new Date(data.payment_date) : undefined,
+        updated: new Date(),
+      })
       .where(eq(rent_entries.id, id))
       .returning();
+
+    // Create activity log only if there were significant changes
+    if (changes) {
+      await this.activityService.createLog({
+        entity_type: 'rent_entry',
+        entity_id: id,
+        action: 'update',
+        changes,
+        user_id: userId,
+        user_name: currentUser?.name || undefined,
+        user_email: currentUser?.email || undefined,
+        property_id: tenant.property,
+      });
+    }
 
     return updated;
   }
@@ -191,7 +240,26 @@ export class RentService {
       throw new ForbiddenException('Access denied');
     }
 
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
     await db.delete(rent_entries).where(eq(rent_entries.id, id));
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'rent_entry',
+      entity_id: id,
+      action: 'delete',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: tenant.property,
+    });
+
     return { success: true };
   }
 }

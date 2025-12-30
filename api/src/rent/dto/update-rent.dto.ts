@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
 
 export class UpdateRentDto {
   @IsNumber()
@@ -12,6 +12,11 @@ export class UpdateRentDto {
   @IsString()
   @IsOptional()
   rent_month?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['cash', 'bank_transfer', 'mobile_money'])
+  payment_method?: string;
 
   @IsString()
   @IsOptional()

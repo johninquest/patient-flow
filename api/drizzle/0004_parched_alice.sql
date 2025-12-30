@@ -1,0 +1,2 @@
+ALTER TABLE "user_access" DROP CONSTRAINT "user_access_pending_email_property_unique";--> statement-breakpoint
+CREATE INDEX "user_access_pending_email_property_idx" ON "user_access" USING btree ("pending_email","property") WHERE "user_access"."pending_email" IS NOT NULL;

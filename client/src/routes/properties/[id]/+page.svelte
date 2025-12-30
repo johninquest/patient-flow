@@ -2,9 +2,27 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { Button, Card, Table, EmptyState, Modal, Input, ConfirmDialog, GrantAccessModal, AccessList } from '$lib/components';
-    import { propertyService, unitService, tenantService, userAccessService } from '$lib/services';
-    import type { Property, Unit, Tenant, UnitFormData, UserAccess } from '$lib/types';
+    import { 
+        Card, 
+        Button, 
+        Table, 
+        EmptyState, 
+        Modal, 
+        Input, 
+        ConfirmDialog,
+        Select 
+    } from '$lib/components';
+    import ActivityFeed from '$lib/components/ActivityFeed.svelte';
+    import GrantAccessModal from '$lib/components/GrantAccessModal.svelte';
+    import AccessList from '$lib/components/AccessList.svelte';
+    import { 
+        propertyService, 
+        unitService, 
+        tenantService, 
+        userAccessService,
+        activityService 
+    } from '$lib/services';
+    import type { Property, Unit, Tenant, UserAccess, Activity, ActivityFilters, ActivityAction } from '$lib/types';
 
     interface TenantFormData {
         first_name: string;
@@ -15,6 +33,12 @@
         property: string;
         unit: string;
         active: boolean;
+    }
+
+    interface UnitFormData {
+        unit_name: string;
+        unit_number: string;
+        property: string;
     }
 
     let property = $state<Property | null>(null);
@@ -56,6 +80,14 @@
 
     // Access management
     let grantAccessModalOpen = $state(false);
+
+    // Activity state
+    let activeTab = $state<'overview' | 'activity'>('overview');
+    let activities = $state<Activity[]>([]);
+    let activityLoading = $state(false);
+    let activityFilters = $state<ActivityFilters>({
+        days: 30
+    });
 
     const unitColumns = [
         { key: 'unit_number', label: 'Unit #' },
@@ -258,6 +290,36 @@
         if (!unit) return '—';
         return unit.unit_name ? `${unit.unit_number} - ${unit.unit_name}` : unit.unit_number;
     }
+
+    async function loadActivityFeed() {
+        if (!property) return;
+        
+        activityLoading = true;
+        try {
+            activities = await activityService.getPropertyActivityFeed(
+                property.id,
+                activityFilters
+            );
+        } catch (err) {
+            console.error('Failed to load activity feed:', err);
+        } finally {
+            activityLoading = false;
+        }
+    }
+
+    // Watch for tab changes
+    $effect(() => {
+        if (activeTab === 'activity' && property && activities.length === 0) {
+            loadActivityFeed();
+        }
+    });
+
+    // Watch for filter changes
+    $effect(() => {
+        if (activeTab === 'activity') {
+            loadActivityFeed();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -283,7 +345,7 @@
         </Card>
     {:else if property}
         <div class="space-y-6">
-            <!-- Header with Back Button -->
+            <!-- Header -->
             <div class="mb-6">
                 <button
                     onclick={() => goto('/properties')}
@@ -329,140 +391,200 @@
                 </div>
             </div>
 
-            <!-- User Role Badge -->
-            {#if userRole && userRole !== 'owner'}
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                        onclick={() => activeTab = 'overview'}
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors {activeTab === 'overview' ? 'border-brand-500 text-brand-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+                    >
+                        Overview
+                    </button>
+                    <button
+                        onclick={() => activeTab = 'activity'}
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors {activeTab === 'activity' ? 'border-brand-500 text-brand-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+                    >
+                        Activity
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            {#if activeTab === 'overview'}
+                <!-- User Role Badge -->
+                {#if userRole && userRole !== 'owner'}
+                    <Card>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full {
+                                userRole === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                            }">
+                                {userRole}
+                            </span>
+                            <span class="text-sm text-gray-600">
+                                {#if userRole === 'manager'}
+                                    You can view and edit this property
+                                {:else}
+                                    You have read-only access to this property
+                                {/if}
+                            </span>
+                        </div>
+                    </Card>
+                {/if}
+
+                <!-- Units Section -->
                 <Card>
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full {
-                            userRole === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                        }">
-                            {userRole}
-                        </span>
-                        <span class="text-sm text-gray-600">
-                            {#if userRole === 'manager'}
-                                You can view and edit this property
-                            {:else}
-                                You have read-only access to this property
-                            {/if}
-                        </span>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-neutral-900">Units</h2>
+                        {#if canEdit}
+                            <Button size="sm" onclick={() => { 
+                                editingUnit = null;
+                                unitForm = { unit_name: '', unit_number: '', property: property?.id ?? '' };
+                                unitModalOpen = true;
+                            }}>
+                                Add Unit
+                            </Button>
+                        {/if}
                     </div>
+
+                    {#if units.length === 0}
+                        <EmptyState title="No units" description="Add units to this property">
+                            {#snippet action()}
+                                <Button size="sm" onclick={() => openUnitModal()}>Add Unit</Button>
+                            {/snippet}
+                        </EmptyState>
+                    {:else}
+                        <div class="overflow-x-auto">
+                            <Table columns={unitColumns}>
+                                {#each units as unit}
+                                    <tr class="hover:bg-neutral-50">
+                                        <td class="px-4 py-3 text-sm font-medium text-neutral-900">{unit.unit_number}</td>
+                                        <td class="px-4 py-3 text-sm text-neutral-600">{unit.unit_name ?? '—'}</td>
+                                        <td class="px-4 py-3 text-right">
+                                            <div class="flex justify-end gap-1">
+                                                <Button variant="ghost" size="sm" onclick={() => goto(`/units/${unit.id}`)}>View</Button>
+                                                {#if canEdit}
+                                                    <Button variant="ghost" size="sm" onclick={() => openUnitModal(unit)}>Edit</Button>
+                                                    <Button variant="ghost" size="sm" onclick={() => confirmDelete('unit', unit.id, unit.unit_number)}>Delete</Button>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </Table>
+                        </div>
+                    {/if}
                 </Card>
-            {/if}
 
-            <!-- Units Section -->
-            <Card>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-neutral-900">Units</h2>
-                    {#if canEdit}
-                        <Button size="sm" onclick={() => { 
-                            editingUnit = null;
-                            unitForm = { unit_name: '', unit_number: '', property: property?.id ?? '' };
-                            unitModalOpen = true;
-                        }}>
-                            Add Unit
-                        </Button>
-                    {/if}
-                </div>
-
-                {#if units.length === 0}
-                    <EmptyState title="No units" description="Add units to this property">
-                        {#snippet action()}
-                            <Button size="sm" onclick={() => openUnitModal()}>Add Unit</Button>
-                        {/snippet}
-                    </EmptyState>
-                {:else}
-                    <div class="overflow-x-auto">
-                        <Table columns={unitColumns}>
-                            {#each units as unit}
-                                <tr class="hover:bg-neutral-50">
-                                    <td class="px-4 py-3 text-sm font-medium text-neutral-900">{unit.unit_number}</td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600">{unit.unit_name ?? '—'}</td>
-                                    <td class="px-4 py-3 text-right">
-                                        <div class="flex justify-end gap-1">
-                                            <Button variant="ghost" size="sm" onclick={() => goto(`/units/${unit.id}`)}>View</Button>
-                                            {#if canEdit}
-                                                <Button variant="ghost" size="sm" onclick={() => openUnitModal(unit)}>Edit</Button>
-                                                <Button variant="ghost" size="sm" onclick={() => confirmDelete('unit', unit.id, unit.unit_number)}>Delete</Button>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {/each}
-                        </Table>
-                    </div>
-                {/if}
-            </Card>
-
-            <!-- Tenants Section -->
-            <Card>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-neutral-900">Tenants</h2>
-                    {#if canEdit}
-                        <Button size="sm" onclick={() => goto(`/tenants/new?property=${property?.id}`)}>
-                            Add Tenant
-                        </Button>
-                    {/if}
-                </div>
-
-                {#if tenants.length === 0}
-                    <EmptyState title="No tenants" description="Add tenants to this property">
-                        {#snippet action()}
-                            {#if canEdit}
-                                <Button size="sm" onclick={() => openTenantModal()}>Add Tenant</Button>
-                            {/if}
-                        {/snippet}
-                    </EmptyState>
-                {:else}
-                    <div class="overflow-x-auto">
-                        <Table columns={tenantColumns}>
-                            {#each tenants as tenant}
-                                <tr class="hover:bg-neutral-50">
-                                    <td class="px-4 py-3 text-sm font-medium text-neutral-900">
-                                        <div class="min-w-37.5">
-                                            {tenant.first_name} {tenant.last_name}
-                                            {#if tenant.preferred_name}
-                                                <span class="block text-neutral-500 text-xs mt-0.5">({tenant.preferred_name})</span>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600">{getUnitName(tenant.unit)}</td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">{tenant.phone}</td>
-                                    <td class="px-4 py-3 text-sm">
-                                        <span class="inline-flex rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap {tenant.active ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500'}">
-                                            {tenant.active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <div class="flex justify-end gap-1">
-                                            <Button variant="ghost" size="sm" onclick={() => goto(`/tenants/${tenant.id}`)}>View</Button>
-                                            {#if canEdit}
-                                                <Button variant="ghost" size="sm" onclick={() => openTenantModal(tenant)}>Edit</Button>
-                                                <Button variant="ghost" size="sm" onclick={() => confirmDelete('tenant', tenant.id, `${tenant.first_name} ${tenant.last_name}`)}>Delete</Button>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {/each}
-                        </Table>
-                    </div>
-                {/if}
-            </Card>
-
-            <!-- Shared Access Section (Owner Only) -->
-            {#if canManageAccess}
+                <!-- Tenants Section -->
                 <Card>
-                    <div class="mb-4">
-                        <h2 class="text-lg font-semibold text-neutral-900">Shared Access</h2>
-                        <p class="text-sm text-gray-600 mt-1">Manage who can access this property</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-neutral-900">Tenants</h2>
+                        {#if canEdit}
+                            <Button size="sm" onclick={() => openTenantModal()}>
+                                Add Tenant
+                            </Button>
+                        {/if}
                     </div>
-                    
-                    <AccessList 
-                        {accessList}
-                        canManage={true}
-                        loading={false}
-                        onupdated={loadAccessList}
-                        onrevoked={loadAccessList}
-                    />
+
+                    {#if tenants.length === 0}
+                        <EmptyState title="No tenants" description="Add tenants to this property">
+                            {#snippet action()}
+                                {#if canEdit}
+                                    <Button size="sm" onclick={() => openTenantModal()}>Add Tenant</Button>
+                                {/if}
+                            {/snippet}
+                        </EmptyState>
+                    {:else}
+                        <div class="overflow-x-auto">
+                            <Table columns={tenantColumns}>
+                                {#each tenants as tenant}
+                                    <tr class="hover:bg-neutral-50">
+                                        <td class="px-4 py-3 text-sm font-medium text-neutral-900">
+                                            <div class="min-w-37.5">
+                                                {tenant.first_name} {tenant.last_name}
+                                                {#if tenant.preferred_name}
+                                                    <span class="block text-neutral-500 text-xs mt-0.5">({tenant.preferred_name})</span>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-neutral-600">{getUnitName(tenant.unit)}</td>
+                                        <td class="px-4 py-3 text-sm text-neutral-600 whitespace-nowrap">{tenant.phone}</td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span class="inline-flex rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap {tenant.active ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500'}">
+                                                {tenant.active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <div class="flex justify-end gap-1">
+                                                <Button variant="ghost" size="sm" onclick={() => goto(`/tenants/${tenant.id}`)}>View</Button>
+                                                {#if canEdit}
+                                                    <Button variant="ghost" size="sm" onclick={() => openTenantModal(tenant)}>Edit</Button>
+                                                    <Button variant="ghost" size="sm" onclick={() => confirmDelete('tenant', tenant.id, `${tenant.first_name} ${tenant.last_name}`)}>Delete</Button>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </Table>
+                        </div>
+                    {/if}
+                </Card>
+
+                <!-- Shared Access Section (Owner Only) -->
+                {#if canManageAccess}
+                    <Card>
+                        <div class="mb-4">
+                            <h2 class="text-lg font-semibold text-neutral-900">Shared Access</h2>
+                            <p class="text-sm text-gray-600 mt-1">Manage who can access this property</p>
+                        </div>
+                        
+                        <AccessList 
+                            {accessList}
+                            canManage={true}
+                            onupdated={loadAccessList}
+                            onrevoked={loadAccessList}
+                        />
+                    </Card>
+                {/if}
+
+            {:else if activeTab === 'activity'}
+                <Card>
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Recent Activity</h2>
+                        
+                        <!-- Filters -->
+                        <div class="flex gap-3 flex-wrap">
+                            <div class="w-48">
+                                <Select
+                                    label="Time range"
+                                    value={activityFilters.days?.toString() ?? '30'}
+                                    onchange={(value) => activityFilters.days = parseInt(value)}
+                                    options={[
+                                        { value: '7', label: 'Last 7 days' },
+                                        { value: '30', label: 'Last 30 days' },
+                                        { value: '90', label: 'Last 3 months' },
+                                        { value: '365', label: 'Last year' },
+                                    ]}
+                                />
+                            </div>
+                            
+                            <div class="w-48">
+                                <Select
+                                    label="Filter by action"
+                                    value={activityFilters.action ?? ''}
+                                    onchange={(value) => activityFilters.action = (value || undefined) as ActivityAction | undefined}
+                                    options={[
+                                        { value: '', label: 'All actions' },
+                                        { value: 'create', label: 'Created' },
+                                        { value: 'update', label: 'Updated' },
+                                        { value: 'delete', label: 'Deleted' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <ActivityFeed {activities} loading={activityLoading} />
                 </Card>
             {/if}
         </div>

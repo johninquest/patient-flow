@@ -1,28 +1,63 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { db } from '../db';
-import { units, properties, user_access } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { units, user } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { canAccessProperty, canEditProperty } from '../common/access.util';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
-import { canAccessProperty, canEditProperty } from '../common/access.util';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UnitsService {
-  async findByProperty(propertyId: string, userId: string) {
+  constructor(private readonly activityService: ActivityService) {}
+
+  async create(data: CreateUnitDto, userId: string) {
+    const canEdit = await canEditProperty(data.property, userId);
+    if (!canEdit) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    const [unit] = await db
+      .insert(units)
+      .values({
+        unit_number: data.unit_number,
+        unit_name: data.unit_name || null,
+        property: data.property,
+      })
+      .returning();
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'unit',
+      entity_id: unit.id,
+      action: 'create',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: data.property,
+    });
+
+    return unit;
+  }
+
+  async findAll(propertyId: string, userId: string) {
     const hasAccess = await canAccessProperty(propertyId, userId);
     if (!hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
-    return db
-      .select()
-      .from(units)
-      .where(eq(units.property, propertyId))
-      .orderBy(units.unit_number);
+    return db.select().from(units).where(eq(units.property, propertyId));
+  }
+
+  async findByProperty(propertyId: string, userId: string) {
+    return this.findAll(propertyId, userId);
   }
 
   async findOne(id: string, userId: string) {
@@ -44,24 +79,6 @@ export class UnitsService {
     return unit;
   }
 
-  async create(data: CreateUnitDto, userId: string) {
-    const canEdit = await canEditProperty(data.property, userId);
-    if (!canEdit) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    const [unit] = await db
-      .insert(units)
-      .values({
-        unit_name: data.unit_name,
-        unit_number: data.unit_number,
-        property: data.property,
-      })
-      .returning();
-
-    return unit;
-  }
-
   async update(id: string, data: UpdateUnitDto, userId: string) {
     const [unit] = await db
       .select()
@@ -78,20 +95,44 @@ export class UnitsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const updateData: any = {
-      updated: new Date(),
-    };
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
 
-    if (data.unit_name !== undefined) updateData.unit_name = data.unit_name;
-    if (data.unit_number !== undefined) updateData.unit_number = data.unit_number;
+    // Calculate changes
+    const changes = this.activityService.calculateChanges(
+      unit,
+      data,
+      ['unit_number', 'unit_name'],
+    );
 
-    const [updatedUnit] = await db
+    const [updated] = await db
       .update(units)
-      .set(updateData)
+      .set({
+        ...data,
+        updated: new Date(),
+      })
       .where(eq(units.id, id))
       .returning();
 
-    return updatedUnit;
+    // Create activity log only if there were significant changes
+    if (changes) {
+      await this.activityService.createLog({
+        entity_type: 'unit',
+        entity_id: id,
+        action: 'update',
+        changes,
+        user_id: userId,
+        user_name: currentUser?.name || undefined,
+        user_email: currentUser?.email || undefined,
+        property_id: unit.property,
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string, userId: string) {
@@ -110,7 +151,26 @@ export class UnitsService {
       throw new ForbiddenException('Access denied');
     }
 
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
     await db.delete(units).where(eq(units.id, id));
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'unit',
+      entity_id: id,
+      action: 'delete',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: unit.property,
+    });
+
     return { success: true };
   }
 }

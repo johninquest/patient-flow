@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, decimal, uuid, unique, check } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, decimal, uuid, unique, check, jsonb, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
@@ -91,6 +91,7 @@ export const rent_entries = pgTable("rent_entries", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   payment_date: timestamp("payment_date").notNull(),
   rent_month: text("rent_month").notNull(), // Format: "YYYY-MM"
+  payment_method: text("payment_method").notNull().default('cash'), // 'cash', 'bank_transfer', 'mobile_money'
   notes: text("notes"),
   recorded_by: text("recorded_by").notNull().references(() => user.id),
   created: timestamp("created").defaultNow().notNull(),
@@ -113,21 +114,40 @@ export const expenses = pgTable("expenses", {
 
 export const user_access = pgTable("user_access", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
-  user: text("user").references(() => user.id, { onDelete: "cascade" }), // Made nullable
-  pending_email: text("pending_email"), // New field
+  user: text("user").references(() => user.id, { onDelete: "cascade" }),
+  pending_email: text("pending_email"),
   property: uuid("property").notNull().references(() => properties.id, { onDelete: "cascade" }),
-  role: text("role").notNull(), // 'manager' | 'viewer'
+  role: text("role").notNull(),
   granted_by: text("granted_by").notNull().references(() => user.id),
   created: timestamp("created").defaultNow().notNull(),
   updated: timestamp("updated").defaultNow().notNull(),
 }, (table) => ({
-  // Unique constraint: one pending invitation per email+property
-  pendingEmailPropertyUnique: unique("user_access_pending_email_property_unique")
-    .on(table.pending_email, table.property)
-    .nullsNotDistinct(),
   // Check constraint: either user or pending_email must be set (not both, not neither)
   userOrPendingCheck: check(
     "user_access_user_or_pending",
     sql`(${table.user} IS NOT NULL AND ${table.pending_email} IS NULL) OR (${table.user} IS NULL AND ${table.pending_email} IS NOT NULL)`
   ),
+  // Partial unique index: only enforce uniqueness for pending invitations
+  pendingEmailPropertyIdx: index("user_access_pending_email_property_idx")
+    .on(table.pending_email, table.property)
+    .where(sql`${table.pending_email} IS NOT NULL`),
+}));
+
+export const activities = pgTable("activities", {
+  id: uuid("id").primaryKey().default(sql`uuidv7()`),
+  entity_type: text("entity_type").notNull(), // 'property', 'tenant', 'unit', 'rent_entry', 'expense', 'user_access'
+  entity_id: uuid("entity_id").notNull(), // ID of the affected record
+  action: text("action").notNull(), // 'create', 'update', 'delete'
+  changes: jsonb("changes"), // { field: { from: value, to: value } }
+  user_id: text("user_id").notNull().references(() => user.id),
+  user_name: text("user_name"), // Denormalized for faster queries
+  user_email: text("user_email"), // Denormalized for faster queries
+  property_id: uuid("property_id").references(() => properties.id, { onDelete: "cascade" }), // Which property this affects
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  // Indexes for fast querying
+  propertyIdx: index("activities_property_idx").on(table.property_id),
+  entityIdx: index("activities_entity_idx").on(table.entity_type, table.entity_id),
+  userIdx: index("activities_user_idx").on(table.user_id),
+  createdAtIdx: index("activities_created_at_idx").on(table.created_at),
 }));

@@ -1,28 +1,68 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { db } from '../db';
-import { expenses, properties, user_access } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { expenses, user } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { canAccessProperty, canEditProperty } from '../common/access.util';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
-import { canAccessProperty, canEditProperty } from '../common/access.util';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class ExpensesService {
-  async findByProperty(propertyId: string, userId: string) {
-    const canAccess = await canAccessProperty(propertyId, userId);
-    if (!canAccess) {
+  constructor(private readonly activityService: ActivityService) {}
+
+  async create(data: CreateExpenseDto, userId: string) {
+    const canEdit = await canEditProperty(data.property, userId);
+    if (!canEdit) {
       throw new ForbiddenException('Access denied');
     }
 
-    return db
-      .select()
-      .from(expenses)
-      .where(eq(expenses.property, propertyId))
-      .orderBy(expenses.expense_date);
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    const [expense] = await db
+      .insert(expenses)
+      .values({
+        property: data.property,
+        unit: data.unit || null,
+        category: data.category,
+        description: data.description,
+        amount: data.amount.toString(),
+        expense_date: new Date(data.expense_date),
+        vendor: data.vendor || null,
+        recorded_by: userId,
+      })
+      .returning();
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'expense',
+      entity_id: expense.id,
+      action: 'create',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: data.property,
+    });
+
+    return expense;
+  }
+
+  async findAll(propertyId: string, userId: string) {
+    const hasAccess = await canAccessProperty(propertyId, userId);
+    if (!hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return db.select().from(expenses).where(eq(expenses.property, propertyId));
+  }
+
+  async findByProperty(propertyId: string, userId: string) {
+    return this.findAll(propertyId, userId);
   }
 
   async findOne(id: string, userId: string) {
@@ -36,33 +76,10 @@ export class ExpensesService {
       throw new NotFoundException('Expense not found');
     }
 
-    const canAccess = await canAccessProperty(expense.property, userId);
-    if (!canAccess) {
+    const hasAccess = await canAccessProperty(expense.property, userId);
+    if (!hasAccess) {
       throw new ForbiddenException('Access denied');
     }
-
-    return expense;
-  }
-
-  async create(data: CreateExpenseDto, userId: string) {
-    const canEdit = await canEditProperty(data.property, userId);
-    if (!canEdit) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    const [expense] = await db
-      .insert(expenses)
-      .values({
-        property: data.property,
-        unit: data.unit,
-        category: data.category,
-        description: data.description,
-        amount: data.amount.toString(),
-        expense_date: new Date(data.expense_date),
-        vendor: data.vendor,
-        recorded_by: userId,
-      })
-      .returning();
 
     return expense;
   }
@@ -83,19 +100,44 @@ export class ExpensesService {
       throw new ForbiddenException('Access denied');
     }
 
-    const updateData: any = {};
-    if (data.unit !== undefined) updateData.unit = data.unit;
-    if (data.category) updateData.category = data.category;
-    if (data.description) updateData.description = data.description;
-    if (data.amount !== undefined) updateData.amount = data.amount.toString();
-    if (data.expense_date) updateData.expense_date = new Date(data.expense_date);
-    if (data.vendor !== undefined) updateData.vendor = data.vendor;
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // Calculate changes
+    const changes = this.activityService.calculateChanges(
+      expense,
+      data,
+      ['amount', 'category', 'description', 'expense_date', 'vendor'],
+    );
 
     const [updated] = await db
       .update(expenses)
-      .set(updateData)
+      .set({
+        ...data,
+        amount: data.amount?.toString(),
+        expense_date: data.expense_date ? new Date(data.expense_date) : undefined,
+        updated: new Date(),
+      })
       .where(eq(expenses.id, id))
       .returning();
+
+    // Create activity log only if there were significant changes
+    if (changes) {
+      await this.activityService.createLog({
+        entity_type: 'expense',
+        entity_id: id,
+        action: 'update',
+        changes,
+        user_id: userId,
+        user_name: currentUser?.name || undefined,
+        user_email: currentUser?.email || undefined,
+        property_id: expense.property,
+      });
+    }
 
     return updated;
   }
@@ -116,7 +158,26 @@ export class ExpensesService {
       throw new ForbiddenException('Access denied');
     }
 
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
     await db.delete(expenses).where(eq(expenses.id, id));
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'expense',
+      entity_id: id,
+      action: 'delete',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: expense.property,
+    });
+
     return { success: true };
   }
 }

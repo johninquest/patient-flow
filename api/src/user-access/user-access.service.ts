@@ -9,9 +9,12 @@ import { user_access, properties, user } from '../db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { isPropertyOwner } from '../common/access.util';
 import { alias } from 'drizzle-orm/pg-core';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UserAccessService {
+  constructor(private readonly activityService: ActivityService) {}
+
   async findByProperty(propertyId: string, userId: string) {
     const isOwner = await isPropertyOwner(propertyId, userId);
     if (!isOwner) {
@@ -113,19 +116,26 @@ export class UserAccessService {
       throw new ForbiddenException('Only property owners can grant access');
     }
 
+    // Get granter info
+    const [granter] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, grantedBy))
+      .limit(1);
+
     // Check if user exists
     const existingUser = await this.findUserByEmail(data.email);
 
     if (existingUser) {
-      // User exists - check if they already have access
+      // User exists - check if they already have access to THIS property
       const [existing] = await db
         .select()
         .from(user_access)
         .where(
           and(
             eq(user_access.property, data.property),
-            eq(user_access.user, existingUser.id),
-          ),
+            eq(user_access.user, existingUser.id)
+          )
         )
         .limit(1);
 
@@ -145,6 +155,17 @@ export class UserAccessService {
         })
         .returning();
 
+      // Create activity log
+      await this.activityService.createLog({
+        entity_type: 'user_access',
+        entity_id: access.id,
+        action: 'create',
+        user_id: grantedBy,
+        user_name: granter?.name || undefined,
+        user_email: granter?.email || undefined,
+        property_id: data.property,
+      });
+
       return access;
     } else {
       // User doesn't exist - check for existing pending invitation
@@ -161,7 +182,7 @@ export class UserAccessService {
 
       if (existingPending) {
         throw new BadRequestException(
-          'A pending invitation already exists for this email. Please update or revoke the existing invitation.',
+          'A pending invitation already exists for this email.',
         );
       }
 
@@ -176,6 +197,17 @@ export class UserAccessService {
           granted_by: grantedBy,
         })
         .returning();
+
+      // Create activity log
+      await this.activityService.createLog({
+        entity_type: 'user_access',
+        entity_id: access.id,
+        action: 'create',
+        user_id: grantedBy,
+        user_name: granter?.name || undefined,
+        user_email: granter?.email || undefined,
+        property_id: data.property,
+      });
 
       return access;
     }
@@ -239,11 +271,39 @@ export class UserAccessService {
       throw new ForbiddenException('Only property owners can update access');
     }
 
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // Calculate changes
+    const changes = this.activityService.calculateChanges(
+      access,
+      data,
+      ['role'],
+    );
+
     const [updated] = await db
       .update(user_access)
       .set({ role: data.role, updated: new Date() })
       .where(eq(user_access.id, id))
       .returning();
+
+    // Create activity log only if there were changes
+    if (changes) {
+      await this.activityService.createLog({
+        entity_type: 'user_access',
+        entity_id: id,
+        action: 'update',
+        changes,
+        user_id: userId,
+        user_name: currentUser?.name || undefined,
+        user_email: currentUser?.email || undefined,
+        property_id: access.property,
+      });
+    }
 
     return updated;
   }
@@ -264,7 +324,26 @@ export class UserAccessService {
       throw new ForbiddenException('Only property owners can revoke access');
     }
 
+    // Get user info
+    const [currentUser] = await db
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
     await db.delete(user_access).where(eq(user_access.id, id));
+
+    // Create activity log
+    await this.activityService.createLog({
+      entity_type: 'user_access',
+      entity_id: id,
+      action: 'delete',
+      user_id: userId,
+      user_name: currentUser?.name || undefined,
+      user_email: currentUser?.email || undefined,
+      property_id: access.property,
+    });
+
     return { success: true };
   }
 }

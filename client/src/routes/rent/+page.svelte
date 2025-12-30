@@ -15,9 +15,18 @@
     let error = $state<string | null>(null);
     let initialized = $state(false);
 
+    const paymentMethods = [
+        { value: 'cash', label: 'Cash' },
+        { value: 'bank_transfer', label: 'Bank Transfer' },
+        { value: 'check', label: 'Check' },
+        { value: 'mobile_money', label: 'Mobile Money' },
+        { value: 'other', label: 'Other' }
+    ];
+
     const columns = [
         { key: 'tenant', label: 'Tenant' },
         { key: 'amount', label: 'Amount' },
+        { key: 'payment_method', label: 'Method' },
         { key: 'rent_month', label: 'Rent Month' },
         { key: 'payment_date', label: 'Payment Date' },
         { key: 'actions', label: '', class: 'w-24' }
@@ -85,6 +94,11 @@
     function handlePropertyChange(value: string) {
         selectedPropertyId = value;
         loadRentEntries();
+    }
+
+    function getPaymentMethodLabel(method: string): string {
+        const pm = paymentMethods.find(m => m.value === method);
+        return pm?.label ?? method;
     }
 </script>
 
@@ -176,6 +190,11 @@
                         </td>
                         <td class="px-4 py-3 text-sm text-green-600 font-medium">
                             {formatAmount(entry.amount)}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-neutral-600">
+                            <span class="px-2 py-1 text-xs rounded-full bg-neutral-100 text-neutral-700">
+                                {getPaymentMethodLabel(entry.payment_method)}
+                            </span>
                         </td>
                         <td class="px-4 py-3 text-sm text-neutral-600">
                             {formatRentMonth(entry.rent_month)}

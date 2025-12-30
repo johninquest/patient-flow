@@ -9,6 +9,7 @@ import { TenantModule } from './tenants/tenant.module';
 import { RentModule } from './rent/rent.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { UserAccessModule } from './user-access/user-access.module';
+import { ActivityModule } from './activity/activity.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserAccessModule } from './user-access/user-access.module';
     RentModule,
     ExpensesModule,
     UserAccessModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
