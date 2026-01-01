@@ -1,4 +1,4 @@
-# Lanlod - Property Management System
+# Popaty - Property Management System
 
 A fullstack application for landlords to track rental income and property expenses across their portfolio.
 
