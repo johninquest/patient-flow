@@ -1,6 +1,6 @@
 # Popaty - Property Management System
 
-A fullstack application for landlords to track rental income and property expenses across their portfolio.
+A fullstack application designed to help DIY landlords and property managers track rental income and property expenses across their portfolio of properties.
 
 ## Features
 
