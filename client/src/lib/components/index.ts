@@ -8,3 +8,5 @@ export { default as EmptyState } from './EmptyState.svelte';
 export { default as ConfirmDialog } from './ConfirmDialog.svelte';
 export { default as GrantAccessModal } from './GrantAccessModal.svelte';
 export { default as AccessList } from './AccessList.svelte';
+export { default as PermissionButton } from './PermissionButton.svelte'; 
+export { default as PermissionGuard } from './PermissionGuard.svelte'; 

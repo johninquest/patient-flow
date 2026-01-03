@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { currentUser } from '$lib/auth'; // ✅ Add this import
+    import { permissions, createPropertyPermissions } from '$lib/stores/permissions';
     import { 
         Card, 
         Button, 
@@ -11,7 +11,8 @@
         Modal, 
         Input, 
         ConfirmDialog,
-        Select 
+        Select,
+        PermissionButton // ✅ Import
     } from '$lib/components';
     import ActivityFeed from '$lib/components/ActivityFeed.svelte';
     import GrantAccessModal from '$lib/components/GrantAccessModal.svelte';
@@ -51,10 +52,22 @@
     let loading = $state(true);
     let error = $state<string | null>(null);
 
-    // User role for this property
-    let userRole = $state<'owner' | 'manager' | 'viewer' | null>(null);
-    let canManageAccess = $derived(userRole === 'owner');
-    let canEdit = $derived(userRole === 'owner' || userRole === 'manager');
+    // ✅ Create permission store - loads asynchronously, doesn't block
+    const propertyId = $derived(page.params.id ?? '');
+    
+    // ✅ Use $derived to reactively create permissions when propertyId changes
+    const perms = $derived(createPropertyPermissions(propertyId));
+    const canManageAccess = $derived($perms.isOwner);
+    const canEdit = $derived($perms.canEdit);
+    const userRole = $derived($perms.role);
+    const permissionsLoading = $derived(!$perms.isLoaded);
+
+    // ✅ Effect to load permissions when propertyId changes
+    $effect(() => {
+        if (propertyId) {
+            permissions.loadPermissions(propertyId);
+        }
+    });
 
     // Unit modal
     let unitModalOpen = $state(false);
@@ -85,7 +98,7 @@
     let grantAccessModalOpen = $state(false);
 
     // Activity state
-    let activeTab = $state<'overview' | 'activity' | 'expenses' | 'rents'>('overview');
+    let activeTab = $state<'overview' | 'rents' | 'expenses' | 'activity'>('overview');
     let activities = $state<Activity[]>([]);
     let activityLoading = $state(false);
     let activityFilters = $state<ActivityFilters>({
@@ -146,13 +159,12 @@
     ];
 
     onMount(async () => {
-        // Read tab from URL
         const tabParam = page.url.searchParams.get('tab');
-        if (tabParam && ['overview', 'activity', 'expenses', 'rents'].includes(tabParam)) {
+        if (tabParam && ['overview', 'rents', 'expenses', 'activity'].includes(tabParam)) {
             activeTab = tabParam as typeof activeTab;
         }
         
-        await loadData();
+        await loadData(); // ✅ Only load data, permissions load via $effect
     });
 
     async function loadData() {
@@ -167,40 +179,34 @@
         }
 
         try {
+            // ✅ Load property first to get permissions context
+            const propertyData = await propertyService.getById(propertyId);
+            property = propertyData;
+
+            // ✅ Determine if user can manage access (owner only)
+            const role = permissions.getRole(propertyId);
+            const isOwner = role === 'owner';
+
+            // ✅ Conditionally fetch access list only for owners
             const [
-                propertyData,
                 unitsData,
                 tenantsData,
                 accessesData,
                 expensesData,
                 rentEntriesData
             ] = await Promise.all([
-                propertyService.getById(propertyId),
                 unitService.getByProperty(propertyId),
                 tenantService.getByProperty(propertyId),
-                userAccessService.getByProperty(propertyId),
+                isOwner ? userAccessService.getByProperty(propertyId) : Promise.resolve([]),
                 expenseService.getByProperty(propertyId),
                 rentService.getByProperty(propertyId)
             ]);
 
-            property = propertyData;
             units = unitsData;
             tenants = tenantsData;
             accessList = accessesData;
             expenses = expensesData;
             rentEntries = rentEntriesData;
-
-            // ✅ Get the actual authenticated user
-            const user = $currentUser;
-            const userId = user?.id;
-
-            // Determine user role
-            if (property && property.owner === userId) {
-                userRole = 'owner';
-            } else {
-                const userAccess = accessList.find((a: UserAccess) => a.user === userId);
-                userRole = userAccess?.role as 'owner' | 'manager' | 'viewer' | null;
-            }
         } catch (err) {
             console.error('Failed to load property:', err);
             error = err instanceof Error ? err.message : 'Failed to load property';
@@ -220,6 +226,10 @@
 
     function handleAccessGranted() {
         loadAccessList();
+        // ✅ Refresh permissions after access changes
+        if (property?.id) {
+            // Permissions will be refreshed automatically on next access
+        }
     }
 
     // Unit functions
@@ -492,25 +502,37 @@
                         </p>
                     </div>
 
+                    <!-- ✅ Use PermissionButton -->
                     <div class="flex gap-2 items-start">
-                        {#if canManageAccess}
-                            <Button variant="secondary" onclick={() => grantAccessModalOpen = true}>
-                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                </svg>
-                                Share
-                            </Button>
-                        {/if}
-                        {#if canEdit}
-                            <Button variant="secondary" onclick={() => goto(`/properties/${property?.id}/edit`)}>
-                                Edit Property
-                            </Button>
-                        {/if}
-                        {#if userRole === 'owner'}
-                            <Button variant="danger" onclick={() => property && confirmDelete('property', property.id, property.name)}>
-                                Delete
-                            </Button>
-                        {/if}
+                        <PermissionButton 
+                            loading={permissionsLoading} 
+                            show={canManageAccess}
+                            variant="secondary"
+                            onclick={() => grantAccessModalOpen = true}
+                        >
+                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                            Share
+                        </PermissionButton>
+
+                        <PermissionButton 
+                            loading={permissionsLoading} 
+                            show={canEdit}
+                            variant="secondary"
+                            onclick={() => goto(`/properties/${property?.id}/edit`)}
+                        >
+                            Edit Property
+                        </PermissionButton>
+
+                        <PermissionButton 
+                            loading={permissionsLoading} 
+                            show={canManageAccess}
+                            variant="danger"
+                            onclick={() => property && confirmDelete('property', property.id, property.name)}
+                        >
+                            Delete
+                        </PermissionButton>
                     </div>
                 </div>
             </div>
@@ -518,17 +540,17 @@
             <!-- Tab Navigation -->
             <div class="border-b border-neutral-200">
                 <nav class="flex gap-4">
-                    <button onclick={() => activeTab = 'overview'} class={activeTab === 'overview' ? 'border-b-2 border-brand-500' : ''}>
+                    <button onclick={() => activeTab = 'overview'} class={activeTab === 'overview' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
                         Overview
                     </button>
-                    <button onclick={() => activeTab = 'activity'} class={activeTab === 'activity' ? 'border-b-2 border-brand-500' : ''}>
-                        Activity
+                    <button onclick={() => activeTab = 'rents'} class={activeTab === 'rents' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
+                        Rents
                     </button>
-                    <button onclick={() => activeTab = 'expenses'} class={activeTab === 'expenses' ? 'border-b-2 border-brand-500' : ''}>
+                    <button onclick={() => activeTab = 'expenses'} class={activeTab === 'expenses' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
                         Expenses
                     </button>
-                    <button onclick={() => activeTab = 'rents'} class={activeTab === 'rents' ? 'border-b-2 border-brand-500' : ''}>
-                        Rents
+                    <button onclick={() => activeTab = 'activity'} class={activeTab === 'activity' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
+                        Activity
                     </button>
                 </nav>
             </div>
@@ -559,15 +581,19 @@
                 <Card>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-neutral-900">Units</h2>
-                        {#if canEdit}
-                            <Button size="sm" onclick={() => { 
+                        
+                        <PermissionButton 
+                            loading={permissionsLoading} 
+                            show={canEdit}
+                            size="sm"
+                            onclick={() => { 
                                 editingUnit = null;
                                 unitForm = { unit_name: '', unit_number: '', property: property?.id ?? '' };
                                 unitModalOpen = true;
-                            }}>
-                                Add Unit
-                            </Button>
-                        {/if}
+                            }}
+                        >
+                            Add Unit
+                        </PermissionButton>
                     </div>
 
                     {#if units.length === 0}
@@ -600,11 +626,15 @@
                 <Card>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-neutral-900">Tenants</h2>
-                        {#if canEdit}
-                            <Button size="sm" onclick={() => openTenantModal()}>
-                                Add Tenant
-                            </Button>
-                        {/if}
+                        
+                        <PermissionButton 
+                            loading={permissionsLoading} 
+                            show={canEdit}
+                            size="sm"
+                            onclick={() => openTenantModal()}
+                        >
+                            Add Tenant
+                        </PermissionButton>
                     </div>
 
                     {#if tenants.length === 0}
@@ -665,102 +695,6 @@
                     </Card>
                 {/if}
 
-            {:else if activeTab === 'activity'}
-                <Card>
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Recent Activity</h2>
-                        
-                        <!-- Filters -->
-                        <div class="flex gap-3 flex-wrap">
-                            <div class="w-48">
-                                <Select
-                                    label="Time range"
-                                    value={activityFilters.days?.toString() ?? '30'}
-                                    onchange={(value) => activityFilters.days = parseInt(value)}
-                                    options={[
-                                        { value: '7', label: 'Last 7 days' },
-                                        { value: '30', label: 'Last 30 days' },
-                                        { value: '90', label: 'Last 3 months' },
-                                        { value: '365', label: 'Last year' },
-                                    ]}
-                                />
-                            </div>
-                            
-                            <div class="w-48">
-                                <Select
-                                    label="Filter by action"
-                                    value={activityFilters.action ?? ''}
-                                    onchange={(value) => activityFilters.action = (value || undefined) as ActivityAction | undefined}
-                                    options={[
-                                        { value: '', label: 'All actions' },
-                                        { value: 'create', label: 'Created' },
-                                        { value: 'update', label: 'Updated' },
-                                        { value: 'delete', label: 'Deleted' },
-                                    ]}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <ActivityFeed {activities} loading={activityLoading} />
-                </Card>
-            {:else if activeTab === 'expenses'}
-                <!-- Expenses Section -->
-                <Card>
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold">Expenses</h2>
-                    </div>
-                    
-                    {#if expenses.length === 0}
-                        <EmptyState title="No expenses" description="Record your first expense">
-                            {#snippet action()}
-                                {#if canEdit}
-                                    <Button onclick={() => property && goto(`/expenses/new?property=${property.id}`)}>
-                                        Add Expense
-                                    </Button>
-                                {/if}
-                            {/snippet}
-                        </EmptyState>
-                    {:else}
-                        <Table columns={expenseColumns}>
-                            {#each expenses as expense}
-                                <tr class="hover:bg-neutral-50 cursor-pointer" onclick={() => goto(`/expenses/${expense.id}`)}>
-                                    <td class="px-4 py-3 text-sm text-neutral-900">
-                                        {new Date(expense.expense_date).toLocaleDateString()}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600">
-                                        <span class="px-2 py-1 text-xs rounded-full bg-neutral-100 text-neutral-700">
-                                            {expenseCategories.find(c => c.value === expense.category)?.label ?? expense.category}
-                                        </span>
-                                    </td>
-                                    <!-- ✅ REMOVED description cell here -->
-                                    <td class="px-4 py-3 text-sm text-red-600 font-medium">
-                                        {formatCurrency(expense.amount)}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-right" onclick={(e) => e.stopPropagation()}>
-                                        <Button variant="ghost" size="sm" onclick={() => goto(`/expenses/${expense.id}`)}>
-                                            View
-                                        </Button>
-                                    </td>
-                                </tr>
-                            {/each}
-                        </Table>
-                    {/if}
-                </Card>
-
-                <!-- Floating Action Button for Expenses -->
-                {#if canEdit}
-                    <button
-                        onclick={() => property && goto(`/expenses/new?property=${property.id}`)}
-                        class="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-300 transition-all hover:scale-105 z-50"
-                        aria-label="Add Expense"
-                    >
-                        <svg class="h-6 w-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
-                {/if}
-
             {:else if activeTab === 'rents'}
                 <!-- Rent Entries Section -->
                 <Card>
@@ -807,17 +741,114 @@
                 </Card>
 
                 <!-- Floating Action Button for Rents -->
-                {#if canEdit}
-                    <button
-                        onclick={() => property && goto(`/rent/new?property=${property.id}`)}
-                        class="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-600 text-white shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all hover:scale-105 z-50"
-                        aria-label="Record Payment"
-                    >
-                        <svg class="h-6 w-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
-                {/if}
+                <PermissionButton 
+                    loading={permissionsLoading} 
+                    show={canEdit && activeTab === 'rents'}
+                    variant="primary"
+                    class="fixed bottom-6 right-6 h-14! w-14! rounded-full shadow-lg hover:scale-105 z-50 p-0!"
+                    onclick={() => property && goto(`/rent/new?property=${property.id}`)}
+                >
+                    <svg class="h-6 w-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </PermissionButton>
+
+            {:else if activeTab === 'expenses'}
+                <!-- Expenses Section -->
+                <Card>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Expenses</h2>
+                    </div>
+                    
+                    {#if expenses.length === 0}
+                        <EmptyState title="No expenses" description="Record your first expense">
+                            {#snippet action()}
+                                {#if canEdit}
+                                    <Button onclick={() => property && goto(`/expenses/new?property=${property.id}`)}>
+                                        Add Expense
+                                    </Button>
+                                {/if}
+                            {/snippet}
+                        </EmptyState>
+                    {:else}
+                        <Table columns={expenseColumns}>
+                            {#each expenses as expense}
+                                <tr class="hover:bg-neutral-50 cursor-pointer" onclick={() => goto(`/expenses/${expense.id}`)}>
+                                    <td class="px-4 py-3 text-sm text-neutral-900">
+                                        {new Date(expense.expense_date).toLocaleDateString()}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-neutral-600">
+                                        <span class="px-2 py-1 text-xs rounded-full bg-neutral-100 text-neutral-700">
+                                            {expenseCategories.find(c => c.value === expense.category)?.label ?? expense.category}
+                                        </span>
+                                    </td>
+                                    <!-- ✅ REMOVED description cell here -->
+                                    <td class="px-4 py-3 text-sm text-red-600 font-medium">
+                                        {formatCurrency(expense.amount)}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-right" onclick={(e) => e.stopPropagation()}>
+                                        <Button variant="ghost" size="sm" onclick={() => goto(`/expenses/${expense.id}`)}>
+                                            View
+                                        </Button>
+                                    </td>
+                                </tr>
+                            {/each}
+                        </Table>
+                    {/if}
+                </Card>
+
+                <!-- Floating Action Button for Expenses -->
+                <PermissionButton 
+                    loading={permissionsLoading} 
+                    show={canEdit && activeTab === 'expenses'}
+                    variant="primary"
+                    class="fixed bottom-6 right-6 h-14! w-14! rounded-full shadow-lg hover:scale-105 z-50 p-0!"
+                    onclick={() => property && goto(`/expenses/new?property=${property.id}`)}
+                >
+                    <svg class="h-6 w-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </PermissionButton>
+
+            {:else if activeTab === 'activity'}
+                <Card>
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Recent Activity</h2>
+                        
+                        <!-- Filters -->
+                        <div class="flex gap-3 flex-wrap">
+                            <div class="w-48">
+                                <Select
+                                    label="Time range"
+                                    value={activityFilters.days?.toString() ?? '30'}
+                                    onchange={(value) => activityFilters.days = parseInt(value)}
+                                    options={[
+                                        { value: '7', label: 'Last 7 days' },
+                                        { value: '30', label: 'Last 30 days' },
+                                        { value: '90', label: 'Last 3 months' },
+                                        { value: '365', label: 'Last year' },
+                                    ]}
+                                />
+                            </div>
+                            
+                            <div class="w-48">
+                                <Select
+                                    label="Filter by action"
+                                    value={activityFilters.action ?? ''}
+                                    onchange={(value) => activityFilters.action = (value || undefined) as ActivityAction | undefined}
+                                    options={[
+                                        { value: '', label: 'All actions' },
+                                        { value: 'create', label: 'Created' },
+                                        { value: 'update', label: 'Updated' },
+                                        { value: 'delete', label: 'Deleted' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <ActivityFeed {activities} loading={activityLoading} />
+                </Card>
             {/if}
         </div>
 
