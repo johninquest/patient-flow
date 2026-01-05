@@ -1,5 +1,5 @@
-export const APP_NAME = 'Popati';
-export const APP_VERSION = '0.12.27';
+export const APP_NAME = 'Popaty';
+export const APP_VERSION = '0.1.5';
 
 export const SUPPORTED_LOCALES = [
     { code: 'en', name: 'English' },
@@ -11,4 +11,4 @@ const isDev = typeof window !== "undefined" && window.location.hostname === "loc
 
 export const API_URL = isDev
   ? "http://localhost:3000"
-  : "https://api.lanlod.com"; // TODO: Update with your production API URL
+  : "https://api.popaty.com"; // TODO: Update with your production API URL

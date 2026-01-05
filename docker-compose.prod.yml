@@ -1,0 +1,54 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    container_name: popaty-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - API_URL=${API_URL}
+      - CLIENT_URL=${CLIENT_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    labels:
+      - "traefik.enable=true"
+      # API routing
+      - "traefik.http.routers.popaty-api.entrypoints=websecure"
+      - "traefik.http.routers.popaty-api.rule=Host(`api.popaty.com`)"
+      - "traefik.http.routers.popaty-api.tls=true"
+      - "traefik.http.routers.popaty-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.popaty-api.loadbalancer.server.port=3000"
+    networks:
+      - proxy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+    container_name: popaty-client
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - PUBLIC_API_URL=${API_URL}
+    labels:
+      - "traefik.enable=true"
+      # Client routing
+      - "traefik.http.routers.popaty-client.entrypoints=websecure"
+      - "traefik.http.routers.popaty-client.rule=Host(`popaty.com`) || Host(`www.popaty.com`)"
+      - "traefik.http.routers.popaty-client.tls=true"
+      - "traefik.http.routers.popaty-client.tls.certresolver=letsencrypt"
+      - "traefik.http.services.popaty-client.loadbalancer.server.port=3000"
+    depends_on:
+      - api
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
