@@ -3,6 +3,7 @@
     import { login, loginWithGoogle } from '$lib/auth/login';
     import { t } from '$lib/i18n';
     import FormInput from '$lib/components/FormInput.svelte';
+    import { APP_VERSION, APP_NAME } from '$lib/config';
 
     let email = $state('');
     let password = $state('');
@@ -45,7 +46,14 @@
 
 <div class="flex min-h-screen items-center justify-center bg-neutral-50">
     <div class="w-full max-w-sm space-y-6 rounded-lg bg-white p-8 shadow-md border border-neutral-200">
-        <h1 class="text-2xl font-bold text-center text-neutral-800">{$t('auth.signin')}</h1>
+        <!-- Add this above your "Sign In" heading -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-brand-500 mb-2">
+                {APP_NAME}
+            </h1>
+        </div>
+
+        <h2 class="text-xl font-semibold text-gray-700 mb-6 text-center">Sign In</h2>
 
         {#if error}
             <p class="rounded bg-red-100 p-3 text-red-700 text-sm">{error}</p>
@@ -125,5 +133,10 @@
             </svg>
             {$t('auth.continue.google')}
         </button>
+
+        <!-- Add this below your Google login button -->
+        <p class="text-xs text-gray-500 mt-6 text-center">
+          Version {APP_VERSION}
+        </p>
     </div>
 </div>
