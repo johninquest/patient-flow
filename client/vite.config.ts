@@ -12,21 +12,18 @@ export default defineConfig({
             srcDir: 'src',
             mode: 'production',
             strategies: 'generateSW',
-            scope: '/',
-            base: '/',
+            scope: './',
+            base: './',
             selfDestroying: process.env.SELF_DESTROYING_SW === 'true',
             manifest: {
                 short_name: 'Popaty',
                 name: 'Popaty - Property rent and expense manager',
-                start_url: '/',
-                scope: '/',
+                start_url: './',
+                scope: './',
                 display: 'standalone',
                 theme_color: '#8c6a3a',
                 background_color: '#F9FAFB',
-                description: 'Property rent and expense management app', 
-                id: '/',
-                orientation: 'portrait-primary',
-                categories: ['business', 'finance', 'productivity'],
+                description: 'Property rent and expense management app',
                 icons: [
                     {
                         src: '/icon-192.png',
@@ -48,11 +45,8 @@ export default defineConfig({
                     }
                 ]
             },
-            injectManifest: {
-                globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
-            },
             workbox: {
-                globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/api\.popaty\.com\/.*/i,
@@ -75,7 +69,7 @@ export default defineConfig({
                             cacheName: 'google-fonts-cache',
                             expiration: {
                                 maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                                maxAgeSeconds: 60 * 60 * 24 * 365
                             },
                             cacheableResponse: {
                                 statuses: [0, 200]
@@ -89,7 +83,7 @@ export default defineConfig({
                             cacheName: 'gstatic-fonts-cache',
                             expiration: {
                                 maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                                maxAgeSeconds: 60 * 60 * 24 * 365
                             },
                             cacheableResponse: {
                                 statuses: [0, 200]
