@@ -27,8 +27,25 @@ export default {
     
     // Dashboard
     'dashboard.title': 'Dashboard',
-    'dashboard.welcome': 'Welcome!',
+    'dashboard.welcome': 'Welcome back, {{name}}',
+    'dashboard.welcome.new': 'Welcome to Popaty!',
     'dashboard.welcome.message': 'You are now logged in to your dashboard.',
+    'dashboard.no.properties': 'You don\'t have access to any properties yet. Create your first property to get started.',
+    'dashboard.my.properties': 'My Properties',
+    'dashboard.shared.with.me': 'Shared With Me ({{count}})',
+    'dashboard.quick.actions': 'Quick Actions',
+    'dashboard.add.property': 'Add Property',
+    'dashboard.owner': 'Owner',
+    'dashboard.shared.by': 'Shared by {{name}}',
+    'dashboard.close.menu': 'Close menu',
+    
+    // Quick Actions
+    'actions.record.rent': 'Record Rent',
+    'actions.record.rent.desc': 'Add a new payment',
+    'actions.view.tenants': 'View Tenants',
+    'actions.view.tenants.desc': 'Manage your tenants',
+    'actions.track.expenses': 'Track Expenses',
+    'actions.track.expenses.desc': 'Log property expenses',
     
     // Settings
     'settings.title': 'Settings',

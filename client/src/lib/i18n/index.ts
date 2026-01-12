@@ -1,12 +1,13 @@
 import { writable, derived } from 'svelte/store';
 import en from './locales/en';
+import fr from './locales/fr';
 
 export type Locale = 'en' | 'fr' | 'de';
 export type TranslationKey = keyof typeof en;
 
 const translations: Record<Locale, Record<string, string>> = {
     en,
-    fr: en, // Fallback to English until French is added
+    fr,
     de: en  // Fallback to English until German is added
 };
 

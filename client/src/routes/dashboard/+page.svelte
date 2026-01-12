@@ -68,7 +68,7 @@
 </script>
 
 <svelte:head>
-    <title>Dashboard | {APP_NAME}</title>
+    <title>{$t('dashboard.title')} | {APP_NAME}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-neutral-50">
@@ -77,8 +77,8 @@
         <div class="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold text-neutral-900">Dashboard</h1>
-                    <p class="text-sm text-neutral-500 mt-1">Welcome back, {userName}</p>
+                    <h1 class="text-2xl font-semibold text-neutral-900">{$t('dashboard.title')}</h1>
+                    <p class="text-sm text-neutral-500 mt-1">{$t('dashboard.welcome', { name: userName })}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <!-- Language Toggle -->
@@ -100,7 +100,7 @@
                             <button 
                                 class="fixed inset-0 z-10" 
                                 onclick={() => showLanguageMenu = false}
-                                aria-label="Close menu"
+                                aria-label={$t('dashboard.close.menu')}
                             ></button>
                             
                             <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-neutral-200 z-20">
@@ -138,9 +138,19 @@
                             </svg>
                         </a>
                     </Tooltip>
-                    <Button variant="secondary" onclick={handleLogout}>
-                        {$t('auth.signout')}
-                    </Button>
+                    
+                    <Tooltip text={$t('auth.signout')} position="bottom">
+                        <button
+                            onclick={handleLogout}
+                            class="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            aria-label={$t('auth.signout')}
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
         </div>
@@ -162,11 +172,11 @@
                                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                     </div>
-                    <h2 class="text-xl font-semibold text-neutral-900 mb-2">Welcome to Popaty!</h2>
+                    <h2 class="text-xl font-semibold text-neutral-900 mb-2">{$t('dashboard.welcome.new')}</h2>
                     <p class="text-neutral-600 mb-6 max-w-md mx-auto">
-                        You don't have access to any properties yet. Create your first property to get started.
+                        {$t('dashboard.no.properties')}
                     </p>
-                    <Button onclick={() => goto('/properties/new')}>Add Property</Button>
+                    <Button onclick={() => goto('/properties/new')}>{$t('dashboard.add.property')}</Button>
                 </div>
             </Card>
         {:else}
@@ -175,9 +185,9 @@
                 {#if ownedProperties.length > 0}
                     <section>
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-neutral-900">My Properties</h2>
+                            <h2 class="text-lg font-semibold text-neutral-900">{$t('dashboard.my.properties')}</h2>
                             <Button variant="primary" onclick={() => goto('/properties/new')}>
-                                Add Property
+                                {$t('dashboard.add.property')}
                             </Button>
                         </div>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -192,7 +202,7 @@
                                                 </p>
                                             </div>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-brand-100 text-brand-700">
-                                                Owner
+                                                {$t('dashboard.owner')}
                                             </span>
                                         </div>
                                     </Card>
@@ -208,7 +218,7 @@
                     <div class="border-t border-gray-200 my-8"></div>
                     
                     <section>
-                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">Shared With Me ({sharedAccess.length})</h2>
+                        <h2 class="text-lg font-semibold text-neutral-900 mb-4">{$t('dashboard.shared.with.me', { count: sharedAccess.length.toString() })}</h2>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {#each sharedAccess as access (access.id)}
                                 <a href="/properties/{access.property}" class="block hover:shadow-md transition-shadow rounded-lg">
@@ -228,7 +238,7 @@
                                             </span>
                                         </div>
                                         <p class="text-xs text-gray-500 mt-2">
-                                            Shared by {getGranterName(access)}
+                                            {$t('dashboard.shared.by', { name: getGranterName(access) })}
                                         </p>
                                     </Card>
                                 </a>
@@ -239,7 +249,7 @@
 
                 <!-- Quick Actions -->
                 <section>
-                    <h2 class="text-lg font-semibold text-neutral-900 mb-4">Quick Actions</h2>
+                    <h2 class="text-lg font-semibold text-neutral-900 mb-4">{$t('dashboard.quick.actions')}</h2>
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <a href="/rent" class="block hover:shadow-md transition-shadow rounded-lg">
                             <Card>
@@ -250,8 +260,8 @@
                                                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </div>
-                                    <p class="font-medium text-neutral-900">Record Rent</p>
-                                    <p class="text-sm text-neutral-500">Add a new payment</p>
+                                    <p class="font-medium text-neutral-900">{$t('actions.record.rent')}</p>
+                                    <p class="text-sm text-neutral-500">{$t('actions.record.rent.desc')}</p>
                                 </div>
                             </Card>
                         </a>
@@ -264,8 +274,8 @@
                                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
                                     </div>
-                                    <p class="font-medium text-neutral-900">View Tenants</p>
-                                    <p class="text-sm text-neutral-500">Manage your tenants</p>
+                                    <p class="font-medium text-neutral-900">{$t('actions.view.tenants')}</p>
+                                    <p class="text-sm text-neutral-500">{$t('actions.view.tenants.desc')}</p>
                                 </div>
                             </Card>
                         </a>
@@ -278,8 +288,8 @@
                                                 d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
                                         </svg>
                                     </div>
-                                    <p class="font-medium text-neutral-900">Track Expenses</p>
-                                    <p class="text-sm text-neutral-500">Log property expenses</p>
+                                    <p class="font-medium text-neutral-900">{$t('actions.track.expenses')}</p>
+                                    <p class="text-sm text-neutral-500">{$t('actions.track.expenses.desc')}</p>
                                 </div>
                             </Card>
                         </a>
