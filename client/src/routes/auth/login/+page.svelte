@@ -58,9 +58,9 @@
         </div>
 
         <!-- Replaced "Sign In" header to be more subtle -->
-        <h2 class="text-sm font-medium text-neutral-500 text-center uppercase tracking-wider mb-4">
+        <h3 class="text-sm font-medium text-neutral-500 text-center uppercase tracking-wider mb-4">
             {$t('auth.signin.title')}
-        </h2>
+        </h3>
 
         {#if error}
             <div class="rounded-md bg-red-50 p-3 border border-red-100">
