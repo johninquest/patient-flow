@@ -1,6 +1,7 @@
 export default {
     // Common
     'app.name': 'Popaty',
+    'app.tagline': 'Property rent & expense manager',
     'common.loading': 'Loading...',
     'common.error': 'An error occurred',
     'common.save': 'Save',
@@ -9,6 +10,7 @@ export default {
     
     // Auth
     'auth.signin': 'Sign in',
+    'auth.signin.title': 'Sign in to your account',
     'auth.signout': 'Sign out',
     'auth.signup': 'Create account',
     'auth.email': 'Email',
@@ -17,7 +19,7 @@ export default {
     'auth.forgot': 'Forgot password?',
     'auth.no.account': "Don't have an account?",
     'auth.have.account': 'Already have an account?',
-    'auth.continue.google': 'Continue with Google',
+    'auth.continue.google': 'Google',
     'auth.or': 'Or continue with',
     'auth.signin.loading': 'Signing in...',
     'auth.signup.loading': 'Creating account...',

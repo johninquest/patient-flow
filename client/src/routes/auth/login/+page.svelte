@@ -53,13 +53,13 @@
                 {APP_NAME}
             </h1>
             <p class="text-xs font-medium uppercase tracking-wide text-neutral-500 mt-1.5">
-                Property rent & expense manager
+                {$t('app.tagline')}
             </p>
         </div>
 
         <!-- Replaced "Sign In" header to be more subtle -->
         <h2 class="text-sm font-medium text-neutral-500 text-center uppercase tracking-wider mb-4">
-            Sign in to your account
+            {$t('auth.signin.title')}
         </h2>
 
         {#if error}

@@ -1,6 +1,7 @@
 export default {
     // Common
     'app.name': 'Popaty',
+    'app.tagline': 'Gestionnaire de loyers et dépenses',
     'common.loading': 'Chargement…',
     'common.error': 'Une erreur est survenue',
     'common.save': 'Enregistrer',
@@ -9,6 +10,7 @@ export default {
 
     // Auth
     'auth.signin': 'Se connecter',
+    'auth.signin.title': 'Connectez-vous à votre compte',
     'auth.signout': 'Se déconnecter',
     'auth.signup': 'Créer un compte',
     'auth.email': 'E-mail',
@@ -17,7 +19,7 @@ export default {
     'auth.forgot': 'Mot de passe oublié ?',
     'auth.no.account': "Vous n'avez pas de compte ?",
     'auth.have.account': 'Vous avez déjà un compte ?',
-    'auth.continue.google': 'Continuer avec Google',
+    'auth.continue.google': 'Google',
     'auth.or': 'Ou continuer avec',
     'auth.signin.loading': 'Connexion en cours…',
     'auth.signup.loading': 'Création du compte…',

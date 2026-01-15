@@ -38,12 +38,29 @@ export function setLocale(newLocale: Locale) {
     }
 }
 
-// Initialize from localStorage
+// Initialize from browser or localStorage
 export function initLocale() {
     if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('locale') as Locale | null;
         if (saved && translations[saved]) {
+            console.log('[i18n] Using saved locale:', saved);
             locale.set(saved);
+            return;
+        }
+        
+        // Detect browser language if no saved preference
+        const browserLang = navigator.language.toLowerCase();
+        console.log('[i18n] Detected browser language:', browserLang);
+        
+        if (browserLang.startsWith('fr')) {
+            console.log('[i18n] Setting locale to: fr');
+            locale.set('fr');
+        } else if (browserLang.startsWith('de')) {
+            console.log('[i18n] Setting locale to: de');
+            locale.set('de');
+        } else {
+            console.log('[i18n] Setting locale to: en (default)');
+            locale.set('en'); // Default fallback
         }
     }
 }
