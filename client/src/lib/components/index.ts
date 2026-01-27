@@ -11,4 +11,5 @@ export { default as AccessList } from './AccessList.svelte';
 export { default as PermissionButton } from './PermissionButton.svelte'; 
 export { default as PermissionGuard } from './PermissionGuard.svelte'; 
 export { default as ReloadPrompt } from './ReloadPrompt.svelte';
-export { default as Tooltip } from './Tooltip.svelte';
+export { default as Tooltip } from './Tooltip.svelte'; 
+export { default as ErrorDialog } from './ErrorDialog.svelte';
