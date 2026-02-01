@@ -3,8 +3,8 @@
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { t, initLocale } from '$lib/i18n';
-    import { initializeAuth, isInitialized } from '$lib/auth';
-    import { ReloadPrompt } from '$lib/components';
+    import { initializeAuth } from '$lib/auth';
+    import { ReloadPrompt, VersionCheck } from '$lib/components';
     import '../app.css';
 
     let { children }: { children: Snippet } = $props();
@@ -25,6 +25,7 @@
     {@render children()}
     {#if browser}
         <ReloadPrompt />
+        <VersionCheck />
     {/if}
 {:else}
     <div class="min-h-screen flex items-center justify-center bg-neutral-50">

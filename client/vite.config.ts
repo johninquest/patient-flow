@@ -3,8 +3,6 @@ import { defineConfig } from 'vite';
 import { readFileSync } from 'fs';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
-
 export default defineConfig({
     plugins: [
         sveltekit(),
@@ -12,6 +10,7 @@ export default defineConfig({
             srcDir: 'src',
             mode: 'production',
             strategies: 'generateSW',
+            registerType: 'autoUpdate',
             scope: '/',
             base: '/',
             selfDestroying: process.env.SELF_DESTROYING_SW === 'true',
@@ -44,6 +43,8 @@ export default defineConfig({
                 navigateFallback: '/',
                 additionalManifestEntries: [{ url: '/', revision: null }],
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+                skipWaiting: true,
+                clientsClaim: true, 
                 runtimeCaching: [
                     {
                         urlPattern: ({ url }) => url.origin === 'https://api.popaty.com',
@@ -70,10 +71,5 @@ export default defineConfig({
                 includeVersionFile: true
             }
         })
-    ],
-    define: {
-        __APP_VERSION__: JSON.stringify(pkg.version)
-    }
+    ]
 });
-
-export {};

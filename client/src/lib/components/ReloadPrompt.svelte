@@ -1,28 +1,61 @@
 <script lang="ts">
     import { useRegisterSW } from 'virtual:pwa-register/svelte';
+    import { browser } from '$app/environment';
     import Button from './Button.svelte';
 
     const {
         needRefresh,
+        offlineReady,
         updateServiceWorker
     } = useRegisterSW({
+        immediate: true, // ✅ Register immediately
         onRegistered(registration: ServiceWorkerRegistration | undefined) {
-            // console.log('[PWA] Service worker registered');
-            // Check for updates every hour
+            console.log('[PWA] Service worker registered');
             if (registration) {
+                // Check for updates more frequently - every 5 minutes
                 setInterval(() => {
+                    console.log('[PWA] Checking for updates...');
                     registration.update();
-                }, 60 * 60 * 1000);
+                }, 5 * 60 * 1000);
+                
+                // Also check on visibility change (when app comes to foreground)
+                if (browser) {
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'visible') {
+                            console.log('[PWA] App visible, checking for updates...');
+                            registration.update();
+                        }
+                    });
+                }
             }
         },
         onRegisterError(error: Error) {
             console.error('[PWA] Service worker registration error:', error);
+        },
+        onNeedRefresh() {
+            console.log('[PWA] New content available, refresh needed');
+        },
+        onOfflineReady() {
+            console.log('[PWA] App ready to work offline');
         }
     });
 
     function close() {
         $needRefresh = false;
     }
+
+    // Auto-reload after a short delay if user doesn't interact (optional, more aggressive)
+    $effect(() => {
+        if ($needRefresh && browser) {
+            // Give user 30 seconds to see the prompt, then auto-update
+            const timeout = setTimeout(() => {
+                console.log('[PWA] Auto-updating after timeout...');
+                updateServiceWorker(true);
+            }, 30000);
+            
+            return () => clearTimeout(timeout);
+        }
+    });
 </script>
 
 {#if $needRefresh}
@@ -40,14 +73,14 @@
                         New version available
                     </p>
                     <p class="text-sm text-neutral-500 mt-1">
-                        Click reload to update the app.
+                        Tap reload to update to the latest version.
                     </p>
                     <div class="flex gap-2 mt-3">
                         <Button size="sm" onclick={() => updateServiceWorker(true)}>
-                            Reload
+                            Reload Now
                         </Button>
                         <Button size="sm" variant="ghost" onclick={close}>
-                            Dismiss
+                            Later
                         </Button>
                     </div>
                 </div>
@@ -63,4 +96,8 @@
             </div>
         </div>
     </div>
+{/if}
+
+{#if $offlineReady}
+    <!-- Optional: show offline ready notification briefly -->
 {/if}
