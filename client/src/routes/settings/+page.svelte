@@ -79,10 +79,10 @@
                         <dt class="text-neutral-500">{$t('settings.account.name')}</dt>
                         <dd class="font-medium text-neutral-900">{$currentUser?.name || '—'}</dd>
                     </div>
-                    <div>
+                   <!--  <div>
                         <dt class="text-neutral-500">{$t('settings.account.id')}</dt>
                         <dd class="font-mono text-xs text-neutral-600">{$currentUser?.id}</dd>
-                    </div>
+                    </div> -->
                 </dl>
             </section>
 
