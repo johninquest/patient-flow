@@ -175,9 +175,7 @@ export class PropertiesService {
       .where(eq(user.id, userId))
       .limit(1);
 
-    await db.delete(properties).where(eq(properties.id, id));
-
-    // Create activity log
+    // ✅ Create activity log BEFORE deleting the property
     await this.activityService.createLog({
       entity_type: 'property',
       entity_id: id,
@@ -185,8 +183,10 @@ export class PropertiesService {
       user_id: userId,
       user_name: currentUser?.name || undefined,
       user_email: currentUser?.email || undefined,
-      property_id: id,
+      property_id: null, // ✅ Set to null since property will be deleted
     });
+
+    await db.delete(properties).where(eq(properties.id, id));
 
     return { success: true };
   }

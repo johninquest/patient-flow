@@ -25,7 +25,7 @@ export interface CreateActivityLogDto {
   user_id: string;
   user_name?: string;
   user_email?: string;
-  property_id?: string;
+  property_id?: string | null;
 }
 
 export interface ActivityFilters {
