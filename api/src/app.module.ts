@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { PropertiesModule } from './properties/properties.module';
-import { UnitsModule } from './units/units.module';
-import { TenantModule } from './tenants/tenant.module';
-import { RentModule } from './rent/rent.module';
-import { ExpensesModule } from './expenses/expenses.module';
-import { UserAccessModule } from './user-access/user-access.module';
-import { ActivityModule } from './activity/activity.module';
+import { AuthModule } from './core/auth/auth.module';
+import { PropertiesModule } from './modules/properties/properties.module';
+import { UnitsModule } from './modules/units/units.module';
+import { TenantModule } from './modules/tenants/tenant.module';
+import { RentModule } from './modules/rent/rent.module';
+import { ExpensesModule } from './modules/expenses/expenses.module';
+import { UserAccessModule } from './modules/user-access/user-access.module';
+import { ActivityModule } from './modules/activity/activity.module';
 
 @Module({
   imports: [
