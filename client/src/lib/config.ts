@@ -1,5 +1,5 @@
 export const APP_NAME = 'Popaty';
-export const APP_VERSION = '0.2.4';
+export const APP_VERSION = '0.2.22';
 
 export const SUPPORTED_LOCALES = [
     { code: 'en', name: 'English' },

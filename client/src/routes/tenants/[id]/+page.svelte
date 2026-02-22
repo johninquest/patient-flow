@@ -4,13 +4,15 @@
     import { page } from '$app/state';
     import { Button, Card, Input, Select, ConfirmDialog } from '$lib/components';
     import Tooltip from '$lib/components/Tooltip.svelte';
-    import { tenantService, unitService, rentService } from '$lib/services';
+    import { tenantService, unitService, rentService, propertyService } from '$lib/services';
+    import { getCurrencyByCountryCode } from '$lib/types/currency.types';
     import { t } from '$lib/i18n';
-    import type { Tenant, Unit, RentEntry } from '$lib/types';
+    import type { Tenant, Unit, RentEntry, Property } from '$lib/types';
 
     let tenant = $state<Tenant | null>(null);
     let units = $state<Unit[]>([]);
     let rentHistory = $state<RentEntry[]>([]);
+    let property = $state<Property | null>(null);
     let loading = $state(true);
     let saving = $state(false);
     let error = $state<string | null>(null);
@@ -58,6 +60,9 @@
 
             // Load units for the property
             units = await unitService.getByProperty(tenant.property);
+
+            // Load property for currency formatting
+            property = await propertyService.getById(tenant.property);
 
             // Load rent history
             rentHistory = await rentService.getByTenant(tenantId);
@@ -124,6 +129,12 @@
         if (!tenant?.unit) return 'No unit assigned';
         const unit = units.find((u) => u.id === tenant?.unit);
         return unit ? `${unit.unit_number}${unit.unit_name ? ` - ${unit.unit_name}` : ''}` : 'No unit assigned';
+    }
+
+    function formatCurrency(amount: number): string {
+        if (!property) return amount.toLocaleString();
+        const currency = getCurrencyByCountryCode(property.country);
+        return `${currency?.symbol ?? currency?.currencyCode ?? ''} ${amount.toLocaleString()}`;
     }
 </script>
 
@@ -281,7 +292,7 @@
                                 {#each rentHistory as entry}
                                     <tr class="hover:bg-neutral-50">
                                         <td class="px-4 py-3 text-sm text-neutral-900">{formatRentMonth(entry.rent_month)}</td>
-                                        <td class="px-4 py-3 text-sm text-green-600 font-medium">{entry.amount.toLocaleString()}</td>
+                                        <td class="px-4 py-3 text-sm text-green-600 font-medium">{formatCurrency(entry.amount)}</td>
                                         <td class="px-4 py-3 text-sm text-neutral-600">{formatDate(entry.payment_date)}</td>
                                     </tr>
                                 {/each}
