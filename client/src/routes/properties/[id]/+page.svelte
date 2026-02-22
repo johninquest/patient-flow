@@ -100,7 +100,7 @@
     let grantAccessModalOpen = $state(false);
 
     // Activity state
-    let activeTab = $state<'overview' | 'rents' | 'expenses' | 'activity'>('overview');
+    let activeTab = $state<'overview' | 'setup' | 'rents' | 'expenses' | 'activity'>('overview');
     let activities = $state<Activity[]>([]);
     let activityLoading = $state(false);
     let activityFilters = $state<ActivityFilters>({
@@ -162,7 +162,7 @@
 
     onMount(async () => {
         const tabParam = page.url.searchParams.get('tab');
-        if (tabParam && ['overview', 'rents', 'expenses', 'activity'].includes(tabParam)) {
+        if (tabParam && ['overview', 'setup', 'rents', 'expenses', 'activity'].includes(tabParam)) {
             activeTab = tabParam as typeof activeTab;
         }
         
@@ -546,6 +546,9 @@
                     <button onclick={() => activeTab = 'overview'} class={activeTab === 'overview' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
                         Overview
                     </button>
+                    <button onclick={() => activeTab = 'setup'} class={activeTab === 'setup' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
+                        Setup
+                    </button>
                     <button onclick={() => activeTab = 'rents'} class={activeTab === 'rents' ? 'border-b-2 border-brand-500 pb-2 px-1 text-sm font-medium text-brand-600' : 'pb-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700'}>
                         Rents
                     </button>
@@ -560,26 +563,12 @@
 
             <!-- Tab Content -->
             {#if activeTab === 'overview'}
-                <!-- User Role Badge -->
-                {#if userRole && userRole !== 'owner'}
-                    <Card>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full {
-                                userRole === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                            }">
-                                {userRole}
-                            </span>
-                            <span class="text-sm text-gray-600">
-                                {#if userRole === 'manager'}
-                                    You can view and edit this property
-                                {:else}
-                                    You have read-only access to this property
-                                {/if}
-                            </span>
-                        </div>
-                    </Card>
-                {/if}
+                <!-- Stats placeholder — replaced when analytics endpoint is ready -->
+                <Card>
+                    <p class="text-sm text-gray-500 text-center py-8">Property stats coming soon.</p>
+                </Card>
 
+            {:else if activeTab === 'setup'}
                 <!-- Units Section -->
                 <Card>
                     <div class="flex items-center justify-between mb-4">
