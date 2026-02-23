@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { db } from '../../core/db';
 import { rent_entries, tenants, user } from '../../core/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { canAccessProperty, canEditProperty } from '../../core/common/access.util';
 import { CreateRentDto } from './dto/create-rent.dto';
 import { UpdateRentDto } from './dto/update-rent.dto';
@@ -39,7 +39,7 @@ export class RentService {
       .from(rent_entries)
       .innerJoin(tenants, eq(rent_entries.tenant, tenants.id))
       .where(eq(tenants.property, propertyId))
-      .orderBy(rent_entries.payment_date);
+      .orderBy(desc(rent_entries.payment_date));
 
     return entries;
   }

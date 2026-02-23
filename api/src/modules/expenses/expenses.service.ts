@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { db } from '../../core/db';
 import { expenses, user } from '../../core/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { canAccessProperty, canEditProperty } from '../../core/common/access.util';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
@@ -58,7 +58,11 @@ export class ExpensesService {
       throw new ForbiddenException('Access denied');
     }
 
-    return db.select().from(expenses).where(eq(expenses.property, propertyId));
+    return db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.property, propertyId))
+      .orderBy(desc(expenses.expense_date));
   }
 
   async findByProperty(propertyId: string, userId: string) {

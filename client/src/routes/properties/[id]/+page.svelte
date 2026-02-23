@@ -138,16 +138,16 @@
     ];
 
     const expenseColumns = [
+        { key: 'date', label: 'Date' },
         { key: 'category', label: 'Category' },
         { key: 'amount', label: 'Amount' },
-        { key: 'date', label: 'Date' },
         { key: 'actions', label: '', class: 'w-24 hidden sm:table-cell' }
-    ]; // ✅ Removed description column
+    ];
 
     const rentColumns = [
+        { key: 'period', label: 'Period' },
         { key: 'tenant', label: 'Tenant' },
         { key: 'amount', label: 'Amount' },
-        { key: 'period', label: 'Period' },
         { key: 'actions', label: '', class: 'w-24 hidden sm:table-cell' }
     ];
 
@@ -735,12 +735,6 @@
                                     class="hover:bg-neutral-50 cursor-pointer" 
                                     onclick={() => goto(`/rent/${rent.id}`)}
                                 >
-                                    <td class="px-4 py-3 text-sm font-medium text-neutral-900">
-                                        {getTenantName(rent.tenant)}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600">
-                                        {formatCurrency(rent.amount, property.country)}
-                                    </td>
                                     <td class="px-4 py-3 text-sm">
                                         <span class="block font-medium text-neutral-900">
                                             {formatRentMonth(rent.rent_month)}
@@ -749,7 +743,12 @@
                                             Paid {formatPaymentDate(rent.payment_date)}
                                         </span>
                                     </td>
-                                    <!-- View button: hidden on mobile, visible on larger screens -->
+                                    <td class="px-4 py-3 text-sm font-medium text-neutral-900">
+                                        {getTenantName(rent.tenant)}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-neutral-600">
+                                        {formatCurrency(rent.amount, property.country)}
+                                    </td>
                                     <td class="hidden sm:table-cell px-4 py-3 text-right" onclick={(e) => e.stopPropagation()}>
                                         <Button variant="ghost" size="sm" onclick={() => goto(`/rent/${rent.id}`)}>View</Button>
                                     </td>
@@ -793,6 +792,9 @@
                         <Table columns={expenseColumns}>
                             {#each expenses as expense}
                                 <tr class="hover:bg-neutral-50 cursor-pointer" onclick={() => goto(`/expenses/${expense.id}`)}>
+                                    <td class="px-4 py-3 text-sm text-neutral-600">
+                                        {formatPaymentDate(expense.expense_date)}
+                                    </td>
                                     <td class="px-4 py-3 text-sm font-medium text-neutral-900">
                                         <span class="inline-flex rounded-full px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 capitalize">
                                             {expense.category}
@@ -800,9 +802,6 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-neutral-600">
                                         {formatCurrency(expense.amount, property.country)}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-neutral-600">
-                                        {formatPaymentDate(expense.expense_date)}
                                     </td>
                                     <td class="hidden sm:table-cell px-4 py-3 text-right" onclick={(e) => e.stopPropagation()}>
                                         <Button variant="ghost" size="sm" onclick={() => goto(`/expenses/${expense.id}`)}>View</Button>
