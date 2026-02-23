@@ -17,7 +17,10 @@
     let loading = $state(false);
     let error = $state<string | null>(null);
 
-    const currentYear = new Date().getFullYear();
+    const today = new Date();
+    const maxYear = today.getFullYear();
+    const minYear = 2000;
+    let selectedYear = $state(maxYear);
 
     const MONTH_LABELS = [
         'January', 'February', 'March', 'April',
@@ -40,7 +43,7 @@
     const monthlyRows = $derived(() => {
         if (!stats) return [];
         return MONTH_LABELS.map((label, idx) => {
-            const monthStr = `${currentYear}-${String(idx + 1).padStart(2, '0')}`;
+            const monthStr = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
             const entry = stats!.monthly.find((m) => m.month === monthStr);
             return {
                 label,
@@ -60,8 +63,9 @@
         if (!propertyId || loading) return;
         loading = true;
         error = null;
+        stats = null;
         try {
-            stats = await analyticsService.getPropertyStats(propertyId, currentYear);
+            stats = await analyticsService.getPropertyStats(propertyId, selectedYear);
         } catch (err) {
             console.error('Failed to load property stats:', err);
             error = 'Failed to load stats';
@@ -70,9 +74,23 @@
         }
     }
 
-    // Same lazy-load pattern as the activity tab in [id]/+page.svelte
+    function prevYear() {
+        if (selectedYear > minYear) {
+            selectedYear--;
+            loadStats();
+        }
+    }
+
+    function nextYear() {
+        if (selectedYear < maxYear) {
+            selectedYear++;
+            loadStats();
+        }
+    }
+
+    // Lazy-load on first tab visit
     $effect(() => {
-        if (activeTab === 'overview' && propertyId && !stats) {
+        if (activeTab === 'overview' && propertyId && !stats && !loading) {
             loadStats();
         }
     });
@@ -101,18 +119,35 @@
         </div>
     </Card>
 
-{:else if !hasAnyData}
-    <EmptyState
-        title="No data yet"
-        description="Stats will appear here once rent payments and expenses are recorded for this property."
-    />
-
-{:else if stats}
+{:else}
     <div class="space-y-6">
 
-        <!-- Year heading -->
+        <!-- Year selector -->
         <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-neutral-900">{currentYear} Summary</h2>
+            <h2 class="text-lg font-semibold text-neutral-900">{selectedYear} Summary</h2>
+            <div class="flex items-center gap-2">
+                <button
+                    onclick={prevYear}
+                    disabled={selectedYear <= minYear}
+                    class="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100 hover:text-brand-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous year"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <span class="text-base font-semibold text-neutral-800 tabular-nums w-12 text-center select-none">{selectedYear}</span>
+                <button
+                    onclick={nextYear}
+                    disabled={selectedYear >= maxYear}
+                    class="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100 hover:text-brand-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next year"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- KPI Cards -->
@@ -122,10 +157,10 @@
             <Card>
                 <div class="space-y-1">
                     <p class="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                        Collected This Year
+                        Collected
                     </p>
-                    <p class="text-2xl font-bold text-green-600">
-                        {formatCurrency(stats.total_collected)}
+                    <p class="text-2xl font-bold {hasAnyData ? 'text-green-600' : 'text-neutral-400'}">
+                        {hasAnyData ? formatCurrency(stats!.total_collected) : '—'}
                     </p>
                 </div>
             </Card>
@@ -134,74 +169,73 @@
             <Card>
                 <div class="space-y-1">
                     <p class="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                        Expenses This Year
+                        Expenses
                     </p>
-                    <p class="text-2xl font-bold text-red-500">
-                        {formatCurrency(stats.total_expenses)}
+                    <p class="text-2xl font-bold {hasAnyData ? 'text-red-500' : 'text-neutral-400'}">
+                        {hasAnyData ? formatCurrency(stats!.total_expenses) : '—'}
                     </p>
                 </div>
             </Card>
 
-            <!-- Net Income — green if positive, red if negative -->
+            <!-- Net Income -->
             <Card>
                 <div class="space-y-1">
                     <p class="text-xs font-medium uppercase tracking-wider text-neutral-500">
                         Net Income
                     </p>
-                    <p class="text-2xl font-bold {stats.net_income >= 0 ? 'text-green-600' : 'text-red-500'}">
-                        {formatCurrency(stats.net_income)}
-                    </p>
-                    {#if stats.net_income < 0}
-                        <p class="text-xs text-red-400">Expenses exceed collected rent</p>
+                    {#if hasAnyData}
+                        <p class="text-2xl font-bold {stats!.net_income >= 0 ? 'text-green-600' : 'text-red-500'}">
+                            {formatCurrency(stats!.net_income)}
+                        </p>
+                        {#if stats!.net_income < 0}
+                            <p class="text-xs text-red-400">Expenses exceed collected rent</p>
+                        {/if}
+                    {:else}
+                        <p class="text-2xl font-bold text-neutral-400">—</p>
                     {/if}
+                    <p class="text-xs text-neutral-400 pt-1">Collected − Expenses</p>
                 </div>
             </Card>
 
         </div>
 
         <!-- Monthly Breakdown Table -->
-        <Card>
-            <h3 class="text-sm font-semibold text-neutral-700 mb-4">Monthly Breakdown</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                                Month
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
-                                Collected
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
-                                Expenses
-                            </th>
-                            <!-- Net column hidden for now -->
-                            <!-- <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
-                                Net
-                            </th> -->
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-neutral-100 bg-white">
-                        {#each monthlyRows() as row}
-                            {@const isEmpty = row.collected === 0 && row.expenses === 0}
-                            <tr class={isEmpty ? 'opacity-40' : 'hover:bg-neutral-50'}>
-                                <td class="px-4 py-2.5 text-sm text-neutral-700">{row.label}</td>
-                                <td class="px-4 py-2.5 text-sm text-right {row.collected > 0 ? 'text-green-600 font-medium' : 'text-neutral-400'}">
-                                    {row.collected > 0 ? formatCurrency(row.collected) : '—'}
-                                </td>
-                                <td class="px-4 py-2.5 text-sm text-right {row.expenses > 0 ? 'text-red-500 font-medium' : 'text-neutral-400'}">
-                                    {row.expenses > 0 ? formatCurrency(row.expenses) : '—'}
-                                </td>
-                                <!-- Net column hidden for now -->
-                                <!-- <td class="px-4 py-2.5 text-sm text-right font-medium {row.net > 0 ? 'text-green-600' : row.net < 0 ? 'text-red-500' : 'text-neutral-400'}">
-                                    {row.collected > 0 || row.expenses > 0 ? formatCurrency(row.net) : '—'}
-                                </td> -->
+        {#if hasAnyData}
+            <Card>
+                <h3 class="text-sm font-semibold text-neutral-700 mb-4">Monthly Breakdown</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-neutral-200">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
+                                    Month
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
+                                    Collected
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
+                                    Expenses
+                                </th>
                             </tr>
-                        {/each}
-                    </tbody>
-                </table>
-            </div>
-        </Card>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-100 bg-white">
+                            {#each monthlyRows() as row}
+                                {@const isEmpty = row.collected === 0 && row.expenses === 0}
+                                <tr class={isEmpty ? 'opacity-40' : 'hover:bg-neutral-50'}>
+                                    <td class="px-4 py-2.5 text-sm text-neutral-700">{row.label}</td>
+                                    <td class="px-4 py-2.5 text-sm text-right {row.collected > 0 ? 'text-green-600 font-medium' : 'text-neutral-400'}">
+                                        {row.collected > 0 ? formatCurrency(row.collected) : '—'}
+                                    </td>
+                                    <td class="px-4 py-2.5 text-sm text-right {row.expenses > 0 ? 'text-red-500 font-medium' : 'text-neutral-400'}">
+                                        {row.expenses > 0 ? formatCurrency(row.expenses) : '—'}
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        {/if}
 
     </div>
 {/if}
