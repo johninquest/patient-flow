@@ -507,13 +507,13 @@
             <!-- Header -->
             <div class="mb-6">
                 <button
-                    onclick={() => goto('/properties')}
+                    onclick={() => goto('/dashboard')}
                     class="mb-4 inline-flex items-center gap-1.5 text-sm text-neutral-600 transition-colors hover:text-brand-500"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to Properties
+                    Back to Dashboard
                 </button>
 
                 <div class="flex items-start justify-between gap-4 flex-wrap">
