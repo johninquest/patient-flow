@@ -45,6 +45,8 @@ client/
     lib/             # API client, config, utils, types
     routes/          # Lazy-loaded route components
     i18n/            # Translation files (en.json, fr.json)
+docs/
+  decisions/         # Architecture Decision Records (ADRs)
 ```
 
 ## Core Entities
@@ -133,6 +135,14 @@ For detailed patterns per area, see:
 - `.github/instructions/api-module.instructions.md` — NestJS module patterns (applies to `api/src/modules/**`)
 - `.github/instructions/drizzle-schema.instructions.md` — Database schema patterns (applies to `api/src/core/db/schema.ts`)
 - `.github/instructions/react.instructions.md` — React component patterns (applies to `client/src/**`)
+- `.github/instructions/architecture-decision-reminder.instructions.md` — Remind to log ADRs on significant changes (applies to `**`)
+
+## Architecture Decision Records
+
+Major architectural decisions are logged in `docs/decisions/` as lightweight ADRs.
+- Use the `/log-architecture-decision` prompt to create a new ADR after a significant change.
+- ADRs are numbered sequentially: `NNNN-short-description.md`.
+- The `architecture-decision-reminder` instruction prompts Copilot to suggest logging a decision when it detects significant changes.
 
 ## Reusable Prompts
 
@@ -141,6 +151,7 @@ Common scaffolding tasks have dedicated prompts in `.github/prompts/`:
 - `scaffold-react-feature.prompt.md` — Generate a React feature page
 - `generate-unit-tests.prompt.md` — Generate service unit tests
 - `add-swagger-decorators.prompt.md` — Audit and add Swagger decorators
+- `log-architecture-decision.prompt.md` — Create an Architecture Decision Record
 
 ## Explicitly Deferred (Do Not Build)
 

@@ -8,6 +8,8 @@
 api/        # NestJS backend (Node.js LTS, npm)
 client/     # React 19 + Vite 7 frontend (CSR SPA)
 drizzle/    # Migration SQL files (generated, do not edit manually)
+docs/
+  decisions/  # Architecture Decision Records (ADRs)
 ```
 
 ## Commands
@@ -132,6 +134,14 @@ features/<name>/
 - Optimistic locking: `WHERE id = ? AND version = ?`
 - Every transition logged to `audit_log`
 - Admin role can override ownership
+
+## Architecture Decision Records
+
+Major architectural decisions are logged in `docs/decisions/` as lightweight ADRs.
+- Use the `/log-architecture-decision` prompt to create a new ADR after a significant change.
+- ADRs are numbered sequentially: `NNNN-short-description.md`.
+- Format: Problem → Decision → Rationale (10-20 lines, lightweight).
+- The `architecture-decision-reminder` instruction prompts Copilot to suggest logging a decision when it detects significant changes.
 
 ## Auth Flow
 
