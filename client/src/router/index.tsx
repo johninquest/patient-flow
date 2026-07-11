@@ -9,6 +9,7 @@ const Login = lazy(() => import('../pages/Login'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Patients = lazy(() => import('../pages/Patients'));
 const PatientDetail = lazy(() => import('../pages/PatientDetail'));
+const PatientForm = lazy(() => import('../pages/PatientForm'));
 const Encounters = lazy(() => import('../pages/Encounters'));
 const EncounterDetail = lazy(() => import('../pages/EncounterDetail'));
 const Tasks = lazy(() => import('../pages/Tasks'));
@@ -85,6 +86,7 @@ export default function AppRouter() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="patients" element={<Patients />} />
+            <Route path="patients/new" element={<PatientForm />} />
             <Route path="patients/:id" element={<PatientDetail />} />
             <Route path="encounters" element={<Encounters />} />
             <Route path="encounters/:id" element={<EncounterDetail />} />

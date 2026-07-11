@@ -13,6 +13,8 @@ import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
+import { RolesGuard } from '../../core/auth/guards/roles.guard';
+import { Roles } from '../../core/auth/decorators/roles.decorator';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
 
 @ApiTags('Patients')
@@ -22,9 +24,12 @@ export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a patient' })
+  @UseGuards(RolesGuard)
+  @Roles('clinical_staff', 'admin')
+  @ApiOperation({ summary: 'Create a patient (clinical staff and admin only)' })
   @ApiResponse({ status: 201, description: 'Patient created successfully' })
   @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 403, description: 'Forbidden — clinical staff or admin role required' })
   create(@Body() dto: CreatePatientDto, @CurrentUser() user: any) {
     return this.patientsService.create(dto, user.id, user.role);
   }

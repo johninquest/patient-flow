@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api/client';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, Avatar, StatusPill, EmptyState, LoadingSpinner, Button } from '../components/ui';
 import { UserGroupIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/24/outline';
 
@@ -16,6 +17,7 @@ interface Patient {
 
 export default function Patients() {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ['patients'],
@@ -30,9 +32,11 @@ export default function Patients() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-medium text-text-primary">{t('patients.title')}</h1>
-        <Link to="/patients/new">
-          <Button>{t('patients.create')}</Button>
-        </Link>
+        {(user?.role === 'clinical_staff' || user?.role === 'admin') && (
+          <Link to="/patients/new">
+            <Button>{t('patients.create')}</Button>
+          </Link>
+        )}
       </div>
 
       {patients && patients.length > 0 ? (
@@ -81,10 +85,14 @@ export default function Patients() {
           icon={<UserGroupIcon className="w-12 h-12" />}
           title={t('patients.empty.title')}
           description={t('patients.empty.description')}
-          action={{
-            label: t('patients.create'),
-            onClick: () => window.location.href = '/patients/new',
-          }}
+          action={
+            (user?.role === 'clinical_staff' || user?.role === 'admin')
+              ? {
+                  label: t('patients.create'),
+                  onClick: () => window.location.href = '/patients/new',
+                }
+              : undefined
+          }
         />
       )}
     </div>
