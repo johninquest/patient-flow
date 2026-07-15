@@ -82,7 +82,14 @@ export const patients = pgTable(
     date_of_birth: timestamp('date_of_birth'),
     phone: text('phone'),
     email: text('email'),
-    address: text('address'),
+    address: jsonb('address'), // { street, postal_code, city, country }
+    identity: jsonb('identity'), // { document_type, country_national, scanned_document }
+    financials: jsonb('financials'), // { health_insurance, reimbursement }
+    emergency_contact: jsonb('emergency_contact'), // { name, relation, phone, email, comments }
+    medical_history: text('medical_history'),
+    medical_history_date: timestamp('medical_history_date'),
+    physicians: jsonb('physicians'), // { attending, correspondent, other }
+    transport_logistics: jsonb('transport_logistics'), // { modes: { public, taxi, ambulance }, comments }
     notes: text('notes'),
     created_at: timestamp('created_at').defaultNow().notNull(),
     updated_at: timestamp('updated_at').defaultNow().notNull(),

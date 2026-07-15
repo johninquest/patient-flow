@@ -29,29 +29,41 @@ export class PatientsController {
   @ApiOperation({ summary: 'Create a patient (clinical staff and admin only)' })
   @ApiResponse({ status: 201, description: 'Patient created successfully' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — clinical staff or admin role required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — clinical staff or admin role required',
+  })
   create(@Body() dto: CreatePatientDto, @CurrentUser() user: any) {
     return this.patientsService.create(dto, user.id, user.role);
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all patients' })
-  @ApiResponse({ status: 200, description: 'List of patients' })
-  findAll() {
-    return this.patientsService.findAll();
+  @ApiOperation({ summary: 'List all patients (role-filtered)' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of patients (filtered by caller role)',
+  })
+  findAll(@CurrentUser() user: any) {
+    return this.patientsService.findAll(user.role);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get patient by ID' })
-  @ApiResponse({ status: 200, description: 'Patient details' })
+  @ApiOperation({ summary: 'Get patient by ID (role-filtered)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient details (filtered by caller role)',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
-  findOne(@Param('id') id: string) {
-    return this.patientsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.patientsService.findOne(id, user.role);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a patient' })
+  @ApiOperation({
+    summary: 'Update a patient (section-level write enforcement)',
+  })
   @ApiResponse({ status: 200, description: 'Patient updated successfully' })
+  @ApiResponse({ status: 403, description: 'Write outside allowed sections' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   update(
     @Param('id') id: string,
@@ -62,8 +74,11 @@ export class PatientsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a patient' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Delete a patient (admin only)' })
   @ApiResponse({ status: 200, description: 'Patient deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.patientsService.remove(id, user.id, user.role);

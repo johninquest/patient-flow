@@ -5,15 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, Avatar, StatusPill, EmptyState, LoadingSpinner, Button } from '../components/ui';
 import { UserGroupIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/24/outline';
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-}
+import type { Patient } from '../lib/types/patient.types';
 
 export default function Patients() {
   const { t } = useTranslation();

@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '../lib/api/client';
+import type { Role } from '../lib/types/patient.types';
 
 interface User {
   id: string;
   email: string;
   name?: string;
-  role: string;
+  role: Role;
   status: string;
 }
 

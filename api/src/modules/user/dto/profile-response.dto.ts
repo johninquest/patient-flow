@@ -31,6 +31,8 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Last update timestamp' })
   updatedAt: Date;
 
-  @ApiPropertyOptional({ description: 'Last login timestamp (from most recent session)' })
+  @ApiPropertyOptional({
+    description: 'Last login timestamp (from most recent session)',
+  })
   lastLogin: Date | null;
 }

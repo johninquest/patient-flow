@@ -12,7 +12,9 @@
     "actions": "Actions",
     "confirm": "Confirm",
     "back": "Back",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "yes": "Yes",
+    "no": "No"
   },
   "auth": {
     "login": "Login",
@@ -51,6 +53,38 @@
     "notFound": "Patient not found",
     "status": {
       "active": "Active"
+    },
+    "sections": {
+      "identity": "Identity & Administration",
+      "contact": "Contact & Address",
+      "financials": "Financials",
+      "emergency": "Emergency Contact",
+      "medical": "Medical History & Care",
+      "transport": "Transport Logistics",
+      "notes": "Notes"
+    },
+    "fields": {
+      "documentType": "Document Type",
+      "countryNational": "Nationality",
+      "scannedDocument": "Document scanned",
+      "addressStreet": "Street",
+      "addressPostalCode": "Postal Code",
+      "addressCity": "City",
+      "addressCountry": "Country",
+      "healthInsurance": "Health Insurance",
+      "reimbursement": "Reimbursement",
+      "emergencyName": "Contact Name",
+      "emergencyRelation": "Relation",
+      "emergencyComments": "Comments",
+      "medicalHistory": "Medical History",
+      "medicalHistoryDate": "History Recorded Date",
+      "attendingPhysician": "Attending Physician",
+      "correspondentPhysician": "Correspondent Physician",
+      "otherPhysician": "Other Physician",
+      "transportPublic": "Public Transport",
+      "transportTaxi": "Taxi",
+      "transportAmbulance": "Ambulance",
+      "transportComments": "Transport Comments"
     },
     "empty": {
       "title": "No patients yet",

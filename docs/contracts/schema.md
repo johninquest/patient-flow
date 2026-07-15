@@ -101,10 +101,17 @@
 | `first_name` | `text` | NOT NULL | |
 | `last_name` | `text` | NOT NULL | |
 | `date_of_birth` | `timestamp` | nullable | |
-| `phone` | `text` | nullable | |
+| `phone` | `text` | nullable | Single phone number |
 | `email` | `text` | nullable | |
-| `address` | `text` | nullable | |
-| `notes` | `text` | nullable | |
+| `address` | `jsonb` | nullable | `{ street, postal_code, city, country }` |
+| `identity` | `jsonb` | nullable | `{ document_type, country_national, scanned_document }` |
+| `financials` | `jsonb` | nullable | `{ health_insurance, reimbursement }` |
+| `emergency_contact` | `jsonb` | nullable | `{ name, relation, phone, email, comments }` |
+| `medical_history` | `text` | nullable | Clinical history |
+| `medical_history_date` | `timestamp` | nullable | When history was last recorded |
+| `physicians` | `jsonb` | nullable | `{ attending, correspondent, other }` |
+| `transport_logistics` | `jsonb` | nullable | `{ modes: { public, taxi, ambulance }, comments }` |
+| `notes` | `text` | nullable | General non-clinical notes |
 | `created_at` | `timestamp` | NOT NULL, default now | |
 | `updated_at` | `timestamp` | NOT NULL, default now | |
 
@@ -113,6 +120,44 @@
 |------|---------|
 | `patients_name_idx` | `last_name`, `first_name` |
 | `patients_email_idx` | `email` |
+
+**jsonb Shapes:**
+```json
+{
+  "address": { "street": "text", "postal_code": "text", "city": "text", "country": "text" },
+  "identity": { "document_type": "text", "country_national": "text", "scanned_document": "boolean" },
+  "financials": { "health_insurance": "text", "reimbursement": "text" },
+  "emergency_contact": { "name": "text", "relation": "text", "phone": "text", "email": "text", "comments": "text" },
+  "physicians": { "attending": "text", "correspondent": "text", "other": "text" },
+  "transport_logistics": { "modes": { "public": "text", "taxi": "text", "ambulance": "text" }, "comments": "text" }
+}
+```
+
+**Role-Based Read Visibility:**
+
+| Section | admin | provider | clinical_staff | front_desk |
+|---------|:-----:|:-------:|:--------------:|:----------:|
+| identity | ✓ | ✓ | ✓ | ✓ |
+| contact (address, phone, email) | ✓ | ✓ | ✓ | ✓ |
+| financials | ✓ | ✓ | ✗ | ✓ |
+| emergency_contact | ✓ | ✓ | ✓ | ✓ |
+| medical (medical_history, medical_history_date, physicians) | ✓ | ✓ | ✓ | ✗ |
+| transport_logistics | ✓ | ✓ | ✓ | ✓ |
+| notes | ✓ | ✓ | ✓ | ✗ |
+
+**Role-Based Write Visibility:**
+
+| Section | admin | provider | clinical_staff | front_desk |
+|---------|:-----:|:-------:|:--------------:|:----------:|
+| identity | ✓ | ✗ | ✗ | ✓ |
+| contact | ✓ | ✗ | ✓ | ✓ |
+| financials | ✓ | ✗ | ✗ | ✓ |
+| emergency_contact | ✓ | ✓ | ✓ | ✓ |
+| medical | ✓ | ✓ | ✓ | ✗ |
+| transport_logistics | ✓ | ✗ | ✓ | ✓ |
+| notes | ✓ | ✓ | ✓ | ✗ |
+
+> Core identity fields (`id`, `first_name`, `last_name`, `date_of_birth`, `email`, `phone`, `created_at`, `updated_at`) are always visible to all authenticated roles. Server-side filtering strips disallowed sections before returning the response.
 
 ---
 

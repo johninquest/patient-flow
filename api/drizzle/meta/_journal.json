@@ -15,6 +15,13 @@
       "when": 1783561469852,
       "tag": "0001_graceful_albert_cleary",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784104414645,
+      "tag": "0002_chunky_quasimodo",
+      "breakpoints": true
     }
   ]
 }

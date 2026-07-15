@@ -12,7 +12,9 @@
     "actions": "Actions",
     "confirm": "Confirmer",
     "back": "Retour",
-    "viewAll": "Voir tout"
+    "viewAll": "Voir tout",
+    "yes": "Oui",
+    "no": "Non"
   },
   "auth": {
     "login": "Connexion",
@@ -51,6 +53,38 @@
     "notFound": "Patient introuvable",
     "status": {
       "active": "Actif"
+    },
+    "sections": {
+      "identity": "Identité et administration",
+      "contact": "Contact et adresse",
+      "financials": "Informations financières",
+      "emergency": "Contact d'urgence",
+      "medical": "Antécédents médicaux et soins",
+      "transport": "Logistique de transport",
+      "notes": "Notes"
+    },
+    "fields": {
+      "documentType": "Type de document",
+      "countryNational": "Nationalité",
+      "scannedDocument": "Document numérisé",
+      "addressStreet": "Rue",
+      "addressPostalCode": "Code postal",
+      "addressCity": "Ville",
+      "addressCountry": "Pays",
+      "healthInsurance": "Assurance maladie",
+      "reimbursement": "Remboursement",
+      "emergencyName": "Nom du contact",
+      "emergencyRelation": "Relation",
+      "emergencyComments": "Commentaires",
+      "medicalHistory": "Antécédents médicaux",
+      "medicalHistoryDate": "Date d'enregistrement",
+      "attendingPhysician": "Médecin traitant",
+      "correspondentPhysician": "Médecin correspondant",
+      "otherPhysician": "Autre médecin",
+      "transportPublic": "Transport public",
+      "transportTaxi": "Taxi",
+      "transportAmbulance": "Ambulance",
+      "transportComments": "Commentaires transport"
     },
     "empty": {
       "title": "Aucun patient pour le moment",

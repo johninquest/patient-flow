@@ -5,7 +5,7 @@ import { getAuth } from './auth';
 
 @Controller('auth')
 export class AuthController {
-  private handler = toNodeHandler(getAuth()!);
+  private handler = toNodeHandler(getAuth());
 
   @All('*path') // Changed from '*' to '*path'
   async handleAuth(@Req() req: Request, @Res() res: Response) {

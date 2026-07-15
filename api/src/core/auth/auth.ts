@@ -3,14 +3,13 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../db';
 import * as schema from '../db/schema';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let authInstance: any = null;
 
 /**
  * Retrieves or initializes the authentication instance using better-auth library.
  * Uses Drizzle ORM with PostgreSQL.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export function getAuth(): any {
   if (!authInstance) {
     const allowedOrigins = process.env.CLIENT_URL?.split(',').map((url) =>

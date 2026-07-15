@@ -45,6 +45,8 @@
 
 ## Patients
 
+> **Role-Based Visibility:** Patient responses are **server-filtered** by the caller's role. Each role only receives the sections they are permitted to read (see visibility matrix in `schema.md`). The request shapes below show all possible fields; individual roles may only write to their permitted sections.
+
 ### `POST /api/patients` — Create Patient
 **Roles:** `clinical_staff`, `admin`
 
@@ -56,12 +58,21 @@
   "date_of_birth": "ISO 8601 date (optional)",
   "phone": "string (optional)",
   "email": "string (optional)",
-  "address": "string (optional)",
+  "address": { "street": "string", "postal_code": "string", "city": "string", "country": "string" } (optional),
+  "identity": { "document_type": "string", "country_national": "string", "scanned_document": "boolean" } (optional),
+  "financials": { "health_insurance": "string", "reimbursement": "string" } (optional),
+  "emergency_contact": { "name": "string", "relation": "string", "phone": "string", "email": "string", "comments": "string" } (optional),
+  "medical_history": "string (optional)",
+  "medical_history_date": "ISO 8601 date (optional)",
+  "physicians": { "attending": "string", "correspondent": "string", "other": "string" } (optional),
+  "transport_logistics": { "modes": { "public": "string", "taxi": "string", "ambulance": "string" }, "comments": "string" } (optional),
   "notes": "string (optional)"
 }
 ```
 
-**Response:** `201 Created`
+**Write Enforcement:** Caller can only set fields within their writable sections (see write visibility matrix). Attempting to write disallowed sections returns `403`.
+
+**Response:** `201 Created` — Role-filtered Patient object (only sections the caller can read):
 ```json
 {
   "id": "uuidv7",
@@ -70,28 +81,35 @@
   "date_of_birth": "timestamp | null",
   "phone": "string | null",
   "email": "string | null",
-  "address": "string | null",
+  "address": "{ street, postal_code, city, country } | null",
+  "identity": "{ document_type, country_national, scanned_document } | null",
+  "financials": "{ health_insurance, reimbursement } | null",
+  "emergency_contact": "{ name, relation, phone, email, comments } | null",
+  "medical_history": "string | null",
+  "medical_history_date": "timestamp | null",
+  "physicians": "{ attending, correspondent, other } | null",
+  "transport_logistics": "{ modes: { public, taxi, ambulance }, comments } | null",
   "notes": "string | null",
   "created_at": "timestamp",
   "updated_at": "timestamp"
 }
 ```
 
-**Errors:** `400` Validation · `403` Role not permitted
+**Errors:** `400` Validation · `403` Role not permitted or write outside allowed sections
 
 ---
 
 ### `GET /api/patients` — List All Patients
 **Roles:** All authenticated users
 
-**Response:** `200 OK` — Array of Patient objects (same shape as create response).
+**Response:** `200 OK` — Array of role-filtered Patient objects (each object contains only the sections the caller's role can read).
 
 ---
 
 ### `GET /api/patients/:id` — Get Patient by ID
 **Roles:** All authenticated users
 
-**Response:** `200 OK` — Patient object
+**Response:** `200 OK` — Role-filtered Patient object
 
 **Errors:** `404` Patient not found
 
@@ -100,7 +118,7 @@
 ### `PUT /api/patients/:id` — Update Patient
 **Roles:** All authenticated users (mutation audited)
 
-**Request:** All fields optional (partial update):
+**Request:** All fields optional (partial update). Only sections the caller's role can write are accepted; others return `403`:
 ```json
 {
   "first_name": "string (optional)",
@@ -108,26 +126,35 @@
   "date_of_birth": "ISO 8601 date (optional)",
   "phone": "string (optional)",
   "email": "string (optional)",
-  "address": "string (optional)",
+  "address": { "street": "string", "postal_code": "string", "city": "string", "country": "string" } (optional),
+  "identity": { "document_type": "string", "country_national": "string", "scanned_document": "boolean" } (optional),
+  "financials": { "health_insurance": "string", "reimbursement": "string" } (optional),
+  "emergency_contact": { "name": "string", "relation": "string", "phone": "string", "email": "string", "comments": "string" } (optional),
+  "medical_history": "string (optional)",
+  "medical_history_date": "ISO 8601 date (optional)",
+  "physicians": { "attending": "string", "correspondent": "string", "other": "string" } (optional),
+  "transport_logistics": { "modes": { "public": "string", "taxi": "string", "ambulance": "string" }, "comments": "string" } (optional),
   "notes": "string (optional)"
 }
 ```
 
-**Response:** `200 OK` — Updated Patient object
+**Write Enforcement:** Caller can only update fields within their writable sections. Attempting to write disallowed sections returns `403`.
 
-**Errors:** `404` Patient not found
+**Response:** `200 OK` — Role-filtered updated Patient object
+
+**Errors:** `403` Write outside allowed sections · `404` Patient not found
 
 ---
 
 ### `DELETE /api/patients/:id` — Delete Patient
-**Roles:** All authenticated users (mutation audited)
+**Roles:** `admin` only (mutation audited)
 
 **Response:** `200 OK`
 ```json
 { "success": true }
 ```
 
-**Errors:** `404` Patient not found
+**Errors:** `403` Not admin · `404` Patient not found
 
 ---
 

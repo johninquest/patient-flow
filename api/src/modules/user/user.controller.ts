@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
@@ -23,10 +31,7 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
-  create(
-    @Body() dto: CreateUserDto,
-    @CurrentUser() actor: any,
-  ) {
+  create(@Body() dto: CreateUserDto, @CurrentUser() actor: any) {
     return this.userService.createUser(dto, actor.id, actor.role);
   }
 
@@ -81,7 +86,9 @@ export class UserController {
   @Patch(':id/status')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @ApiOperation({ summary: 'Update user status (active/suspended) (admin only)' })
+  @ApiOperation({
+    summary: 'Update user status (active/suspended) (admin only)',
+  })
   @ApiResponse({ status: 200, description: 'User status updated successfully' })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({

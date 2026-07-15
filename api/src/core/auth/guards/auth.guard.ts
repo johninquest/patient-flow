@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { getAuth } from '../auth';
 
 @Injectable()
@@ -16,7 +21,9 @@ export class AuthGuard implements CanActivate {
 
     // Check if user account is active
     if (session.user.status === 'suspended') {
-      throw new ForbiddenException('Your account has been suspended. Please contact your administrator.');
+      throw new ForbiddenException(
+        'Your account has been suspended. Please contact your administrator.',
+      );
     }
 
     request.user = session.user;

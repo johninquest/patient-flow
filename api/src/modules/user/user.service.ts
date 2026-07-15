@@ -111,11 +111,7 @@ export class UserService {
    * Uses Better Auth's server-side API to create the user + account,
    * then updates the user record with role, title, and status.
    */
-  async createUser(
-    dto: CreateUserDto,
-    actorUserId: string,
-    actorRole: string,
-  ) {
+  async createUser(dto: CreateUserDto, actorUserId: string, actorRole: string) {
     // Check if email already exists
     const [existing] = await db
       .select({ id: user.id })

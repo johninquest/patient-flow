@@ -88,6 +88,7 @@ export default function AppRouter() {
             <Route path="patients" element={<Patients />} />
             <Route path="patients/new" element={<PatientForm />} />
             <Route path="patients/:id" element={<PatientDetail />} />
+            <Route path="patients/:id/edit" element={<PatientForm />} />
             <Route path="encounters" element={<Encounters />} />
             <Route path="encounters/:id" element={<EncounterDetail />} />
             <Route path="tasks" element={<Tasks />} />
