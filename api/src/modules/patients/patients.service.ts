@@ -1,14 +1,87 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { db } from '../../core/db';
 import { patients } from '../../core/db/schema';
 import { eq } from 'drizzle-orm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuditService } from '../audit/audit.service';
-import {
-  filterPatientByRole,
-  assertCanWriteFields,
-} from './patient-visibility';
+
+type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
+
+type PatientSection =
+  | 'identity'
+  | 'contact'
+  | 'financials'
+  | 'emergency'
+  | 'medical'
+  | 'transport'
+  | 'notes';
+
+/**
+ * Maps each section to the patient fields (DB column names) it covers.
+ * Core identity fields (id, first_name, last_name, date_of_birth, email, phone,
+ * created_at, updated_at) are always visible and not part of any section.
+ */
+const SECTION_FIELDS: Record<PatientSection, string[]> = {
+  identity: ['identity'],
+  contact: ['address'],
+  financials: ['financials'],
+  emergency: ['emergency_contact'],
+  medical: ['medical_history', 'medical_history_date', 'physicians'],
+  transport: ['transport_logistics'],
+  notes: ['notes'],
+};
+
+/** Which sections each role can READ. */
+const PATIENT_READ_VISIBILITY: Record<Role, PatientSection[]> = {
+  admin: [
+    'identity',
+    'contact',
+    'financials',
+    'emergency',
+    'medical',
+    'transport',
+    'notes',
+  ],
+  provider: [
+    'identity',
+    'contact',
+    'financials',
+    'emergency',
+    'medical',
+    'transport',
+    'notes',
+  ],
+  clinical_staff: [
+    'identity',
+    'contact',
+    'emergency',
+    'medical',
+    'transport',
+    'notes',
+  ],
+  front_desk: ['identity', 'contact', 'financials', 'emergency', 'transport'],
+};
+
+/** Which sections each role can WRITE. */
+const PATIENT_WRITE_VISIBILITY: Record<Role, PatientSection[]> = {
+  admin: [
+    'identity',
+    'contact',
+    'financials',
+    'emergency',
+    'medical',
+    'transport',
+    'notes',
+  ],
+  provider: ['emergency', 'medical', 'notes'],
+  clinical_staff: ['contact', 'emergency', 'medical', 'transport', 'notes'],
+  front_desk: ['identity', 'contact', 'financials', 'emergency', 'transport'],
+};
 
 const PATIENT_FIELDS_TO_TRACK = [
   'first_name',
@@ -32,7 +105,7 @@ export class PatientsService {
   constructor(private readonly auditService: AuditService) {}
 
   async create(dto: CreatePatientDto, userId: string, userRole: string) {
-    assertCanWriteFields(userRole, Object.keys(dto));
+    this.assertCanWrite(userRole, Object.keys(dto));
 
     const [patient] = await db
       .insert(patients)
@@ -64,12 +137,12 @@ export class PatientsService {
       resource_id: patient.id,
     });
 
-    return filterPatientByRole(patient, userRole);
+    return this.filterByRole(patient, userRole);
   }
 
   async findAll(userRole: string) {
     const allPatients = await db.select().from(patients);
-    return allPatients.map((p) => filterPatientByRole(p, userRole));
+    return allPatients.map((p) => this.filterByRole(p, userRole));
   }
 
   async findOne(id: string, userRole: string) {
@@ -83,7 +156,7 @@ export class PatientsService {
       throw new NotFoundException(`Patient with ID ${id} not found`);
     }
 
-    return filterPatientByRole(patient, userRole);
+    return this.filterByRole(patient, userRole);
   }
 
   async update(
@@ -92,7 +165,7 @@ export class PatientsService {
     userId: string,
     userRole: string,
   ) {
-    assertCanWriteFields(userRole, Object.keys(dto));
+    this.assertCanWrite(userRole, Object.keys(dto));
 
     const existing = await this.findOneInternal(id);
 
@@ -140,7 +213,7 @@ export class PatientsService {
       });
     }
 
-    return filterPatientByRole(updated, userRole);
+    return this.filterByRole(updated, userRole);
   }
 
   async remove(id: string, userId: string, userRole: string) {
@@ -172,5 +245,68 @@ export class PatientsService {
     }
 
     return patient;
+  }
+
+  /**
+   * Returns a copy of the patient object with only the fields the given role
+   * is permitted to read. Core identity fields are always included.
+   */
+  private filterByRole<T extends Record<string, any>>(
+    patient: T,
+    role: string,
+  ): Partial<T> {
+    const allowedSections = PATIENT_READ_VISIBILITY[role as Role] ?? [];
+    const allowedFields = new Set<string>([
+      'id',
+      'first_name',
+      'last_name',
+      'date_of_birth',
+      'email',
+      'phone',
+      'created_at',
+      'updated_at',
+    ]);
+
+    for (const section of allowedSections) {
+      for (const field of SECTION_FIELDS[section]) {
+        allowedFields.add(field);
+      }
+    }
+
+    const result: Record<string, any> = {};
+    for (const key of Object.keys(patient)) {
+      if (allowedFields.has(key)) {
+        result[key] = patient[key];
+      }
+    }
+    return result as Partial<T>;
+  }
+
+  /**
+   * Throws ForbiddenException if the DTO contains fields outside the caller's
+   * writable sections.
+   */
+  private assertCanWrite(role: string, providedFields: string[]): void {
+    const allowedSections = PATIENT_WRITE_VISIBILITY[role as Role] ?? [];
+    const allowedFields = new Set<string>([
+      'first_name',
+      'last_name',
+      'date_of_birth',
+      'email',
+      'phone',
+    ]);
+
+    for (const section of allowedSections) {
+      for (const field of SECTION_FIELDS[section]) {
+        allowedFields.add(field);
+      }
+    }
+
+    const disallowed = providedFields.filter((f) => !allowedFields.has(f));
+    if (disallowed.length > 0) {
+      throw new ForbiddenException(
+        `Your role (${role}) cannot write the following fields: ${disallowed.join(', ')}`,
+      );
+    }
   }
 }

@@ -1,7 +1,8 @@
 # Patient Data Model Expansion with Role-Based Field Visibility
 
 **Date:** 2026-07-15  
-**Status:** decided
+**Status:** decided  
+**Partially superseded by:** `0005-collapse-patient-dtos-and-inline-visibility.md` (the DTO/visibility *file structure* introduced here was simplified; the schema, visibility matrices, and enforcement behavior are unchanged)
 
 ## Problem
 

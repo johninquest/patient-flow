@@ -3,15 +3,113 @@ import {
   IsOptional,
   IsDateString,
   IsNotEmpty,
+  IsBoolean,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AddressDto } from './address.dto';
-import { IdentityDto } from './identity.dto';
-import { FinancialsDto } from './financials.dto';
-import { EmergencyContactDto } from './emergency-contact.dto';
-import { PhysiciansDto } from './physicians.dto';
-import { TransportLogisticsDto } from './transport-logistics.dto';
+
+export class AddressDto {
+  @IsOptional()
+  @IsString()
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  postal_code?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+}
+
+export class IdentityDto {
+  @IsOptional()
+  @IsString()
+  document_type?: string;
+
+  @IsOptional()
+  @IsString()
+  country_national?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  scanned_document?: boolean;
+}
+
+export class FinancialsDto {
+  @IsOptional()
+  @IsString()
+  health_insurance?: string;
+
+  @IsOptional()
+  @IsString()
+  reimbursement?: string;
+}
+
+export class EmergencyContactDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  relation?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  comments?: string;
+}
+
+export class PhysiciansDto {
+  @IsOptional()
+  @IsString()
+  attending?: string;
+
+  @IsOptional()
+  @IsString()
+  correspondent?: string;
+
+  @IsOptional()
+  @IsString()
+  other?: string;
+}
+
+export class TransportModesDto {
+  @IsOptional()
+  @IsString()
+  public?: string;
+
+  @IsOptional()
+  @IsString()
+  taxi?: string;
+
+  @IsOptional()
+  @IsString()
+  ambulance?: string;
+}
+
+export class TransportLogisticsDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TransportModesDto)
+  modes?: TransportModesDto;
+
+  @IsOptional()
+  @IsString()
+  comments?: string;
+}
 
 export class CreatePatientDto {
   @IsString()
