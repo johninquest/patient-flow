@@ -1,16 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { db } from '../../core/db';
 import { tasks, encounters } from '../../core/db/schema';
 import { eq } from 'drizzle-orm';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AuditService } from '../audit/audit.service';
+import { AppAbility } from '../../core/auth/ability';
 
 @Injectable()
 export class TasksService {
   constructor(private readonly auditService: AuditService) {}
 
-  async create(dto: CreateTaskDto, userId: string, userRole: string) {
+  async create(
+    dto: CreateTaskDto,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
+    // Check CASL permission
+    if (!ability.can('create', 'Task')) {
+      throw new ForbiddenException('You are not allowed to create tasks');
+    }
+
     // Verify encounter exists
     const [encounter] = await db
       .select()
@@ -77,7 +88,13 @@ export class TasksService {
     dto: UpdateTaskDto,
     userId: string,
     userRole: string,
+    ability: AppAbility,
   ) {
+    // Check CASL permission
+    if (!ability.can('update', 'Task')) {
+      throw new ForbiddenException('You are not allowed to update tasks');
+    }
+
     const existing = await this.findOne(id);
 
     const diff = this.auditService.calculateDiff(existing, dto, [
@@ -121,7 +138,17 @@ export class TasksService {
     return updated;
   }
 
-  async remove(id: string, userId: string, userRole: string) {
+  async remove(
+    id: string,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
+    // Check CASL permission
+    if (!ability.can('delete', 'Task')) {
+      throw new ForbiddenException('You are not allowed to delete tasks');
+    }
+
     await this.findOne(id);
 
     await this.auditService.record({

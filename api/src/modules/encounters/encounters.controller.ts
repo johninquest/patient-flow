@@ -13,11 +13,14 @@ import { EncountersService } from './encounters.service';
 import { CreateEncounterDto } from './dto/create-encounter.dto';
 import { UpdateEncounterDto } from './dto/update-encounter.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
+import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
+import { Ability } from '../../core/auth/decorators/ability.decorator';
+import { AppAbility } from '../../core/auth/ability';
 
 @ApiTags('Encounters')
 @Controller('encounters')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, CaslGuard)
 export class EncountersController {
   constructor(private readonly encountersService: EncountersService) {}
 
@@ -25,9 +28,14 @@ export class EncountersController {
   @ApiOperation({ summary: 'Create an encounter' })
   @ApiResponse({ status: 201, description: 'Encounter created successfully' })
   @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
-  create(@Body() dto: CreateEncounterDto, @CurrentUser() user: any) {
-    return this.encountersService.create(dto, user.id, user.role);
+  create(
+    @Body() dto: CreateEncounterDto,
+    @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
+  ) {
+    return this.encountersService.create(dto, user.id, user.role, ability);
   }
 
   @Get()
@@ -61,8 +69,9 @@ export class EncountersController {
     @Param('id') id: string,
     @Body() dto: UpdateEncounterDto,
     @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
   ) {
-    return this.encountersService.update(id, dto, user.id, user.role);
+    return this.encountersService.update(id, dto, user.id, user.role, ability);
   }
 
   @Delete(':id')
@@ -70,7 +79,11 @@ export class EncountersController {
   @ApiResponse({ status: 200, description: 'Encounter deleted successfully' })
   @ApiResponse({ status: 403, description: 'Not authorized' })
   @ApiResponse({ status: 404, description: 'Encounter not found' })
-  remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.encountersService.remove(id, user.id, user.role);
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
+  ) {
+    return this.encountersService.remove(id, user.id, user.role, ability);
   }
 }

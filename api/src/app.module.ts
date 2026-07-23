@@ -8,6 +8,7 @@ import { PatientsModule } from './modules/patients/patients.module';
 import { EncountersModule } from './modules/encounters/encounters.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UserModule } from './modules/user/user.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UserModule } from './modules/user/user.module';
     EncountersModule,
     TasksModule,
     UserModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

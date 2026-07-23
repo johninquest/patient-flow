@@ -214,7 +214,7 @@ export default function PatientForm() {
   };
 
   const handleNestedChange = (section: string, field: string) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -247,7 +247,7 @@ export default function PatientForm() {
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCountry = e.target.value;
     setFormData((prev) => {
-      const updated = {
+      const updated: typeof prev = {
         ...prev,
         address: { ...prev.address, country: newCountry },
       };

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { db } from '../../core/db';
 import { audit_log } from '../../core/db/schema';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { eq, desc } from 'drizzle-orm';
 
 @Injectable()
 export class AuditService {
@@ -48,5 +49,29 @@ export class AuditService {
     }
 
     return hasChanges ? diff : null;
+  }
+
+  /**
+   * Get audit logs for a specific resource
+   */
+  async findByResource(resourceType: string, resourceId: string) {
+    return db
+      .select()
+      .from(audit_log)
+      .where(
+        eq(audit_log.resource_type, resourceType)
+      )
+      .orderBy(desc(audit_log.created_at));
+  }
+
+  /**
+   * Get audit logs for a specific actor
+   */
+  async findByActor(actorUserId: string) {
+    return db
+      .select()
+      .from(audit_log)
+      .where(eq(audit_log.actor_user_id, actorUserId))
+      .orderBy(desc(audit_log.created_at));
   }
 }

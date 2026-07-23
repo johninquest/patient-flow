@@ -5,6 +5,9 @@ import { api } from '../lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, Button, FormInput, Modal, StatusPill, LoadingSpinner } from '../components/ui';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { AuditTimeline } from '../components/AuditTimeline';
+
+type TabType = 'list' | 'activity';
 
 interface StaffMember {
   id: string;
@@ -14,6 +17,18 @@ interface StaffMember {
   title: string | null;
   status: string;
   createdAt: string;
+}
+
+interface AuditLog {
+  id: string;
+  actor_user_id: string;
+  actor_role: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  diff?: Record<string, { from: any; to: any }>;
+  ip_address?: string;
+  created_at: string;
 }
 
 const ROLES = ['admin', 'provider', 'clinical_staff', 'front_desk'] as const;
@@ -35,10 +50,16 @@ export default function Staff() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuspendConfirm, setShowSuspendConfirm] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('list');
 
   const { data: staff, isLoading } = useQuery({
     queryKey: ['staff'],
     queryFn: () => api.get<StaffMember[]>('/api/users'),
+  });
+
+  const { data: auditLogs } = useQuery({
+    queryKey: ['staff-audit'],
+    queryFn: () => api.get<AuditLog[]>('/api/audit/resource/user'),
   });
 
   const updateMutation = useMutation({
@@ -130,9 +151,11 @@ export default function Staff() {
           <h1 className="text-2xl font-medium text-text-primary">{t('staff.title')}</h1>
           <p className="mt-1 text-sm text-text-secondary">{t('staff.description')}</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          {t('staff.createStaff')}
-        </Button>
+        {activeTab === 'list' && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            {t('staff.createStaff')}
+          </Button>
+        )}
       </div>
 
       {error && (
@@ -140,6 +163,28 @@ export default function Staff() {
           <p className="text-sm text-status-delayed-text">{error}</p>
         </Card>
       )}
+
+      {/* Tab Navigation */}
+      <div className="border-b border-border-default mb-6">
+        <nav className="-mb-px flex space-x-8">
+          {(['list', 'activity'] as TabType[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === tab
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-default'
+              }`}
+            >
+              {t(`staff.tabs.${tab}`, tab.charAt(0).toUpperCase() + tab.slice(1))}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {activeTab === 'list' && (
+        <>
 
       {/* Create Staff Modal */}
       <Modal
@@ -367,6 +412,12 @@ export default function Staff() {
           </table>
         </div>
       </Card>
+        </>
+      )}
+
+      {activeTab === 'activity' && (
+        <AuditTimeline logs={auditLogs || []} title={t('staff.activity', 'Staff Activity History')} />
+      )}
     </div>
   );
 }

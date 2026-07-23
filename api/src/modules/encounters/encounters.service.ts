@@ -10,6 +10,7 @@ import { eq, and } from 'drizzle-orm';
 import { CreateEncounterDto } from './dto/create-encounter.dto';
 import { UpdateEncounterDto } from './dto/update-encounter.dto';
 import { AuditService } from '../audit/audit.service';
+import { AppAbility } from '../../core/auth/ability';
 
 // Finite State Machine: defines valid status transitions
 const STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -26,7 +27,17 @@ const VALID_STATUSES = Object.keys(STATUS_TRANSITIONS);
 export class EncountersService {
   constructor(private readonly auditService: AuditService) {}
 
-  async create(dto: CreateEncounterDto, userId: string, userRole: string) {
+  async create(
+    dto: CreateEncounterDto,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
+    // Check CASL permission
+    if (!ability.can('create', 'Encounter')) {
+      throw new ForbiddenException('You are not allowed to create encounters');
+    }
+
     // Verify patient exists
     const [patient] = await db
       .select()
@@ -87,8 +98,14 @@ export class EncountersService {
     dto: UpdateEncounterDto,
     userId: string,
     userRole: string,
+    ability: AppAbility,
   ) {
     const existing = await this.findOne(id);
+
+    // Check CASL permission
+    if (!ability.can('update', 'Encounter')) {
+      throw new ForbiddenException('You are not allowed to update encounters');
+    }
 
     // Validate status transition if status is being updated
     if (dto.status && dto.status !== existing.status) {
@@ -160,12 +177,17 @@ export class EncountersService {
     return updated;
   }
 
-  async remove(id: string, userId: string, userRole: string) {
+  async remove(
+    id: string,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
     const existing = await this.findOne(id);
 
-    // Only admin can delete encounters
-    if (userRole !== 'admin') {
-      throw new ForbiddenException('Only admins can delete encounters');
+    // Check CASL permission
+    if (!ability.can('delete', 'Encounter')) {
+      throw new ForbiddenException('You are not allowed to delete encounters');
     }
 
     await this.auditService.record({

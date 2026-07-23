@@ -110,6 +110,7 @@ export const encounters = pgTable(
       .notNull()
       .references(() => patients.id, { onDelete: 'cascade' }),
     status: text('status').notNull(), // 'scheduled' | 'checked_in' | 'in_progress' | 'completed' | 'cancelled'
+    phase: text('phase'), // 'consultation' | 'awaiting_lab' | 'awaiting_results' | 'treatment' | 'discharge' | null
     assigned_to: text('assigned_to').references(() => user.id, {
       onDelete: 'set null',
     }),
@@ -122,6 +123,7 @@ export const encounters = pgTable(
   (table) => ({
     patientIdx: index('encounters_patient_idx').on(table.patient_id),
     statusIdx: index('encounters_status_idx').on(table.status),
+    phaseIdx: index('encounters_phase_idx').on(table.phase),
     assignedToIdx: index('encounters_assigned_to_idx').on(table.assigned_to),
     scheduledTimeIdx: index('encounters_scheduled_time_idx').on(
       table.scheduled_time,

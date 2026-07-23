@@ -1,6 +1,6 @@
 {
   "name": "patient-flow-api",
-  "version": "0.7.22",
+  "version": "0.7.23",
   "description": "Patient Flow API - Healthcare workflow orchestration",
   "author": "",
   "private": true,
@@ -27,6 +27,7 @@
     "db:drop": "drizzle-kit drop"
   },
   "dependencies": {
+    "@casl/ability": "^7.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",

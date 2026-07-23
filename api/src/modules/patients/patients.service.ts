@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuditService } from '../audit/audit.service';
+import { AppAbility } from '../../core/auth/ability';
 
 type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
 
@@ -104,7 +105,17 @@ const PATIENT_FIELDS_TO_TRACK = [
 export class PatientsService {
   constructor(private readonly auditService: AuditService) {}
 
-  async create(dto: CreatePatientDto, userId: string, userRole: string) {
+  async create(
+    dto: CreatePatientDto,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
+    // Check CASL permission
+    if (!ability.can('create', 'Patient')) {
+      throw new ForbiddenException('You are not allowed to create patients');
+    }
+
     this.assertCanWrite(userRole, Object.keys(dto));
 
     const [patient] = await db
@@ -164,7 +175,13 @@ export class PatientsService {
     dto: UpdatePatientDto,
     userId: string,
     userRole: string,
+    ability: AppAbility,
   ) {
+    // Check CASL permission
+    if (!ability.can('update', 'Patient')) {
+      throw new ForbiddenException('You are not allowed to update patients');
+    }
+
     this.assertCanWrite(userRole, Object.keys(dto));
 
     const existing = await this.findOneInternal(id);
@@ -216,8 +233,18 @@ export class PatientsService {
     return this.filterByRole(updated, userRole);
   }
 
-  async remove(id: string, userId: string, userRole: string) {
+  async remove(
+    id: string,
+    userId: string,
+    userRole: string,
+    ability: AppAbility,
+  ) {
     await this.findOneInternal(id);
+
+    // Check CASL permission
+    if (!ability.can('delete', 'Patient')) {
+      throw new ForbiddenException('Only admins can delete patients');
+    }
 
     await this.auditService.record({
       actor_user_id: userId,

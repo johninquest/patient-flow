@@ -13,13 +13,16 @@ import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
+import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { RolesGuard } from '../../core/auth/guards/roles.guard';
 import { Roles } from '../../core/auth/decorators/roles.decorator';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
+import { Ability } from '../../core/auth/decorators/ability.decorator';
+import { AppAbility } from '../../core/auth/ability';
 
 @ApiTags('Patients')
 @Controller('patients')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, CaslGuard)
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
@@ -33,8 +36,12 @@ export class PatientsController {
     status: 403,
     description: 'Forbidden — clinical staff or admin role required',
   })
-  create(@Body() dto: CreatePatientDto, @CurrentUser() user: any) {
-    return this.patientsService.create(dto, user.id, user.role);
+  create(
+    @Body() dto: CreatePatientDto,
+    @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
+  ) {
+    return this.patientsService.create(dto, user.id, user.role, ability);
   }
 
   @Get()
@@ -69,8 +76,9 @@ export class PatientsController {
     @Param('id') id: string,
     @Body() dto: UpdatePatientDto,
     @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
   ) {
-    return this.patientsService.update(id, dto, user.id, user.role);
+    return this.patientsService.update(id, dto, user.id, user.role, ability);
   }
 
   @Delete(':id')
@@ -80,7 +88,11 @@ export class PatientsController {
   @ApiResponse({ status: 200, description: 'Patient deleted successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
-  remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.patientsService.remove(id, user.id, user.role);
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Ability() ability: AppAbility,
+  ) {
+    return this.patientsService.remove(id, user.id, user.role, ability);
   }
 }
