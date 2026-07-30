@@ -34,7 +34,7 @@ export interface Physicians {
 }
 
 export interface TransportModes {
-  public?: string;
+  public_transport?: string;
   taxi?: string;
   ambulance?: string;
 }

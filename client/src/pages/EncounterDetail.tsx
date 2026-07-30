@@ -6,6 +6,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, StatusPill, LoadingSpinner, Button, Modal } from '../components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AuditTimeline } from '../components/AuditTimeline';
+import { ApiError } from '../lib/api/errors';
 
 type TabType = 'details' | 'activity';
 
@@ -57,7 +58,11 @@ export default function EncounterDetail() {
       queryClient.invalidateQueries({ queryKey: ['encounters'] });
     },
     onError: (err: Error) => {
-      console.error('Failed to update encounter:', err.message);
+      if (err instanceof ApiError) {
+        console.error('Failed to update encounter:', err.message);
+      } else {
+        console.error('Failed to update encounter:', err.message);
+      }
     },
   });
 

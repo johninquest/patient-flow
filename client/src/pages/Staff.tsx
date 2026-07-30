@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, Button, FormInput, Modal, StatusPill, LoadingSpinner } from '../components/ui';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { AuditTimeline } from '../components/AuditTimeline';
+import { ApiError } from '../lib/api/errors';
 
 type TabType = 'list' | 'activity';
 
@@ -70,7 +71,11 @@ export default function Staff() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 
@@ -83,7 +88,11 @@ export default function Staff() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 
@@ -96,7 +105,11 @@ export default function Staff() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 

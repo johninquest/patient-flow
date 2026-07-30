@@ -1,3 +1,5 @@
+import { parseApiError } from './errors';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 class ApiClient {
@@ -25,8 +27,16 @@ class ApiClient {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+      // Parse the error response body
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+      } catch {
+        errorBody = null;
+      }
+      
+      // Throw structured ApiError
+      throw parseApiError(response, errorBody);
     }
 
     return response.json();

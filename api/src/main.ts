@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException, ValidationError } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { seedAdmin } from './core/auth/seed';
+import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,14 +31,32 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
-  // Global validation pipe for DTOs
+  // Global validation pipe for DTOs with structured error responses
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const fieldErrors = errors.map((error) => {
+          const constraints = error.constraints || {};
+          const messages = Object.values(constraints);
+          return {
+            field: error.property,
+            message: messages.join(', '),
+          };
+        });
+        return new BadRequestException({
+          error: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          errors: fieldErrors,
+        });
+      },
     }),
   );
+
+  // Global exception filter for structured error responses
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Swagger/OpenAPI documentation setup
   const config = new DocumentBuilder()

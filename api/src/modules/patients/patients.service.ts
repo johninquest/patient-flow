@@ -10,6 +10,7 @@ import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuditService } from '../audit/audit.service';
 import { AppAbility } from '../../core/auth/ability';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
 
@@ -118,27 +119,32 @@ export class PatientsService {
 
     this.assertCanWrite(userRole, Object.keys(dto));
 
-    const [patient] = await db
-      .insert(patients)
-      .values({
-        first_name: dto.first_name,
-        last_name: dto.last_name,
-        date_of_birth: dto.date_of_birth ? new Date(dto.date_of_birth) : null,
-        phone: dto.phone || null,
-        email: dto.email || null,
-        address: dto.address || null,
-        identity: dto.identity || null,
-        financials: dto.financials || null,
-        emergency_contact: dto.emergency_contact || null,
-        medical_history: dto.medical_history || null,
-        medical_history_date: dto.medical_history_date
-          ? new Date(dto.medical_history_date)
-          : null,
-        physicians: dto.physicians || null,
-        transport_logistics: dto.transport_logistics || null,
-        notes: dto.notes || null,
-      })
-      .returning();
+    let patient;
+    try {
+      [patient] = await db
+        .insert(patients)
+        .values({
+          first_name: dto.first_name,
+          last_name: dto.last_name,
+          date_of_birth: dto.date_of_birth ? new Date(dto.date_of_birth) : null,
+          phone: dto.phone || null,
+          email: dto.email || null,
+          address: dto.address || null,
+          identity: dto.identity || null,
+          financials: dto.financials || null,
+          emergency_contact: dto.emergency_contact || null,
+          medical_history: dto.medical_history || null,
+          medical_history_date: dto.medical_history_date
+            ? new Date(dto.medical_history_date)
+            : null,
+          physicians: dto.physicians || null,
+          transport_logistics: dto.transport_logistics || null,
+          notes: dto.notes || null,
+        })
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     await this.auditService.record({
       actor_user_id: userId,
@@ -192,32 +198,37 @@ export class PatientsService {
       PATIENT_FIELDS_TO_TRACK,
     );
 
-    const [updated] = await db
-      .update(patients)
-      .set({
-        first_name: dto.first_name ?? existing.first_name,
-        last_name: dto.last_name ?? existing.last_name,
-        date_of_birth: dto.date_of_birth
-          ? new Date(dto.date_of_birth)
-          : existing.date_of_birth,
-        phone: dto.phone ?? existing.phone,
-        email: dto.email ?? existing.email,
-        address: dto.address ?? existing.address,
-        identity: dto.identity ?? existing.identity,
-        financials: dto.financials ?? existing.financials,
-        emergency_contact: dto.emergency_contact ?? existing.emergency_contact,
-        medical_history: dto.medical_history ?? existing.medical_history,
-        medical_history_date: dto.medical_history_date
-          ? new Date(dto.medical_history_date)
-          : existing.medical_history_date,
-        physicians: dto.physicians ?? existing.physicians,
-        transport_logistics:
-          dto.transport_logistics ?? existing.transport_logistics,
-        notes: dto.notes ?? existing.notes,
-        updated_at: new Date(),
-      })
-      .where(eq(patients.id, id))
-      .returning();
+    let updated;
+    try {
+      [updated] = await db
+        .update(patients)
+        .set({
+          first_name: dto.first_name ?? existing.first_name,
+          last_name: dto.last_name ?? existing.last_name,
+          date_of_birth: dto.date_of_birth
+            ? new Date(dto.date_of_birth)
+            : existing.date_of_birth,
+          phone: dto.phone ?? existing.phone,
+          email: dto.email ?? existing.email,
+          address: dto.address ?? existing.address,
+          identity: dto.identity ?? existing.identity,
+          financials: dto.financials ?? existing.financials,
+          emergency_contact: dto.emergency_contact ?? existing.emergency_contact,
+          medical_history: dto.medical_history ?? existing.medical_history,
+          medical_history_date: dto.medical_history_date
+            ? new Date(dto.medical_history_date)
+            : existing.medical_history_date,
+          physicians: dto.physicians ?? existing.physicians,
+          transport_logistics:
+            dto.transport_logistics ?? existing.transport_logistics,
+          notes: dto.notes ?? existing.notes,
+          updated_at: new Date(),
+        })
+        .where(eq(patients.id, id))
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     if (diff) {
       await this.auditService.record({

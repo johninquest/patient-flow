@@ -252,7 +252,7 @@ export default function PatientDetail() {
           <dl>
             {patient.transport_logistics.modes && (
               <>
-                <DetailRow label={t('patients.fields.transportPublic')} value={patient.transport_logistics.modes.public} alternate />
+                <DetailRow label={t('patients.fields.transportPublic')} value={patient.transport_logistics.modes.public_transport} alternate />
                 <DetailRow label={t('patients.fields.transportTaxi')} value={patient.transport_logistics.modes.taxi} />
                 <DetailRow label={t('patients.fields.transportAmbulance')} value={patient.transport_logistics.modes.ambulance} alternate />
               </>

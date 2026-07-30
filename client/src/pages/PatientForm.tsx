@@ -9,6 +9,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { Patient } from '../lib/types/patient.types';
 import { canWriteSection } from '../lib/types/patient.types';
 import { getCountryOptions, getCurrencyOptions, COUNTRY_DEFAULT_CURRENCY } from '../lib/iso-data';
+import { ApiError } from '../lib/api/errors';
 
 export default function PatientForm() {
   const { t } = useTranslation();
@@ -38,7 +39,7 @@ export default function PatientForm() {
     medical_history: '',
     medical_history_date: '',
     physicians: { attending: '', correspondent: '', other: '' },
-    transport_logistics: { modes: { public: '', taxi: '', ambulance: '' }, comments: '' },
+    transport_logistics: { modes: { public_transport: '', taxi: '', ambulance: '' }, comments: '' },
     notes: '',
   });
 
@@ -63,13 +64,14 @@ export default function PatientForm() {
         medical_history: existingPatient.medical_history ?? '',
         medical_history_date: existingPatient.medical_history_date ? existingPatient.medical_history_date.split('T')[0] : '',
         physicians: { attending: '', correspondent: '', other: '', ...existingPatient.physicians },
-        transport_logistics: { modes: { public: '', taxi: '', ambulance: '' }, comments: '', ...existingPatient.transport_logistics },
+        transport_logistics: { modes: { public_transport: '', taxi: '', ambulance: '' }, comments: '', ...existingPatient.transport_logistics },
         notes: existingPatient.notes ?? '',
       });
     }
   }, [isEdit, existingPatient]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (data: Record<string, any>) => {
@@ -84,13 +86,28 @@ export default function PatientForm() {
       navigate(isEdit ? `/patients/${id}` : '/patients');
     },
     onError: (error: Error) => {
-      setErrors({ first_name: error.message });
+      if (error instanceof ApiError) {
+        if (error.hasFieldErrors()) {
+          // Map field errors to the correct fields
+          setErrors(error.toFieldErrorMap());
+          setGeneralError(null);
+        } else {
+          // General error (show banner)
+          setGeneralError(error.message);
+          setErrors({});
+        }
+      } else {
+        // Fallback for non-API errors
+        setGeneralError(error.message);
+        setErrors({});
+      }
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setGeneralError(null);
 
     const newErrors: Record<string, string> = {};
     if (!formData.first_name.trim()) {
@@ -185,11 +202,11 @@ export default function PatientForm() {
       const tl = formData.transport_logistics;
       if (tl) {
         const modes = tl.modes;
-        const hasModes = modes && (modes.public || modes.taxi || modes.ambulance);
+        const hasModes = modes && (modes.public_transport || modes.taxi || modes.ambulance);
         if (hasModes || tl.comments) {
           payload.transport_logistics = {
             modes: hasModes ? {
-              public: modes.public || undefined,
+              public_transport: modes.public_transport || undefined,
               taxi: modes.taxi || undefined,
               ambulance: modes.ambulance || undefined,
             } : undefined,
@@ -279,6 +296,13 @@ export default function PatientForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="px-4 py-5 sm:px-6 space-y-8">
+          {/* General error banner */}
+          {generalError && (
+            <div className="p-4 bg-status-delayed-bg border border-status-delayed-border rounded-lg">
+              <p className="text-sm text-status-delayed-text">{generalError}</p>
+            </div>
+          )}
+
           {/* Core identity — always editable */}
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -503,8 +527,8 @@ export default function PatientForm() {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <FormInput
                   label={t('patients.fields.transportPublic')}
-                  value={formData.transport_logistics.modes.public}
-                  onChange={handleDeepNestedChange('transport_logistics', 'modes', 'public')}
+                  value={formData.transport_logistics.modes.public_transport}
+                  onChange={handleDeepNestedChange('transport_logistics', 'modes', 'public_transport')}
                 />
                 <FormInput
                   label={t('patients.fields.transportTaxi')}

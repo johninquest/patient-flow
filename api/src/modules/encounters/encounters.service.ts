@@ -11,6 +11,7 @@ import { CreateEncounterDto } from './dto/create-encounter.dto';
 import { UpdateEncounterDto } from './dto/update-encounter.dto';
 import { AuditService } from '../audit/audit.service';
 import { AppAbility } from '../../core/auth/ability';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 // Finite State Machine: defines valid status transitions
 const STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -51,18 +52,23 @@ export class EncountersService {
       );
     }
 
-    const [encounter] = await db
-      .insert(encounters)
-      .values({
-        patient_id: dto.patient_id,
-        status: 'scheduled',
-        assigned_to: dto.assigned_to || null,
-        scheduled_time: dto.scheduled_time
-          ? new Date(dto.scheduled_time)
-          : null,
-        notes: dto.notes || null,
-      })
-      .returning();
+    let encounter;
+    try {
+      [encounter] = await db
+        .insert(encounters)
+        .values({
+          patient_id: dto.patient_id,
+          status: 'scheduled',
+          assigned_to: dto.assigned_to || null,
+          scheduled_time: dto.scheduled_time
+            ? new Date(dto.scheduled_time)
+            : null,
+          notes: dto.notes || null,
+        })
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     await this.auditService.record({
       actor_user_id: userId,
@@ -139,23 +145,27 @@ export class EncountersService {
       'notes',
     ]);
 
-    // Optimistic locking: increment version
-    const [updated] = await db
-      .update(encounters)
-      .set({
-        status: dto.status ?? existing.status,
-        assigned_to: dto.assigned_to ?? existing.assigned_to,
-        scheduled_time: dto.scheduled_time
-          ? new Date(dto.scheduled_time)
-          : existing.scheduled_time,
-        notes: dto.notes ?? existing.notes,
-        version: existing.version + 1,
-        updated_at: new Date(),
-      })
-      .where(
-        and(eq(encounters.id, id), eq(encounters.version, existing.version)),
-      )
-      .returning();
+    let updated;
+    try {
+      [updated] = await db
+        .update(encounters)
+        .set({
+          status: dto.status ?? existing.status,
+          assigned_to: dto.assigned_to ?? existing.assigned_to,
+          scheduled_time: dto.scheduled_time
+            ? new Date(dto.scheduled_time)
+            : existing.scheduled_time,
+          notes: dto.notes ?? existing.notes,
+          version: existing.version + 1,
+          updated_at: new Date(),
+        })
+        .where(
+          and(eq(encounters.id, id), eq(encounters.version, existing.version)),
+        )
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     if (!updated) {
       throw new BadRequestException(

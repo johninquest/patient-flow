@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api/client';
 import { Card, StatusPill, EmptyState, LoadingSpinner, Button, Modal, FormInput } from '../components/ui';
 import { CheckCircleIcon, UserIcon, CalendarIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ApiError } from '../lib/api/errors';
 
 interface Task {
   id: string;
@@ -48,7 +49,11 @@ export default function Tasks() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 
@@ -61,7 +66,11 @@ export default function Tasks() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 
@@ -72,7 +81,11 @@ export default function Tasks() {
       setError(null);
     },
     onError: (err: Error) => {
-      setError(err.message);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 

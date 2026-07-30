@@ -98,7 +98,7 @@ export class PhysiciansDto {
 export class TransportModesDto {
   @IsOptional()
   @IsString()
-  public?: string;
+  public_transport?: string;
 
   @IsOptional()
   @IsString()

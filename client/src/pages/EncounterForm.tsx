@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api/client';
 import { Card, Button, FormInput } from '../components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ApiError } from '../lib/api/errors';
 
 interface Patient {
   id: string;
@@ -32,6 +33,7 @@ export default function EncounterForm() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   // Fetch patients for dropdown
   const { data: patients } = useQuery({
@@ -52,13 +54,25 @@ export default function EncounterForm() {
       navigate(`/encounters/${encounter.id}`);
     },
     onError: (error: Error) => {
-      setErrors({ general: error.message });
+      if (error instanceof ApiError) {
+        if (error.hasFieldErrors()) {
+          setErrors(error.toFieldErrorMap());
+          setGeneralError(null);
+        } else {
+          setGeneralError(error.message);
+          setErrors({});
+        }
+      } else {
+        setGeneralError(error.message);
+        setErrors({});
+      }
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setGeneralError(null);
 
     const newErrors: Record<string, string> = {};
     if (!formData.patient_id) {
@@ -109,9 +123,9 @@ export default function EncounterForm() {
           {t('encounters.create', 'Create Encounter')}
         </h2>
 
-        {errors.general && (
+        {generalError && (
           <div className="mb-4 p-3 bg-status-delayed-bg border border-status-delayed-text/20 rounded-[var(--radius-control)]">
-            <p className="text-sm text-status-delayed-text">{errors.general}</p>
+            <p className="text-sm text-status-delayed-text">{generalError}</p>
           </div>
         )}
 

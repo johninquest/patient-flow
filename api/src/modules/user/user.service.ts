@@ -13,6 +13,7 @@ import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
 import { AuditService } from '../audit/audit.service';
 import { getAuth } from '../../core/auth/auth';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 @Injectable()
 export class UserService {
@@ -139,25 +140,30 @@ export class UserService {
     const userId = created.user.id;
 
     // Update with role, title, and status
-    const [updated] = await db
-      .update(user)
-      .set({
-        role: dto.role,
-        title: dto.title ?? null,
-        status: 'active',
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, userId))
-      .returning({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        title: user.title,
-        status: user.status,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      });
+    let updated;
+    try {
+      [updated] = await db
+        .update(user)
+        .set({
+          role: dto.role,
+          title: dto.title ?? null,
+          status: 'active',
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, userId))
+        .returning({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          title: user.title,
+          status: user.status,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        });
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     await this.auditService.record({
       actor_user_id: actorUserId,
@@ -213,21 +219,26 @@ export class UserService {
       ['status'],
     );
 
-    const [updated] = await db
-      .update(user)
-      .set({
-        status: dto.status,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, id))
-      .returning({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        updatedAt: user.updatedAt,
-      });
+    let updated;
+    try {
+      [updated] = await db
+        .update(user)
+        .set({
+          status: dto.status,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, id))
+        .returning({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          updatedAt: user.updatedAt,
+        });
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     if (diff) {
       await this.auditService.record({
@@ -275,22 +286,27 @@ export class UserService {
       'title',
     ]);
 
-    const [updated] = await db
-      .update(user)
-      .set({
-        role: dto.role ?? existing.role,
-        title: dto.title !== undefined ? dto.title : existing.title,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, id))
-      .returning({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        title: user.title,
-        updatedAt: user.updatedAt,
-      });
+    let updated;
+    try {
+      [updated] = await db
+        .update(user)
+        .set({
+          role: dto.role ?? existing.role,
+          title: dto.title !== undefined ? dto.title : existing.title,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, id))
+        .returning({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          title: user.title,
+          updatedAt: user.updatedAt,
+        });
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     if (diff) {
       await this.auditService.record({

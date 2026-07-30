@@ -6,6 +6,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AuditService } from '../audit/audit.service';
 import { AppAbility } from '../../core/auth/ability';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 @Injectable()
 export class TasksService {
@@ -35,20 +36,25 @@ export class TasksService {
       );
     }
 
-    const [task] = await db
-      .insert(tasks)
-      .values({
-        encounter_id: dto.encounter_id,
-        title: dto.title,
-        description: dto.description || null,
-        status: dto.status || 'todo',
-        priority: dto.priority || 'medium',
-        assigned_user_id: dto.assigned_user_id || null,
-        assigned_role: dto.assigned_role || null,
-        blocking: dto.blocking || false,
-        due_at: dto.due_at ? new Date(dto.due_at) : null,
-      })
-      .returning();
+    let task;
+    try {
+      [task] = await db
+        .insert(tasks)
+        .values({
+          encounter_id: dto.encounter_id,
+          title: dto.title,
+          description: dto.description || null,
+          status: dto.status || 'todo',
+          priority: dto.priority || 'medium',
+          assigned_user_id: dto.assigned_user_id || null,
+          assigned_role: dto.assigned_role || null,
+          blocking: dto.blocking || false,
+          due_at: dto.due_at ? new Date(dto.due_at) : null,
+        })
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     await this.auditService.record({
       actor_user_id: userId,
@@ -108,21 +114,26 @@ export class TasksService {
       'due_at',
     ]);
 
-    const [updated] = await db
-      .update(tasks)
-      .set({
-        title: dto.title ?? existing.title,
-        description: dto.description ?? existing.description,
-        status: dto.status ?? existing.status,
-        priority: dto.priority ?? existing.priority,
-        assigned_user_id: dto.assigned_user_id ?? existing.assigned_user_id,
-        assigned_role: dto.assigned_role ?? existing.assigned_role,
-        blocking: dto.blocking ?? existing.blocking,
-        due_at: dto.due_at ? new Date(dto.due_at) : existing.due_at,
-        updated_at: new Date(),
-      })
-      .where(eq(tasks.id, id))
-      .returning();
+    let updated;
+    try {
+      [updated] = await db
+        .update(tasks)
+        .set({
+          title: dto.title ?? existing.title,
+          description: dto.description ?? existing.description,
+          status: dto.status ?? existing.status,
+          priority: dto.priority ?? existing.priority,
+          assigned_user_id: dto.assigned_user_id ?? existing.assigned_user_id,
+          assigned_role: dto.assigned_role ?? existing.assigned_role,
+          blocking: dto.blocking ?? existing.blocking,
+          due_at: dto.due_at ? new Date(dto.due_at) : existing.due_at,
+          updated_at: new Date(),
+        })
+        .where(eq(tasks.id, id))
+        .returning();
+    } catch (error) {
+      throw translateDatabaseError(error);
+    }
 
     if (diff) {
       await this.auditService.record({
