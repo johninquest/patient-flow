@@ -1,0 +1,20 @@
+{
+  "name": "patient-flow",
+  "version": "0.7.24",
+  "private": true,
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:client": "npm run dev --workspace=apps/client"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0"
+  }
+}
