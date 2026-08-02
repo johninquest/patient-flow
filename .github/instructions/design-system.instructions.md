@@ -1,5 +1,5 @@
 ---
-applyTo: "client/src/**"
+applyTo: "apps/client/src/**"
 description: "Design system rules and component usage guidelines for Patient Flow"
 ---
 
@@ -11,7 +11,7 @@ Patient Flow uses a comprehensive design system to ensure visual consistency, ac
 
 ## Design Tokens
 
-All tokens are defined in `client/src/index.css` using Tailwind v4's `@theme` directive.
+All tokens are defined in `apps/client/src/index.css` using Tailwind v4's `@theme` directive.
 
 ### Color Palette
 
@@ -68,7 +68,7 @@ All tokens are defined in `client/src/index.css` using Tailwind v4's `@theme` di
 
 ## Component Library
 
-All components are in `client/src/components/ui/`. **Always use these instead of building custom UI.**
+All components are in `apps/client/src/components/ui/`. **Always use these instead of building custom UI.**
 
 ### Button
 
@@ -539,8 +539,8 @@ test('Button renders with correct variant', () => {
 
 ## Resources
 
-- **Design Tokens:** `client/src/index.css`
-- **Component Library:** `client/src/components/ui/`
+- **Design Tokens:** `apps/client/src/index.css`
+- **Component Library:** `apps/client/src/components/ui/`
 - **Icons:** [@heroicons/react](https://heroicons.com/)
 - **Tailwind v4 Docs:** [tailwindcss.com](https://tailwindcss.com/)
 - **WCAG Guidelines:** [w3.org/WAI/WCAG21](https://www.w3.org/WAI/WCAG21/quickref/)

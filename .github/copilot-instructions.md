@@ -27,22 +27,23 @@
 ## Project Layout
 
 ```
-api/
-  src/
-    core/
-      auth/          # Better Auth wiring, AuthGuard, @CurrentUser()
-      db/            # Drizzle schema (schema.ts) + connection (index.ts)
-      common/        # Shared utilities (roles guard, access checks)
-    modules/
-      patients/      # Patient CRUD
-      encounters/    # Encounter workflow + FSM
-      tasks/         # Task management
-      audit/         # Audit logging service
-      user/          # User management + role assignment
-client/
-  src/
-    components/      # Reusable UI primitives
-      ui/            # Design system components (Button, Card, StatusPill, etc.)
+apps/
+  api/
+    src/
+      core/
+        auth/          # Better Auth wiring, AuthGuard, @CurrentUser()
+        db/            # Drizzle schema (schema.ts) + connection (index.ts)
+        common/        # Shared utilities (roles guard, access checks)
+      modules/
+        patients/      # Patient CRUD
+        encounters/    # Encounter workflow + FSM
+        tasks/         # Task management
+        audit/         # Audit logging service
+        user/          # User management + role assignment
+  client/
+    src/
+      components/      # Reusable UI primitives
+        ui/            # Design system components (Button, Card, StatusPill, etc.)
       Layout.tsx     # App shell with sidebar/bottom nav
       BottomTabBar.tsx
     features/        # Feature modules (patients, encounters, tasks, staff)
@@ -97,8 +98,8 @@ docs/
 - **Timestamps** — `created_at` / `updated_at` with `.defaultNow().notNull()`.
 - **Migration workflow** — schema change → `npm run db:generate` → review SQL → `npm run db:migrate`. Never edit files in `drizzle/` manually.
 - **Table naming** — snake_case, plural (e.g., `patients`, `encounters`, `tasks`).
-Design System** — use components from `client/src/components/ui/` (Button, Card, StatusPill, MetricCard, FormInput, Modal, EmptyState, LoadingSpinner, Avatar). Never build custom UI elements.
-- **Design Tokens** — all colors, spacing, typography defined in `client/src/index.css` via Tailwind v4 `@theme` directive. Use tokens (e.g., `text-primary`, `bg-canvas`, `status-ready-bg`), never hardcoded values.
+Design System** — use components from `apps/client/src/components/ui/` (Button, Card, StatusPill, MetricCard, FormInput, Modal, EmptyState, LoadingSpinner, Avatar). Never build custom UI elements.
+- **Design Tokens** — all colors, spacing, typography defined in `apps/client/src/index.css` via Tailwind v4 `@theme` directive. Use tokens (e.g., `text-primary`, `bg-canvas`, `status-ready-bg`), never hardcoded values.
 - **Icons** — use `@heroicons/react` only. Outline icons for navigation, solid for active states. Never inline SVGs.
 - **TanStack Query** — all server state via `useQuery`/`useMutation`. No manual fetch/axios in components.
 - **React Context** — auth/session state only. Everything else in TanStack Query or local state.
@@ -174,10 +175,10 @@ Keep sessions lean: separate backend, frontend, and test sessions. Use `/compact
 ## Scoped Instructions
 
 For detailed patterns per area, see:
-- `.github/instructions/api-module.instructions.md` — NestJS module patterns (applies to `api/src/modules/**`)
-- `.github/instructions/drizzle-schema.instructions.md` — Database schema patterns (applies to `api/src/core/db/schema.ts`)
-- `.github/instructions/react.instructions.md` — React component patterns (applies to `client/src/**`)
-- `.github/instructions/design-system.instructions.md` — Design system rules, tokens, and component usage (applies to `client/src/**`)
+- `.github/instructions/api-module.instructions.md` — NestJS module patterns (applies to `apps/api/src/modules/**`)
+- `.github/instructions/drizzle-schema.instructions.md` — Database schema patterns (applies to `apps/api/src/core/db/schema.ts`)
+- `.github/instructions/react.instructions.md` — React component patterns (applies to `apps/client/src/**`)
+- `.github/instructions/design-system.instructions.md` — Design system rules, tokens, and component usage (applies to `apps/client/src/**`)
 - `.github/instructions/architecture-decision-reminder.instructions.md` — Remind to log ADRs on significant changes (applies to `**`)
 
 ## Architecture Decision Records

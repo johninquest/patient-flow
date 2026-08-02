@@ -1,5 +1,5 @@
 ---
-applyTo: "api/src/core/db/schema.ts"
+applyTo: "apps/api/src/core/db/schema.ts"
 description: "Drizzle ORM schema conventions for Patient Flow"
 ---
 
@@ -7,7 +7,7 @@ description: "Drizzle ORM schema conventions for Patient Flow"
 
 ## Single Schema File
 
-All table definitions live in `api/src/core/db/schema.ts`. Do not split into multiple files.
+All table definitions live in `apps/api/src/core/db/schema.ts`. Do not split into multiple files.
 
 ## ID Convention
 
@@ -103,15 +103,15 @@ Update with: `WHERE id = ? AND version = ?` then `SET version = version + 1`.
 
 ## Migration Workflow
 
-1. Edit `api/src/core/db/schema.ts`
-2. Run `npm run db:generate` (from `api/` directory)
+1. Edit `apps/api/src/core/db/schema.ts`
+2. Run `npm run db:generate` (from `apps/api/` directory)
 3. Review the generated SQL in `drizzle/`
 4. Run `npm run db:migrate`
 5. **Never** edit files in `drizzle/` manually
 
 ## Database Connection
 
-Connection setup in `api/src/core/db/index.ts` uses `pg` Pool + `drizzle-orm/node-postgres`:
+Connection setup in `apps/api/src/core/db/index.ts` uses `pg` Pool + `drizzle-orm/node-postgres`:
 
 ```typescript
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -124,7 +124,7 @@ export const db = drizzle(pool, { schema });
 
 ## Drizzle Config
 
-`drizzle.config.ts` references `./src/core/db/schema.ts` (path relative to `api/`):
+`drizzle.config.ts` references `./src/core/db/schema.ts` (path relative to `apps/api/`):
 
 ```typescript
 export default defineConfig({

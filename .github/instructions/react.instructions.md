@@ -1,5 +1,5 @@
 ---
-applyTo: "client/src/**"
+applyTo: "apps/client/src/**"
 description: "React frontend conventions for Patient Flow"
 ---
 
@@ -26,11 +26,11 @@ All server state goes through TanStack Query. Never use `fetch` or `axios` direc
 
 ### API Client
 
-Centralized API client in `client/src/lib/api/client.ts` with `credentials: 'include'` for cookie-based auth.
+Centralized API client in `apps/client/src/lib/api/client.ts` with `credentials: 'include'` for cookie-based auth.
 
 ### Query Hooks
 
-Create custom hooks per feature in `client/src/hooks/`:
+Create custom hooks per feature in `apps/client/src/hooks/`:
 
 ```typescript
 // hooks/usePatients.ts
@@ -89,7 +89,7 @@ function PatientCard({ patient }: Props) {
 }
 ```
 
-Translation files: `client/src/i18n/en.json` and `client/src/i18n/fr.json`.
+Translation files: `apps/client/src/i18n/en.json` and `apps/client/src/i18n/fr.json`.
 Always add keys for **both** locales when adding new user-facing strings.
 
 ## Styling — Tailwind CSS v4
@@ -97,7 +97,7 @@ Always add keys for **both** locales when adding new user-facing strings.
 - **Tailwind only** — no inline styles, no CSS modules, no styled-components
 - Use utility classes directly: `className="flex items-center gap-2 text-sm text-text-secondary"`
 - For complex repeated patterns, extract to a component, not a CSS class
-- Design tokens defined in `client/src/index.css` using `@theme` directive
+- Design tokens defined in `apps/client/src/index.css` using `@theme` directive
 
 ## Design System
 
@@ -105,7 +105,7 @@ The application uses a comprehensive design system with predefined tokens and re
 
 ### Design Tokens
 
-All design tokens are defined in `client/src/index.css` and available as Tailwind utilities:
+All design tokens are defined in `apps/client/src/index.css` and available as Tailwind utilities:
 
 **Colors:**
 - Brand: `primary` (#0E7C86), `accent` (#3B82C4)
@@ -129,7 +129,7 @@ All design tokens are defined in `client/src/index.css` and available as Tailwin
 
 ### UI Component Library
 
-All reusable components are in `client/src/components/ui/`. **Use these instead of building custom UI:**
+All reusable components are in `apps/client/src/components/ui/`. **Use these instead of building custom UI:**
 
 - **Button** — Primary, secondary, ghost, danger variants with loading states
 - **Card** — Container with surface background and border
@@ -224,7 +224,7 @@ features/<name>/
 
 ## Reusable Components
 
-Shared UI primitives live in `client/src/components/`:
+Shared UI primitives live in `apps/client/src/components/`:
 - Button, Modal, Table, FormInput, Select, Alert, EmptyState, ConfirmDialog, Tooltip
 - Prefer these over creating new one-off components
 - All shared components accept `className` prop for Tailwind customization
@@ -239,6 +239,6 @@ Shared UI primitives live in `client/src/components/`:
 ## TypeScript
 
 - Strict mode enabled
-- Define types in `client/src/lib/types/` — one file per entity
+- Define types in `apps/client/src/lib/types/` — one file per entity
 - Use interfaces for object shapes, types for unions/aliases
 - API response types should match backend DTOs

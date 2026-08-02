@@ -27,7 +27,7 @@ Add a nullable `phase` field to the `encounters` table. The `phase` tracks what'
 ### Schema Change
 
 ```typescript
-// api/src/core/db/schema.ts
+// apps/api/src/core/db/schema.ts
 export const encounters = pgTable('encounters', {
   // ... existing fields
   status: text('status').notNull(), // 'scheduled' | 'checked_in' | 'in_progress' | 'completed' | 'cancelled'

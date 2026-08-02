@@ -21,14 +21,14 @@ Store **ISO 3166-1 alpha-2 country codes** (e.g., "FR", "US") and **ISO 4217 cur
 ### Implementation
 
 **Backend (API):**
-- Create `api/src/core/common/iso-codes.ts` with static arrays of all valid ISO 3166-1 alpha-2 country codes (~249) and ISO 4217 currency codes (~180)
+- Create `apps/api/src/core/common/iso-codes.ts` with static arrays of all valid ISO 3166-1 alpha-2 country codes (~249) and ISO 4217 currency codes (~180)
 - Add `@IsIn(ISO_COUNTRY_CODES)` validation to `AddressDto.country` and `IdentityDto.country_national` fields
 - Add new `FinancialsDto.currency` field with `@IsIn(ISO_CURRENCY_CODES)` validation
 - No database schema changes — fields remain `jsonb` with string values
 - No new API endpoints or lookup tables
 
 **Frontend (Client):**
-- Create `client/src/lib/iso-data.ts` utility module with:
+- Create `apps/client/src/lib/iso-data.ts` utility module with:
   - `getCountryName(code, locale)` — wraps `Intl.DisplayNames` with `type: 'region'`
   - `getCurrencyName(code, locale)` — wraps `Intl.DisplayNames` with `type: 'currency'`
   - `getCountryOptions(locale)` — returns sorted array of `{ value, label }` for all countries
@@ -80,7 +80,7 @@ Existing patient records with free-text country values (e.g., "France" instead o
 - **Positive:** Data is portable and integration-ready — external systems expect ISO codes.
 - **Negative:** Existing records with free-text country values will display the raw string until manually edited. This is acceptable for a small dataset and can be addressed through normal data entry workflows.
 - **Negative:** `Intl.DisplayNames` requires modern browsers (no IE11 support). This is acceptable given the project's browser support policy.
-- **Neutral:** ISO code lists are duplicated between backend (`api/src/core/common/iso-codes.ts`) and frontend (`client/src/lib/iso-data.ts`). This is intentional — the lists are small, stable, and the duplication avoids cross-package imports in a monorepo.
+- **Neutral:** ISO code lists are duplicated between backend (`apps/api/src/core/common/iso-codes.ts`) and frontend (`apps/client/src/lib/iso-data.ts`). This is intentional — the lists are small, stable, and the duplication avoids cross-package imports in a monorepo.
 
 ## Verification
 

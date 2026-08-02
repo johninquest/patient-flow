@@ -22,7 +22,7 @@ Implement **CASL (Common Ability Specification Library)** for backend authorizat
 
 **Backend (API):**
 - Install `@casl/ability` package
-- Create `api/src/core/auth/ability.ts` with:
+- Create `apps/api/src/core/auth/ability.ts` with:
   - `AppAbility` type definition
   - `defineAbilitiesFor(user)` function that builds ability based on user role
   - Role-based rules:
@@ -30,8 +30,8 @@ Implement **CASL (Common Ability Specification Library)** for backend authorizat
     - **provider**: read all patients, update own encounters, manage tasks
     - **clinical_staff**: create/read/update patients and encounters, manage tasks
     - **front_desk**: read patients, update demographics, manage encounters and tasks
-- Create `api/src/core/auth/guards/casl.guard.ts` — attaches `request.ability` after AuthGuard
-- Create `api/src/core/auth/decorators/ability.decorator.ts` — `@Ability()` parameter decorator
+- Create `apps/api/src/core/auth/guards/casl.guard.ts` — attaches `request.ability` after AuthGuard
+- Create `apps/api/src/core/auth/decorators/ability.decorator.ts` — `@Ability()` parameter decorator
 - Update all controllers to use `@UseGuards(AuthGuard, CaslGuard)`
 - Update all services to accept `ability: AppAbility` parameter and check `ability.can()` before operations
 - Replace hardcoded role checks (e.g., `if (userRole !== 'admin')`) with CASL checks

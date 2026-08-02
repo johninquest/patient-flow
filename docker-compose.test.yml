@@ -16,14 +16,14 @@ services:
 
   api:
     build:
-      context: ./api
+      context: ./apps/api
       dockerfile: Dockerfile
     container_name: patient-flow-api-test
     restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
-      - ./api/.env
+      - ./apps/api/.env
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -31,7 +31,7 @@ services:
       - API_URL=http://localhost:3000
       - CLIENT_URL=http://localhost:5173
     volumes:
-      - ./api:/app
+      - ./apps/api:/app
       - /app/node_modules
     depends_on:
       - postgres
@@ -40,7 +40,7 @@ services:
 
   client:
     build:
-      context: ./client
+      context: ./apps/client
       dockerfile: Dockerfile
     container_name: patient-flow-client-test
     restart: unless-stopped
@@ -49,7 +49,7 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - ./client:/app
+      - ./apps/client:/app
       - /app/node_modules
     depends_on:
       - api

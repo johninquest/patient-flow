@@ -10,7 +10,7 @@ Generate comprehensive unit tests for a NestJS service in the Patient Flow API.
 ## Input
 
 Ask me for:
-1. **Service file path** (e.g., `api/src/modules/patients/patients.service.ts`)
+1. **Service file path** (e.g., `apps/api/src/modules/patients/patients.service.ts`)
 
 ## Process
 
@@ -21,7 +21,7 @@ Ask me for:
 
 ## Output
 
-Generate `api/src/modules/<name>/<name>.service.spec.ts` with:
+Generate `apps/api/src/modules/<name>/<name>.service.spec.ts` with:
 
 ### Test Structure
 - Use `@nestjs/testing` `Test.createTestingModule()`
@@ -82,4 +82,4 @@ const mockDb = {
 - Test file name: `<name>.service.spec.ts` (co-located with service)
 - Use `describe` blocks per method
 - Use `beforeEach` to reset mocks
-- Run with `npm test` from `api/` directory
+- Run with `npm test` from `apps/api/` directory

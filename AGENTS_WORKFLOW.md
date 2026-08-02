@@ -49,7 +49,7 @@ flowchart LR
 **Agent:** `/tester` and `/reviewer`
 
 1. Invoke `/tester` to generate unit tests for new/modified services
-2. Run `npm test` in `api/` — all tests must pass
+2. Run `npm test` in `apps/api/` — all tests must pass
 3. Invoke `/reviewer` with the changed files + contracts attached
 4. Address any **Critical** or **Warning** issues from the review
 5. For frontend changes: instruct the agent to "Launch the app in the integrated browser and verify the layout works without console errors"
@@ -126,8 +126,8 @@ The contracts in `docs/contracts/` are the **source of truth**. Code conforms to
 ### Self-Correction Loop
 Agents must verify their own work before marking a task complete:
 
-1. **Run lint** — `npm run lint` in `api/` or `client/`
-2. **Run build/typecheck** — `npm run build` (api) or `npm run check` (client)
+1. **Run lint** — `npm run lint` in `apps/api/` or `apps/client/`
+2. **Run build/typecheck** — `npm run build` (apps/api) or `npm run check` (apps/client)
 3. **Check diagnostics** — use `getDiagnostics` to pull workspace errors
 4. **Fix issues** — agent self-corrects before reporting done
 

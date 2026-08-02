@@ -18,7 +18,7 @@ Ask me for:
 
 Generate the following files:
 
-### 1. `client/src/features/<name>/<Name>ListPage.tsx`
+### 1. `apps/client/src/features/<name>/<Name>ListPage.tsx`
 - Default export (for lazy loading)
 - `useTranslation()` for all strings
 - TanStack Query hook for data fetching (`useQuery`)
@@ -30,7 +30,7 @@ Generate the following files:
 - Role-based action buttons (hidden for unauthorized roles)
 - Use Heroicons for all icons
 
-### 2. `client/src/features/<name>/<Name>DetailPage.tsx`
+### 2. `apps/client/src/features/<name>/<Name>DetailPage.tsx`
 - Default export (for lazy loading)
 - `useParams()` for ID, TanStack Query for detail fetch
 - Use `Card` component as container
@@ -39,7 +39,7 @@ Generate the following files:
 - Use `LoadingSpinner` for loading state
 - Use Heroicons for back button and other icons
 
-### 3. `client/src/features/<name>/<Name>Form.tsx`
+### 3. `apps/client/src/features/<name>/<Name>Form.tsx`
 - Create/edit form using `FormInput` component for all fields
 - Use `Button` for submit and cancel actions
 - TanStack Query mutation (`useMutation`) for submit
@@ -47,17 +47,17 @@ Generate the following files:
 - i18n labels and placeholders
 - Use `Card` as form container
 
-### 4. `client/src/features/<name>/<Name>Card.tsx`
+### 4. `apps/client/src/features/<name>/<Name>Card.tsx`
 - Use `Card` component as wrapper
 - Use `Avatar` if displaying user/patient initials
 - Use `StatusPill` for status
 - Key fields displayed with design system typography
 - Click-through to detail
 
-### 5. `client/src/features/<name>/index.ts`
+### 5. `apps/client/src/features/<name>/index.ts`
 - Public exports for the feature
 
-### 6. `client/src/hooks/use<Names>.ts`
+### 6. `apps/client/src/hooks/use<Names>.ts`
 - `use<Names>()` — list query
 - `use<Name>(id)` — detail query
 - `useCreate<Name>()` — create mutation
@@ -65,7 +65,7 @@ Generate the following files:
 - `useDelete<Name>()` — delete mutation
 - All mutations invalidate relevant query keys on success
 
-### 7. `client/src/lib/types/<name>.types.ts`
+### 7. `apps/client/src/lib/types/<name>.types.ts`
 - TypeScript interface matching the backend entity
 - Create and Update DTO types matching backend DTOs
 
@@ -75,7 +75,7 @@ Generate the following files:
 - Add navigation link to sidebar/nav
 
 ### 9. i18n keys
-- Add translation keys to both `client/src/i18n/en.json` and `client/src/i18n/fr.json`
+- Add translation keys to both `apps/client/src/i18n/en.json` and `apps/client/src/i18n/fr.json`
 
 ## Conventions Reference
 
@@ -84,7 +84,7 @@ Generate the following files:
 - Tailwind CSS v4 for all styling with design system tokens
 - `useTranslation()` for all user-facing strings
 - TanStack Query for all server state
-- **Always use design system components** from `client/src/components/ui/`
+- **Always use design system components** from `apps/client/src/components/ui/`
 - **Always use Heroicons** from `@heroicons/react`
 - **Always include empty states** using `EmptyState` component
 - **Always include loading states** using `LoadingSpinner` component
@@ -92,7 +92,7 @@ Generate the following files:
 
 ## Design System Components
 
-Import from `client/src/components/ui`:
+Import from `apps/client/src/components/ui`:
 - `Button` — actions (primary, secondary, ghost, danger)
 - `Card` — containers
 - `StatusPill` — status indicators with icon + label

@@ -5,8 +5,9 @@
 ## Project Layout
 
 ```
-api/        # NestJS backend (Node.js LTS, npm)
-client/     # React 18 + Vite 5 frontend (CSR SPA)
+apps/
+  api/        # NestJS backend (Node.js LTS, npm)
+  client/     # React 18 + Vite 5 frontend (CSR SPA)
 drizzle/    # Migration SQL files (generated, do not edit manually)
 docs/
   decisions/  # Architecture Decision Records (ADRs)
@@ -14,7 +15,7 @@ docs/
 
 ## Commands
 
-### API (`cd api`)
+### API (`cd apps/api`)
 | Task | Command |
 |------|---------|
 | Dev server | `npm run start:dev` |
@@ -26,7 +27,7 @@ docs/
 | Run migrations | `npm run db:migrate` |
 | DB studio | `npm run db:studio` |
 
-### Client (`cd client`)
+### Client (`cd apps/client`)
 | Task | Command |
 |------|---------|
 | Dev server | `npm run dev` |
@@ -38,18 +39,18 @@ docs/
 ```bash
 docker-compose up            # Dev (API :3000, client :5173, postgres :5432)
 docker-compose up -d         # Background
-docker-compose exec api npm run db:migrate  # Run migrations inside container
+docker-compose exec api npm run db:migrate  # Run migrations inside container (api service)
 docker-compose -f docker-compose.prod.yml up  # Production
 ```
 
 > **Package manager**: Both API and client use **npm**.
-> **Install policy**: Use `npm ci` for reproducible installs in CI, Docker, and after cloning. Use `npm install` only when intentionally updating dependencies locally. Both packages enforce `minimumReleaseAge=10080` (7 days) via `.npmrc` to reduce supply-chain risk.
+> **Install policy**: Use `npm ci` for reproducible installs in CI, Docker, and after cloning. Use `npm install` only when intentionally updating dependencies locally. The root `.npmrc` enforces `minimumReleaseAge=10080` (7 days) to reduce supply-chain risk.
 
 ## Environment Variables
 
 Configuration is split by responsibility:
 
-1. **API environment** — copy `api/.env.example` to `api/.env` and fill in server-side variables:
+1. **API environment** — copy `apps/api/.env.example` to `apps/api/.env` and fill in server-side variables:
    - `DATABASE_URL` – PostgreSQL connection string
    - `AUTH_SECRET` – random secret (generate: `openssl rand -base64 32`)
    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – Google OAuth
@@ -57,7 +58,7 @@ Configuration is split by responsibility:
    - `ADMIN_EMAIL` – user to promote to admin on startup
    - `PORT` – optional, defaults to `3000`
 
-2. **Client environment** — copy `client/.env.example` to `client/.env` and fill in browser-safe variables:
+2. **Client environment** — copy `apps/client/.env.example` to `apps/client/.env` and fill in browser-safe variables:
    - `VITE_API_URL` – base URL of the API (must be accessible from the browser)
 
 3. **Docker orchestration** — copy `.env.example` to `.env` at the repo root. This file is used only by Docker Compose and contains shared variables for the API and database containers:
@@ -72,10 +73,10 @@ Configuration is split by responsibility:
 
 ### API (NestJS)
 
-- **Entry**: `api/src/main.ts`
-- **Modules**: `api/src/modules/` — each feature (patients, encounters, tasks, audit, user) is a self-contained NestJS module.
-- **Database**: `api/src/core/db/schema.ts` — single Drizzle schema file. All IDs are UUIDs generated with `uuidv7()`, **not** `gen_random_uuid()`.
-- **Auth**: Better Auth via `api/src/core/auth/auth.ts`. The `AuthGuard` resolves the session and attaches `request.user`. Use `@CurrentUser()` to access the user in controllers.
+- **Entry**: `apps/api/src/main.ts`
+- **Modules**: `apps/api/src/modules/` — each feature (patients, encounters, tasks, audit, user) is a self-contained NestJS module.
+- **Database**: `apps/api/src/core/db/schema.ts` — single Drizzle schema file. All IDs are UUIDs generated with `uuidv7()`, **not** `gen_random_uuid()`.
+- **Auth**: Better Auth via `apps/api/src/core/auth/auth.ts`. The `AuthGuard` resolves the session and attaches `request.user`. Use `@CurrentUser()` to access the user in controllers.
 - **Access control**: Role-based access control (RBAC) with four roles:
   - **admin** – full access: staff management, all data, configuration
   - **provider** – clinical access: own patients/encounters, clinical notes
@@ -95,29 +96,29 @@ export class ResourceController {
 ```
 
 #### Adding a new module
-1. Create `api/src/modules/<name>/` with `*.module.ts`, `*.controller.ts`, `*.service.ts`, and `dto/` folder.
-2. Register in `api/src/app.module.ts`.
+1. Create `apps/api/src/modules/<name>/` with `*.module.ts`, `*.controller.ts`, `*.service.ts`, and `dto/` folder.
+2. Register in `apps/api/src/app.module.ts`.
 3. All DB queries go in the service; controllers are thin.
 4. Use `@Roles()` decorator + `RolesGuard` for role-based access control.
 5. Log all mutations to the `audit_log` table via `AuditService.record()`.
 6. Add Swagger decorators: `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()`.
 
 #### Database / Drizzle workflow
-- Schema: `api/src/core/db/schema.ts` (single file, do not split)
+- Schema: `apps/api/src/core/db/schema.ts` (single file, do not split)
 - After any schema change: `npm run db:generate` → review generated SQL → `npm run db:migrate`
 - Never edit files in `drizzle/` manually.
-- `drizzle.config.ts` references `./src/core/db/schema.ts` (note: path relative to `api/`).
+- `drizzle.config.ts` references `./src/core/db/schema.ts` (note: path relative to `apps/api/`).
 
 ### Client (React)
 
 - **CSR SPA**: Pure client-side rendered application using React 18 + Vite 5.
-- **API client**: `client/src/lib/api/client.ts` — centralized fetch wrapper with `credentials: 'include'` for cookie-based auth.
-- **API URL**: resolved in `client/src/lib/config.ts` — automatically switches between `localhost:3000` (dev) and production URL.
-- **Auth**: Better Auth client-side SDK; auth state managed via React Context in `client/src/hooks/useAuth.ts`.
+- **API client**: `apps/client/src/lib/api/client.ts` — centralized fetch wrapper with `credentials: 'include'` for cookie-based auth.
+- **API URL**: resolved in `apps/client/src/lib/config.ts` — automatically switches between `localhost:3000` (dev) and production URL.
+- **Auth**: Better Auth client-side SDK; auth state managed via React Context in `apps/client/src/hooks/useAuth.ts`.
 - **Server state**: TanStack Query v5 for all API data fetching and caching.
-- **i18n**: `client/src/i18n/` — supported locales: `en`, `fr`. Always use `useTranslation()` hook for user-facing strings.
-- **Design System**: Comprehensive component library in `client/src/components/ui/` (Button, Card, StatusPill, MetricCard, FormInput, Modal, EmptyState, LoadingSpinner, Avatar). **Always use these instead of building custom UI.**
-- **Design Tokens**: All colors, spacing, typography defined in `client/src/index.css` via Tailwind v4 `@theme` directive. Use tokens (e.g., `text-primary`, `bg-canvas`, `status-ready-bg`), never hardcoded values.
+- **i18n**: `apps/client/src/i18n/` — supported locales: `en`, `fr`. Always use `useTranslation()` hook for user-facing strings.
+- **Design System**: Comprehensive component library in `apps/client/src/components/ui/` (Button, Card, StatusPill, MetricCard, FormInput, Modal, EmptyState, LoadingSpinner, Avatar). **Always use these instead of building custom UI.**
+- **Design Tokens**: All colors, spacing, typography defined in `apps/client/src/index.css` via Tailwind v4 `@theme` directive. Use tokens (e.g., `text-primary`, `bg-canvas`, `status-ready-bg`), never hardcoded values.
 - **Icons**: Use `@heroicons/react` only. Outline icons for navigation, solid for active states. Never inline SVGs.
 - **Styling**: Tailwind CSS v4 only — no inline styles, no CSS modules.
 - **Accessibility**: WCAG AA compliance. Status indicators must include icon + label (never color alone). All list views need empty/loading/error states.
@@ -136,7 +137,7 @@ r/index.tsx`
 
 #### Design System Components
 
-Located in `client/src/components/ui/`:
+Located in `apps/client/src/components/ui/`:
 - **Button** — Primary, secondary, ghost, danger variants with loading states
 - **Card** — Container with surface background and border
 - **StatusPill** — Status indicators with icon + label (never color alone)
@@ -168,7 +169,7 @@ Map entity statuses to design system status types:
 #### Routing
 - All routes lazy-loaded with `React.lazy()` + `Suspense`
 - Protected routes wrapped in `ProtectedRoute` component
-- Route definitions in `client/src/routes/AppRoutes.tsx`
+- Route definitions in `apps/client/src/routes/AppRoutes.tsx`
 
 ## Core Entities
 

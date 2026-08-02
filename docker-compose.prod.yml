@@ -1,12 +1,12 @@
 services:
   api:
     build:
-      context: ./api
+      context: ./apps/api
       dockerfile: Dockerfile.prod
     container_name: patient-flow-api
     restart: unless-stopped
     env_file:
-      - ./api/.env
+      - ./apps/api/.env
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -29,7 +29,7 @@ services:
 
   client:
     build:
-      context: ./client
+      context: ./apps/client
       dockerfile: Dockerfile.prod
     container_name: patient-flow-client
     restart: unless-stopped

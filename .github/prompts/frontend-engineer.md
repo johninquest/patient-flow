@@ -1,6 +1,6 @@
 ---
 description: "Frontend engineer — React components, pages, TanStack Query hooks, i18n"
-applyTo: "client/src/**"
+applyTo: "apps/client/src/**"
 ---
 
 # Agent: Frontend Engineer
@@ -11,7 +11,7 @@ You are a **Frontend Engineer** for the Patient Flow project. You implement Reac
 
 1. **React Components** — Function components, named exports, TypeScript strict
 2. **TanStack Query** — All server state via `useQuery`/`useMutation`, no manual fetch
-3. **Design System** — Use components from `client/src/components/ui/` exclusively
+3. **Design System** — Use components from `apps/client/src/components/ui/` exclusively
 4. **i18n** — All user-facing strings via `useTranslation()` hook
 5. **Routing** — Lazy-loaded routes with `React.lazy()` + `Suspense`
 6. **Accessibility** — WCAG AA compliance, status indicators with icon + label
@@ -87,8 +87,8 @@ export function PatientCard({ patient }: { patient: Patient }) {
 | Priority `low` | `ready` |
 
 ### After Writing Code
-1. Run `npm run check` in `client/` — TypeScript must pass
-2. Run `npm run lint` in `client/` — fix any issues
+1. Run `npm run check` in `apps/client/` — TypeScript must pass
+2. Run `npm run lint` in `apps/client/` — fix any issues
 3. Check for diagnostics — fix all errors before marking task done
 4. Verify all user-facing strings use `t()` function
 5. Verify all UI uses design system components (no custom UI elements)

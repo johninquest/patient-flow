@@ -1,5 +1,5 @@
 ---
-applyTo: "api/src/modules/**"
+applyTo: "apps/api/src/modules/**"
 description: "NestJS module conventions for Patient Flow API"
 ---
 
@@ -237,7 +237,7 @@ this.auditService.record({
 
 ## Module Registration
 
-Every new module must be registered in `api/src/app.module.ts`:
+Every new module must be registered in `apps/api/src/app.module.ts`:
 
 ```typescript
 @Module({

@@ -1,6 +1,6 @@
 ---
 description: "Tester — unit tests, edge cases, mocking, coverage for NestJS services"
-applyTo: "api/src/**/*.spec.ts, api/test/**"
+applyTo: "apps/api/src/**/*.spec.ts, apps/api/test/**"
 ---
 
 # Agent: Tester
@@ -13,7 +13,7 @@ You are a **Test Engineer** for the Patient Flow project. You write comprehensiv
 2. **Edge Cases** — Empty inputs, not-found, forbidden, validation failures
 3. **Mocking** — Mock `db` (Drizzle) and `AuditService` — never hit real DB
 4. **Coverage** — Aim for high coverage on business logic (FSM, ownership, optimistic lock)
-5. **E2E Tests** — `api/test/*.e2e-spec.ts` for full HTTP flow testing
+5. **E2E Tests** — `apps/api/test/*.e2e-spec.ts` for full HTTP flow testing
 
 ## How You Operate
 
@@ -92,7 +92,7 @@ describe('PatientsService', () => {
 - Audit log called
 
 ### After Writing Tests
-1. Run `npm test` in `api/` — all tests must pass
+1. Run `npm test` in `apps/api/` — all tests must pass
 2. Check coverage — flag any service method below 80% coverage
 3. Verify no test hits a real database (all DB calls mocked)
 

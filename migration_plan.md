@@ -19,20 +19,20 @@
 - Add Copilot customizations (instructions + prompts) to automate implementation quality
 
 ## What to keep from current codebase
-- api/src/core/auth (auth wiring, guard, decorator)
-- api/src/core/db/index.ts and auth-related schema tables
-- api/src/main.ts shell (update for Swagger as needed)
+- apps/api/src/core/auth (auth wiring, guard, decorator)
+- apps/api/src/core/db/index.ts and auth-related schema tables
+- apps/api/src/main.ts shell (update for Swagger as needed)
 - Docker compose shell and env-file conventions
 - Portable TS utilities from old client (types and pure validation helpers)
 
 ## What to discard/reset
-- Existing domain modules under api/src/modules/* (properties, units, tenants, rent, expenses, etc.)
+- Existing domain modules under apps/api/src/modules/* (properties, units, tenants, rent, expenses, etc.)
 - Existing drizzle migration history under drizzle/* (regenerate from new schema)
-- Svelte client implementation under client/src/* (except optional portable TS-only helpers)
+- Svelte client implementation under apps/client/src/* (except optional portable TS-only helpers)
 
 ## Phase 0 - Cleanup and baseline
 1. Rename project metadata from Popaty to Patient Flow (README/package names/container names)
-2. Remove old NestJS domain modules in api/src/modules/*
+2. Remove old NestJS domain modules in apps/api/src/modules/*
 3. Reset drizzle migrations (keep folder, regenerate from new schema)
 4. Replace Svelte frontend implementation with React app skeleton
 
@@ -44,7 +44,7 @@
 5. Update .env.example defaults to local postgres service
 
 ## Phase 2 - Backend domain reset (NestJS + Drizzle)
-1. Keep auth tables and add Patient Flow tables in api/src/core/db/schema.ts:
+1. Keep auth tables and add Patient Flow tables in apps/api/src/core/db/schema.ts:
 - patients: id, names, dob, contact, notes, timestamps
 - encounters: id, patient_id, workflow status, scheduled_time, notes, timestamps
 - tasks: id, encounter_id, title/description, status, priority, assignees, blocking flag, due_at, timestamps
@@ -56,7 +56,7 @@
 6. Add audit logging on all mutation endpoints
 
 ## Phase 3 - Frontend rebuild (React)
-1. Scaffold Vite React TypeScript app in client/
+1. Scaffold Vite React TypeScript app in apps/client/
 2. Configure Tailwind CSS v4 and base design system tokens
 3. Install core libs: react-router-dom@7, @tanstack/react-query@5, react-i18next, i18next, better-auth
 4. Create centralized API client (credentials: include)
@@ -67,11 +67,11 @@
 9. Implement shared UI primitives (Button, Modal, Table, FormInput, Alert, etc.)
 
 ## Phase 4 - Copilot automation artifacts
-1. .github/instructions/api-module.instructions.md (for api/src/modules/**)
+1. .github/instructions/api-module.instructions.md (for apps/api/src/modules/**)
 - Enforce thin controllers, DTO validation, swagger decorators, audit logging, access checks
-2. .github/instructions/drizzle-schema.instructions.md (for api/src/core/db/schema.ts)
+2. .github/instructions/drizzle-schema.instructions.md (for apps/api/src/core/db/schema.ts)
 - Enforce uuidv7, migration workflow, no manual edits in drizzle/
-3. .github/instructions/react.instructions.md (for client/src/**)
+3. .github/instructions/react.instructions.md (for apps/client/src/**)
 - Enforce function components, TanStack Query for data fetching, i18n usage, Tailwind-only styling
 4. .github/prompts/scaffold-api-module.prompt.md
 5. .github/prompts/scaffold-react-feature.prompt.md

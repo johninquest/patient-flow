@@ -42,7 +42,7 @@ Update all call sites to use `this.filterByRole(...)` / `this.assertCanWrite(...
 ### Resulting structure
 
 ```
-api/src/modules/patients/
+apps/api/src/modules/patients/
   patients.controller.ts
   patients.module.ts
   patients.service.ts          # now holds visibility policy + methods

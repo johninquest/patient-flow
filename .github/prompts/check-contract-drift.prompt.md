@@ -11,9 +11,9 @@ You are checking for **contract drift** — discrepancies between the documented
 - Read `docs/contracts/schema.md`
 
 ### Step 2: Read the Live Code
-- Read `api/src/core/db/schema.ts` — compare every table, column, type, constraint, and index against `schema.md`
-- Read ALL controller files in `api/src/modules/*/` — compare every route, method, guard, and role against `api_spec.md`
-- Read ALL DTO files in `api/src/modules/*/dto/` — compare every field and validation decorator against `api_spec.md`
+- Read `apps/api/src/core/db/schema.ts` — compare every table, column, type, constraint, and index against `schema.md`
+- Read ALL controller files in `apps/api/src/modules/*/` — compare every route, method, guard, and role against `api_spec.md`
+- Read ALL DTO files in `apps/api/src/modules/*/dto/` — compare every field and validation decorator against `api_spec.md`
 
 ### Step 3: Produce a Drift Report
 

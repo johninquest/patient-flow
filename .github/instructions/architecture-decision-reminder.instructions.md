@@ -11,8 +11,8 @@ When you detect that the user has made a significant architectural or implementa
 
 Suggest creating an ADR when you observe:
 
-1. **New module creation** — adding a new NestJS module in `api/src/modules/`
-2. **Database schema changes** — modifications to `api/src/core/db/schema.ts` (new tables, columns, relationships, indexes)
+1. **New module creation** — adding a new NestJS module in `apps/api/src/modules/`
+2. **Database schema changes** — modifications to `apps/api/src/core/db/schema.ts` (new tables, columns, relationships, indexes)
 3. **Technology or library changes** — adding new dependencies to `package.json` (especially architectural ones like ORMs, auth libraries, state management)
 4. **Major refactors** — restructuring code across multiple files, changing patterns, or replacing implementations
 5. **Authentication/authorization changes** — modifications to auth flow, guards, roles, or permissions

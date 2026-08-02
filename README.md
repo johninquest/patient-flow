@@ -29,8 +29,9 @@ A lightweight patient workflow orchestration system for clinics and healthcare o
 
 ```
 patient-flow/
-├── api/          # NestJS backend API
-├── client/       # React frontend
+├── apps/
+│   ├── api/      # NestJS backend API
+│   └── client/   # React frontend
 └── requirements/ # Project documentation
 ```
 
@@ -43,7 +44,7 @@ patient-flow/
 
 ### Option 1: Local Development (without Docker)
 
-> **Dependency policy:** Both `api/` and `client/` contain `.npmrc` with `minimumReleaseAge=10080` (7 days). This tells npm to avoid versions published within the last 7 days when resolving updates, reducing supply-chain risk. Docker builds and CI use `npm ci` for reproducible installs.
+> **Dependency policy:** The root `.npmrc` contains `minimumReleaseAge=10080` (7 days). This tells npm to avoid versions published within the last 7 days when resolving updates, reducing supply-chain risk. Docker builds and CI use `npm ci` for reproducible installs.
 
 **Backend:**
 ```bash
@@ -200,7 +201,7 @@ npm run deploy:firebase
 
 Environment configuration is split by responsibility:
 
-- **`api/.env`** — Server-side secrets and configuration for the NestJS API.
+- **`apps/api/.env`** — Server-side secrets and configuration for the NestJS API.
   - `DATABASE_URL`
   - `AUTH_SECRET`
   - `GOOGLE_CLIENT_ID`
@@ -210,7 +211,7 @@ Environment configuration is split by responsibility:
   - `ADMIN_EMAIL`
   - `PORT` (optional, defaults to `3000`)
 
-- **`client/.env`** — Browser-safe build-time variables for the Vite client.
+- **`apps/client/.env`** — Browser-safe build-time variables for the Vite client.
   - `VITE_API_URL`
 
 - **`.env` at repo root** — Used only by Docker Compose for orchestration.

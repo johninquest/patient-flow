@@ -22,7 +22,7 @@ Create **audit log query endpoints** for each resource type (patient, encounter,
 ### Implementation
 
 **Backend (API):**
-- Create `api/src/modules/audit/audit.controller.ts` with endpoints:
+- Create `apps/api/src/modules/audit/audit.controller.ts` with endpoints:
   - `GET /api/audit/patient/:id` — audit logs for a patient
   - `GET /api/audit/encounter/:id` — audit logs for an encounter
   - `GET /api/audit/task/:id` — audit logs for a task
@@ -34,7 +34,7 @@ Create **audit log query endpoints** for each resource type (patient, encounter,
 - Protect endpoints with `AuthGuard` and `CaslGuard`
 
 **Frontend (Client):**
-- Create `client/src/components/AuditTimeline.tsx` — reusable timeline component
+- Create `apps/client/src/components/AuditTimeline.tsx` — reusable timeline component
   - Props: `logs: AuditLog[]`, `title?: string`
   - Displays chronological list of audit events
   - Shows actor (user ID), role, action, timestamp, and diff

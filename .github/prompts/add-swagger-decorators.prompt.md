@@ -9,7 +9,7 @@ Audit all NestJS controllers and add missing Swagger/OpenAPI decorators.
 
 ## Process
 
-1. Find all controller files in `api/src/modules/*/`
+1. Find all controller files in `apps/api/src/modules/*/`
 2. For each controller, check for:
    - `@ApiTags()` at class level
    - `@ApiOperation()` on every method

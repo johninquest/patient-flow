@@ -13,6 +13,9 @@ build/
 *.log
 client/dev-dist/
 
+# Turborepo
+.turbo/
+
 # IDE
 .vscode/
 .idea/

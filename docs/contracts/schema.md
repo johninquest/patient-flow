@@ -2,12 +2,12 @@
 
 > **Source of truth for database schema.** All Drizzle ORM definitions must conform to this blueprint.
 >
-> **How to use:** Attach `#schema.md` to Copilot chat when modifying `api/src/core/db/schema.ts` or generating migrations.
+> **How to use:** Attach `#schema.md` to Copilot chat when modifying `apps/api/src/core/db/schema.ts` or generating migrations.
 >
 > **Drift check:** Run `/check-contract-drift` to compare this blueprint against `schema.ts`.
 
 **Database:** PostgreSQL 18 · **ORM:** Drizzle
-**Schema file:** `api/src/core/db/schema.ts` (single file — never split)
+**Schema file:** `apps/api/src/core/db/schema.ts` (single file — never split)
 **Migration workflow:** schema change → `npm run db:generate` → review SQL → `npm run db:migrate`
 
 ---

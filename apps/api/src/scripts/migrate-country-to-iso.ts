@@ -29,7 +29,7 @@ import { resolve } from 'path';
 import * as schema from '../core/db/schema';
 import { ISO_COUNTRY_CODES } from '../core/common/iso-codes';
 
-// Load environment variables from api/.env
+// Load environment variables from apps/api/.env
 config({ path: resolve(__dirname, '../../.env') });
 
 // Country name to ISO code mapping — split into English and French to avoid
@@ -232,7 +232,7 @@ async function migrate() {
   // Validate environment
   if (!process.env.DATABASE_URL) {
     console.error('❌ DATABASE_URL not found in environment');
-    console.log('   Ensure api/.env exists and contains DATABASE_URL');
+    console.log('   Ensure apps/api/.env exists and contains DATABASE_URL');
     process.exit(1);
   }
 
