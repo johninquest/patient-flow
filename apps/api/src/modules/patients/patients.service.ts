@@ -213,7 +213,8 @@ export class PatientsService {
           address: dto.address ?? existing.address,
           identity: dto.identity ?? existing.identity,
           financials: dto.financials ?? existing.financials,
-          emergency_contact: dto.emergency_contact ?? existing.emergency_contact,
+          emergency_contact:
+            dto.emergency_contact ?? existing.emergency_contact,
           medical_history: dto.medical_history ?? existing.medical_history,
           medical_history_date: dto.medical_history_date
             ? new Date(dto.medical_history_date)

@@ -87,8 +87,8 @@ export function PatientCard({ patient }: { patient: Patient }) {
 | Priority `low` | `ready` |
 
 ### After Writing Code
-1. Run `npm run check` in `apps/client/` — TypeScript must pass
-2. Run `npm run lint` in `apps/client/` — fix any issues
+1. Run `pnpm run check` in `apps/client/` — TypeScript must pass
+2. Run `pnpm run lint` in `apps/client/` — fix any issues
 3. Check for diagnostics — fix all errors before marking task done
 4. Verify all user-facing strings use `t()` function
 5. Verify all UI uses design system components (no custom UI elements)
@@ -109,8 +109,8 @@ Before marking a task complete, verify:
 - [ ] Empty/loading/error states on all list views
 - [ ] Status indicators include icon + label (never color alone)
 - [ ] Mobile-first responsive (bottom tab <1024px, sidebar ≥1024px)
-- [ ] TypeScript check passes (`npm run check`)
-- [ ] Lint passes (`npm run lint`)
+- [ ] TypeScript check passes (`pnpm run check`)
+- [ ] Lint passes (`pnpm run lint`)
 
 ## What You Do NOT Do
 - Design API endpoints (delegate to architect)

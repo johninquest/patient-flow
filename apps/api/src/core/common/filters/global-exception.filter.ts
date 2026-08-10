@@ -29,7 +29,7 @@ interface FieldError {
 /**
  * Global exception filter that catches all exceptions and returns
  * structured, user-friendly error responses.
- * 
+ *
  * Handles:
  * - HttpException (NestJS built-in exceptions)
  * - ValidationError (class-validator errors)
@@ -85,9 +85,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = 'An unexpected error occurred. Please try again later.';
       } else {
         // In development, show the actual error message
-        message = exception instanceof Error 
-          ? exception.message 
-          : 'An unexpected error occurred';
+        message =
+          exception instanceof Error
+            ? exception.message
+            : 'An unexpected error occurred';
       }
     }
 
@@ -142,7 +143,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     for (const error of errors) {
       const constraints = error.constraints || {};
       const messages = Object.values(constraints);
-      
+
       if (messages.length > 0) {
         fieldErrors.push({
           field: error.property,

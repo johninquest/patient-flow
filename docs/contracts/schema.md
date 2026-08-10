@@ -8,7 +8,7 @@
 
 **Database:** PostgreSQL 18 · **ORM:** Drizzle
 **Schema file:** `apps/api/src/core/db/schema.ts` (single file — never split)
-**Migration workflow:** schema change → `npm run db:generate` → review SQL → `npm run db:migrate`
+**Migration workflow:** schema change → `pnpm run db:generate` → review SQL → `pnpm run db:migrate`
 
 ---
 
@@ -281,5 +281,5 @@ When adding a new business table, ensure:
 6. [ ] Enum values stored as `text` with inline comment listing valid values
 7. [ ] Schema blueprint (`docs/contracts/schema.md`) updated
 8. [ ] API spec (`docs/contracts/api_spec.md`) updated if table has endpoints
-9. [ ] `npm run db:generate` run and SQL reviewed
-10. [ ] `npm run db:migrate` run to apply
+9. [ ] `pnpm run db:generate` run and SQL reviewed
+10. [ ] `pnpm run db:migrate` run to apply

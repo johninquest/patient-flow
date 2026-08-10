@@ -1,17 +1,13 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { defineAbilitiesFor } from '../ability';
 
 /**
  * CASL Guard — attaches the user's ability object to the request.
  * Must be used AFTER AuthGuard (which sets request.user).
- * 
+ *
  * Usage:
  *   @UseGuards(AuthGuard, CaslGuard)
- * 
+ *
  * After this guard runs, `request.ability` is available for use
  * in controllers and services.
  */

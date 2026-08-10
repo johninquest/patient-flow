@@ -96,7 +96,7 @@ docs/
 - **All business entity IDs use `uuidv7()`** — `uuid("id").primaryKey().default(sql\`uuidv7()\`)`. Never `gen_random_uuid()`.
 - **Auth tables use text IDs** — Better Auth convention for user/session/account/verification.
 - **Timestamps** — `created_at` / `updated_at` with `.defaultNow().notNull()`.
-- **Migration workflow** — schema change → `npm run db:generate` → review SQL → `npm run db:migrate`. Never edit files in `drizzle/` manually.
+- **Migration workflow** — schema change → `pnpm run db:generate` → review SQL → `pnpm run db:migrate`. Never edit files in `drizzle/` manually.
 - **Table naming** — snake_case, plural (e.g., `patients`, `encounters`, `tasks`).
 Design System** — use components from `apps/client/src/components/ui/` (Button, Card, StatusPill, MetricCard, FormInput, Modal, EmptyState, LoadingSpinner, Avatar). Never build custom UI elements.
 - **Design Tokens** — all colors, spacing, typography defined in `apps/client/src/index.css` via Tailwind v4 `@theme` directive. Use tokens (e.g., `text-primary`, `bg-canvas`, `status-ready-bg`), never hardcoded values.
@@ -114,25 +114,25 @@ Design System** — use components from `apps/client/src/components/ui/` (Button
 
 ## Commands
 
-### API (`cd api`)
+### API (`pnpm --filter patient-flow-api`)
 | Task | Command |
 |------|---------|
-| Dev server | `npm run start:dev` |
-| Build | `npm run build` |
-| Unit tests | `npm test` |
-| E2E tests | `npm run test:e2e` |
-| Lint | `npm run lint` |
-| Generate migration | `npm run db:generate` |
-| Run migrations | `npm run db:migrate` |
-| DB studio | `npm run db:studio` |
+| Dev server | `pnpm run start:dev` |
+| Build | `pnpm run build` |
+| Unit tests | `pnpm test` |
+| E2E tests | `pnpm run test:e2e` |
+| Lint | `pnpm run lint` |
+| Generate migration | `pnpm run db:generate` |
+| Run migrations | `pnpm run db:migrate` |
+| DB studio | `pnpm run db:studio` |
 
-### Client (`cd client`)
+### Client (`pnpm --filter patient-flow-client`)
 | Task | Command |
 |------|---------|
-| Dev server | `npm run dev` |
-| Build | `npm run build` |
-| Type check | `npm run check` |
-| Lint | `npm run lint` |
+| Dev server | `pnpm run dev` |
+| Build | `pnpm run build` |
+| Type check | `pnpm run check` |
+| Lint | `pnpm run lint` |
 
 ### Docker (repo root)
 ```bash

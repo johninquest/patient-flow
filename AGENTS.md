@@ -6,7 +6,7 @@
 
 ```
 apps/
-  api/        # NestJS backend (Node.js LTS, npm)
+  api/        # NestJS backend (Node.js LTS, pnpm)
   client/     # React 18 + Vite 5 frontend (CSR SPA)
 drizzle/    # Migration SQL files (generated, do not edit manually)
 docs/
@@ -15,36 +15,36 @@ docs/
 
 ## Commands
 
-### API (`cd apps/api`)
+### API (`pnpm --filter patient-flow-api`)
 | Task | Command |
 |------|---------|
-| Dev server | `npm run start:dev` |
-| Build | `npm run build` |
-| Unit tests | `npm test` |
-| E2E tests | `npm run test:e2e` |
-| Lint | `npm run lint` |
-| Generate migration | `npm run db:generate` |
-| Run migrations | `npm run db:migrate` |
-| DB studio | `npm run db:studio` |
+| Dev server | `pnpm run start:dev` |
+| Build | `pnpm run build` |
+| Unit tests | `pnpm test` |
+| E2E tests | `pnpm run test:e2e` |
+| Lint | `pnpm run lint` |
+| Generate migration | `pnpm run db:generate` |
+| Run migrations | `pnpm run db:migrate` |
+| DB studio | `pnpm run db:studio` |
 
-### Client (`cd apps/client`)
+### Client (`pnpm --filter patient-flow-client`)
 | Task | Command |
 |------|---------|
-| Dev server | `npm run dev` |
-| Build | `npm run build` |
-| Type check | `npm run check` |
-| Lint | `npm run lint` |
+| Dev server | `pnpm run dev` |
+| Build | `pnpm run build` |
+| Type check | `pnpm run check` |
+| Lint | `pnpm run lint` |
 
 ### Docker (repo root)
 ```bash
 docker-compose up            # Dev (API :3000, client :5173, postgres :5432)
 docker-compose up -d         # Background
-docker-compose exec api npm run db:migrate  # Run migrations inside container (api service)
+docker-compose exec api pnpm run db:migrate  # Run migrations inside container (api service)
 docker-compose -f docker-compose.prod.yml up  # Production
 ```
 
-> **Package manager**: Both API and client use **npm**.
-> **Install policy**: Use `npm ci` for reproducible installs in CI, Docker, and after cloning. Use `npm install` only when intentionally updating dependencies locally. The root `.npmrc` enforces `minimumReleaseAge=10080` (7 days) to reduce supply-chain risk.
+> **Package manager**: This monorepo uses **pnpm** (pinned in `package.json#packageManager`).
+> **Install policy**: Use `pnpm install --frozen-lockfile` for reproducible installs in CI, Docker, and after cloning. Use `pnpm install` or `pnpm add` only when intentionally updating dependencies locally. The root `.npmrc` enforces `minimumReleaseAge=10080` (7 days) to reduce supply-chain risk.
 
 ## Environment Variables
 
@@ -105,7 +105,7 @@ export class ResourceController {
 
 #### Database / Drizzle workflow
 - Schema: `apps/api/src/core/db/schema.ts` (single file, do not split)
-- After any schema change: `npm run db:generate` → review generated SQL → `npm run db:migrate`
+- After any schema change: `pnpm run db:generate` → review generated SQL → `pnpm run db:migrate`
 - Never edit files in `drizzle/` manually.
 - `drizzle.config.ts` references `./src/core/db/schema.ts` (note: path relative to `apps/api/`).
 
@@ -208,4 +208,4 @@ Major architectural decisions are logged in `docs/decisions/` as lightweight ADR
 - Traefik reverse proxy handles TLS termination and routing.
 - API: `api.patientflow.app` → container port 3000.
 - Client: `app.patientflow.app` → container port 3000 (Vite build output).
-- Migrations must be run manually after deploy: `docker-compose exec api npm run db:migrate`.
+- Migrations must be run manually after deploy: `docker-compose exec api pnpm run db:migrate`.

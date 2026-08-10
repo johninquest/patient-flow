@@ -104,9 +104,9 @@ Update with: `WHERE id = ? AND version = ?` then `SET version = version + 1`.
 ## Migration Workflow
 
 1. Edit `apps/api/src/core/db/schema.ts`
-2. Run `npm run db:generate` (from `apps/api/` directory)
+2. Run `pnpm run db:generate` (from `apps/api/` directory)
 3. Review the generated SQL in `drizzle/`
-4. Run `npm run db:migrate`
+4. Run `pnpm run db:migrate`
 5. **Never** edit files in `drizzle/` manually
 
 ## Database Connection

@@ -58,9 +58,7 @@ export class AuditService {
     return db
       .select()
       .from(audit_log)
-      .where(
-        eq(audit_log.resource_type, resourceType)
-      )
+      .where(eq(audit_log.resource_type, resourceType))
       .orderBy(desc(audit_log.created_at));
   }
 

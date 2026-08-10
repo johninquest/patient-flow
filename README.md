@@ -20,10 +20,10 @@ A lightweight patient workflow orchestration system for clinics and healthcare o
 - **Authentication:** Better Auth
 
 ### Frontend (Client)
-- **Framework:** React 19
+- **Framework:** React 18
 - **Styling:** Tailwind CSS v4
 - **Language:** TypeScript
-- **Build Tool:** Vite 7
+- **Build Tool:** Vite 5
 
 ## Project Structure
 
@@ -44,28 +44,31 @@ patient-flow/
 
 ### Option 1: Local Development (without Docker)
 
-> **Dependency policy:** The root `.npmrc` contains `minimumReleaseAge=10080` (7 days). This tells npm to avoid versions published within the last 7 days when resolving updates, reducing supply-chain risk. Docker builds and CI use `npm ci` for reproducible installs.
+> **Dependency policy:** The root `.npmrc` contains `minimumReleaseAge=10080` (7 days). This tells the package manager to avoid versions published within the last 7 days when resolving updates, reducing supply-chain risk. Docker builds and CI use `pnpm install --frozen-lockfile` for reproducible installs.
+>
+> This project uses **pnpm** (pinned in `package.json#packageManager`). On first use, Corepack will prompt to download pnpm. On Windows, `corepack enable` may require running PowerShell as Administrator.
+
+**Install dependencies (repo root):**
+```bash
+pnpm install
+```
 
 **Backend:**
 ```bash
-cd api
-npm ci
-cp .env.example .env  # Configure your environment variables
-npm run start:dev
+cp apps/api/.env.example apps/api/.env  # Configure your environment variables
+pnpm --filter patient-flow-api run start:dev
 ```
 
 **Frontend:**
 ```bash
-cd client
-npm ci
-cp .env.example .env  # Configure your environment variables
-npm run dev
+cp apps/client/.env.example apps/client/.env  # Configure your environment variables
+pnpm --filter patient-flow-client run dev
 ```
 
 **Updating dependencies:**
-- Use `npm install` (or `npm update`, or `npm install <package>@latest`) locally when you intentionally want to update packages.
-- Review the resulting `package-lock.json` diff, run tests, then commit both `package.json` and `package-lock.json`.
-- CI and Docker use `npm ci`, which installs exactly the committed lockfile versions.
+- Use `pnpm add` (or `pnpm update`, or `pnpm add <package>@latest`) locally when you intentionally want to update packages.
+- Review the resulting `pnpm-lock.yaml` diff, run tests, then commit both `package.json` and `pnpm-lock.yaml`.
+- CI and Docker use `pnpm install --frozen-lockfile`, which installs exactly the committed lockfile versions.
 
 ### Option 2: Docker Development
 
@@ -104,7 +107,7 @@ docker-compose -f docker-compose.test.yml exec api sh
 docker-compose -f docker-compose.test.yml exec client sh
 
 # Run migrations
-docker-compose -f docker-compose.test.yml exec api npm run db:migrate
+docker-compose -f docker-compose.test.yml exec api pnpm run db:migrate
 ```
 
 **Docker Compose Files:**
@@ -113,16 +116,6 @@ docker-compose -f docker-compose.test.yml exec api npm run db:migrate
 - `docker-compose.prod.yml` - Production deployment
 
 ## Deployment
-
-### Client Build Options
-
-The client supports two build modes via the `ADAPTER` environment variable:
-
-| Command | Adapter | Output | Use Case |
-|---------|---------|--------|----------|
-| `npm run build` | Node | `build/` (server) | Docker self-hosted |
-| `npm run build:static` | Static | `build/` (static) | Firebase Hosting |
-| `npm run deploy:firebase` | Static | Firebase | Deploy to Firebase |
 
 ### Production Deployment with Docker
 
@@ -171,30 +164,13 @@ docker stats popaty-api popaty-client
 **Maintenance:**
 ```bash
 # Run database migrations
-docker-compose -f docker-compose.prod.yml exec api npm run migration:run
+docker-compose -f docker-compose.prod.yml exec api pnpm run db:migrate
 
 # Restart services
 docker-compose -f docker-compose.prod.yml restart
 
 # Stop and remove containers
 docker-compose -f docker-compose.prod.yml down
-```
-
-### Firebase Hosting Deployment
-
-**Prerequisites:**
-- Firebase CLI installed (`npm install -g firebase-tools`)
-- Firebase project created
-
-**Deploy:**
-```bash
-cd client
-
-# Login to Firebase (first time only)
-firebase login
-
-# Build and deploy
-npm run deploy:firebase
 ```
 
 ## Environment Variables

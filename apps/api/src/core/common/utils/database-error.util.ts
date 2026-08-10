@@ -57,7 +57,7 @@ function extractDuplicateValue(error: PostgresError): string | null {
 
 /**
  * Translate PostgreSQL errors to user-friendly NestJS exceptions
- * 
+ *
  * @param error - The caught error (may or may not be a Postgres error)
  * @returns NestJS exception with user-friendly message
  */
@@ -107,16 +107,12 @@ export function translateDatabaseError(error: unknown): Error {
 
     case PG_ERROR_CODES.DATETIME_FIELD_OVERFLOW: {
       const field = pgError.column || 'date field';
-      return new BadRequestException(
-        `Invalid date/time value for ${field}`,
-      );
+      return new BadRequestException(`Invalid date/time value for ${field}`);
     }
 
     case PG_ERROR_CODES.STRING_DATA_RIGHT_TRUNCATION: {
       const field = pgError.column || 'field';
-      return new BadRequestException(
-        `Value for ${field} is too long`,
-      );
+      return new BadRequestException(`Value for ${field} is too long`);
     }
 
     default:

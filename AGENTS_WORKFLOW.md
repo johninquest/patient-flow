@@ -126,8 +126,8 @@ The contracts in `docs/contracts/` are the **source of truth**. Code conforms to
 ### Self-Correction Loop
 Agents must verify their own work before marking a task complete:
 
-1. **Run lint** — `npm run lint` in `apps/api/` or `apps/client/`
-2. **Run build/typecheck** — `npm run build` (apps/api) or `npm run check` (apps/client)
+1. **Run lint** — `pnpm run lint` in `apps/api/` or `apps/client/`
+2. **Run build/typecheck** — `pnpm run build` (apps/api) or `pnpm run check` (apps/client)
 3. **Check diagnostics** — use `getDiagnostics` to pull workspace errors
 4. **Fix issues** — agent self-corrects before reporting done
 
@@ -176,8 +176,8 @@ Use this checklist for every feature:
 ### Execution
 - [ ] Backend session: `/backend-engineer` invoked with plan + contracts
 - [ ] Frontend session: `/frontend-engineer` invoked with plan + `#api_spec.md`
-- [ ] Code compiles (`npm run build` / `npm run check`)
-- [ ] Lint passes (`npm run lint`)
+- [ ] Code compiles (`pnpm run build` / `pnpm run check`)
+- [ ] Lint passes (`pnpm run lint`)
 
 ### Verification
 - [ ] Tests generated (`/tester`) and passing (`npm test`)

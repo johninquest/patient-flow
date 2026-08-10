@@ -4,7 +4,7 @@ import { AppAbility } from '../ability';
 /**
  * Decorator to access the CASL ability object from the request.
  * Must be used with CaslGuard.
- * 
+ *
  * Usage:
  *   @UseGuards(AuthGuard, CaslGuard)
  *   findAll(@Ability() ability: AppAbility) {

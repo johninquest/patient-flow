@@ -1,7 +1,9 @@
 # Monorepo Restructure with npm Workspaces + Turborepo
 
 **Date:** 2026-07-25  
-**Status:** decided
+**Status:** superseded by 0011
+
+> **Note:** This ADR documented the original decision to use **npm workspaces**. The project has since migrated to **pnpm** — see [ADR 0011](./0011-npm-to-pnpm-migration.md) for the current package manager decision and rationale. The body below is preserved as a historical record.
 
 ## Problem
 

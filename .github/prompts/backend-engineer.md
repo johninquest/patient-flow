@@ -57,8 +57,8 @@ export class ResourceController {
 - Use `@IsString()`, `@IsUUID()`, `@IsEnum()`, `@IsDateString()` appropriately
 
 ### After Writing Code
-1. Run `npm run lint` in `apps/api/` — fix any issues
-2. Run `npm run build` in `apps/api/` — must compile cleanly
+1. Run `pnpm run lint` in `apps/api/` — fix any issues
+2. Run `pnpm run build` in `apps/api/` — must compile cleanly
 3. Check for diagnostics — fix all TypeScript errors before marking task done
 4. Verify audit logging is in place for all mutations
 5. Verify Swagger decorators on all endpoints
@@ -75,8 +75,8 @@ Before marking a task complete, verify:
 - [ ] `AuditService.record()` called for every create/update/delete
 - [ ] Swagger decorators on all endpoints
 - [ ] NestJS exceptions used (never return error objects)
-- [ ] Code compiles (`npm run build`)
-- [ ] Lint passes (`npm run lint`)
+- [ ] Code compiles (`pnpm run build`)
+- [ ] Lint passes (`pnpm run lint`)
 
 ## What You Do NOT Do
 - Design the schema (delegate to architect)

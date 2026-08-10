@@ -31,7 +31,7 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Patient');
       // Providers cannot delete patients
       cannot('delete', 'Patient');
-      
+
       // Providers can create encounters
       can('create', 'Encounter');
       // Providers can read all encounters
@@ -40,13 +40,13 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Encounter');
       // Providers cannot delete encounters
       cannot('delete', 'Encounter');
-      
+
       // Providers can manage tasks
       can('create', 'Task');
       can('read', 'Task');
       can('update', 'Task');
       can('delete', 'Task');
-      
+
       // Providers cannot manage users
       cannot('manage', 'User');
       break;
@@ -60,19 +60,19 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Patient');
       // Clinical staff cannot delete patients
       cannot('delete', 'Patient');
-      
+
       // Clinical staff can manage encounters
       can('create', 'Encounter');
       can('read', 'Encounter');
       can('update', 'Encounter');
       cannot('delete', 'Encounter');
-      
+
       // Clinical staff can manage tasks
       can('create', 'Task');
       can('read', 'Task');
       can('update', 'Task');
       can('delete', 'Task');
-      
+
       // Clinical staff cannot manage users
       cannot('manage', 'User');
       break;
@@ -86,19 +86,19 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Patient');
       // Front desk cannot delete patients
       cannot('delete', 'Patient');
-      
+
       // Front desk can manage encounters
       can('create', 'Encounter');
       can('read', 'Encounter');
       can('update', 'Encounter');
       cannot('delete', 'Encounter');
-      
+
       // Front desk can manage tasks
       can('create', 'Task');
       can('read', 'Task');
       can('update', 'Task');
       can('delete', 'Task');
-      
+
       // Front desk cannot manage users
       cannot('manage', 'User');
       break;

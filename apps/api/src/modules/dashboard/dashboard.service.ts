@@ -15,9 +15,7 @@ export class DashboardService {
     const [activeEncountersResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(encounters)
-      .where(
-        sql`${encounters.status} NOT IN ('completed', 'cancelled')`
-      );
+      .where(sql`${encounters.status} NOT IN ('completed', 'cancelled')`);
 
     // Pending tasks (not done)
     const [pendingTasksResult] = await db
@@ -37,8 +35,8 @@ export class DashboardService {
       .where(
         and(
           gte(encounters.scheduled_time, today),
-          lte(encounters.scheduled_time, tomorrow)
-        )
+          lte(encounters.scheduled_time, tomorrow),
+        ),
       );
 
     return {

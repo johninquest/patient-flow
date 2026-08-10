@@ -1,5 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, BadRequestException, ValidationError } from '@nestjs/common';
+import {
+  ValidationPipe,
+  BadRequestException,
+  ValidationError,
+} from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { seedAdmin } from './core/auth/seed';

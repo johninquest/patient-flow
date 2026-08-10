@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { db } from '../../core/db';
 import { tasks, encounters } from '../../core/db/schema';
 import { eq } from 'drizzle-orm';

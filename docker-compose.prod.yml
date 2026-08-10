@@ -1,8 +1,8 @@
 services:
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: apps/api/Dockerfile.prod
     container_name: patient-flow-api
     restart: unless-stopped
     env_file:
@@ -29,8 +29,8 @@ services:
 
   client:
     build:
-      context: ./apps/client
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: apps/client/Dockerfile.prod
     container_name: patient-flow-client
     restart: unless-stopped
     environment:
