@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EncountersService } from './encounters.service';
 import { CreateEncounterDto } from './dto/create-encounter.dto';
 import { UpdateEncounterDto } from './dto/update-encounter.dto';
+import { EncounterResponseDto } from './dto/encounter-response.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
@@ -26,7 +27,11 @@ export class EncountersController {
 
   @Post()
   @ApiOperation({ summary: 'Create an encounter' })
-  @ApiResponse({ status: 201, description: 'Encounter created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Encounter created successfully',
+    type: EncounterResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
@@ -40,14 +45,22 @@ export class EncountersController {
 
   @Get()
   @ApiOperation({ summary: 'List all encounters' })
-  @ApiResponse({ status: 200, description: 'List of encounters' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of encounters',
+    type: [EncounterResponseDto],
+  })
   findAll() {
     return this.encountersService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get encounter by ID' })
-  @ApiResponse({ status: 200, description: 'Encounter details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Encounter details',
+    type: EncounterResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Encounter not found' })
   findOne(@Param('id') id: string) {
     return this.encountersService.findOne(id);
@@ -55,7 +68,11 @@ export class EncountersController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an encounter' })
-  @ApiResponse({ status: 200, description: 'Encounter updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Encounter updated successfully',
+    type: EncounterResponseDto,
+  })
   @ApiResponse({
     status: 400,
     description: 'Invalid status transition or optimistic lock conflict',

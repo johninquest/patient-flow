@@ -1,6 +1,7 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
+import { AuditLogResponseDto } from './dto/audit-log-response.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { CaslGuard } from '../../core/auth/guards/casl.guard';
 
@@ -12,28 +13,44 @@ export class AuditController {
 
   @Get('patient/:id')
   @ApiOperation({ summary: 'Get audit logs for a patient' })
-  @ApiResponse({ status: 200, description: 'Audit logs for the patient' })
+  @ApiResponse({
+    status: 200,
+    description: 'Audit logs for the patient',
+    type: [AuditLogResponseDto],
+  })
   async getPatientAuditLogs(@Param('id') id: string) {
     return this.auditService.findByResource('patient', id);
   }
 
   @Get('encounter/:id')
   @ApiOperation({ summary: 'Get audit logs for an encounter' })
-  @ApiResponse({ status: 200, description: 'Audit logs for the encounter' })
+  @ApiResponse({
+    status: 200,
+    description: 'Audit logs for the encounter',
+    type: [AuditLogResponseDto],
+  })
   async getEncounterAuditLogs(@Param('id') id: string) {
     return this.auditService.findByResource('encounter', id);
   }
 
   @Get('task/:id')
   @ApiOperation({ summary: 'Get audit logs for a task' })
-  @ApiResponse({ status: 200, description: 'Audit logs for the task' })
+  @ApiResponse({
+    status: 200,
+    description: 'Audit logs for the task',
+    type: [AuditLogResponseDto],
+  })
   async getTaskAuditLogs(@Param('id') id: string) {
     return this.auditService.findByResource('task', id);
   }
 
   @Get('user/:id')
   @ApiOperation({ summary: 'Get audit logs for a user' })
-  @ApiResponse({ status: 200, description: 'Audit logs for the user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Audit logs for the user',
+    type: [AuditLogResponseDto],
+  })
   async getUserAuditLogs(@Param('id') id: string) {
     return this.auditService.findByActor(id);
   }

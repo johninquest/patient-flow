@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 const VALID_ROLES = [
   'admin',
@@ -8,6 +9,11 @@ const VALID_ROLES = [
 ] as const;
 
 export class UpdateUserRoleDto {
+  @ApiPropertyOptional({
+    description: 'User role',
+    enum: VALID_ROLES,
+    example: 'provider',
+  })
   @IsOptional()
   @IsString()
   @IsIn(VALID_ROLES, {
@@ -15,6 +21,10 @@ export class UpdateUserRoleDto {
   })
   role?: string;
 
+  @ApiPropertyOptional({
+    description: 'Professional title/designation',
+    example: 'Doctor',
+  })
   @IsOptional()
   @IsString()
   title?: string;

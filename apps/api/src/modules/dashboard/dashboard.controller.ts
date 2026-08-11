@@ -1,6 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
+import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 
 @ApiTags('Dashboard')
@@ -11,7 +12,11 @@ export class DashboardController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Get dashboard statistics' })
-  @ApiResponse({ status: 200, description: 'Dashboard statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard statistics',
+    type: DashboardStatsDto,
+  })
   async getStats() {
     return this.dashboardService.getStats();
   }

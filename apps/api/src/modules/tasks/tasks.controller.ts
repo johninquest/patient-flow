@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { TaskResponseDto } from './dto/task-response.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
@@ -27,7 +28,11 @@ export class TasksController {
 
   @Post()
   @ApiOperation({ summary: 'Create a task' })
-  @ApiResponse({ status: 201, description: 'Task created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Task created successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Encounter not found' })
@@ -41,7 +46,11 @@ export class TasksController {
 
   @Get()
   @ApiOperation({ summary: 'List all tasks or filter by encounter' })
-  @ApiResponse({ status: 200, description: 'List of tasks' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of tasks',
+    type: [TaskResponseDto],
+  })
   findAll(@Query('encounter_id') encounterId?: string) {
     if (encounterId) {
       return this.tasksService.findByEncounter(encounterId);
@@ -51,7 +60,11 @@ export class TasksController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get task by ID' })
-  @ApiResponse({ status: 200, description: 'Task details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task details',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Task not found' })
   findOne(@Param('id') id: string) {
     return this.tasksService.findOne(id);
@@ -59,7 +72,11 @@ export class TasksController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a task' })
-  @ApiResponse({ status: 200, description: 'Task updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task updated successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   update(

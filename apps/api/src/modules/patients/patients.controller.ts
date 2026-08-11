@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { PatientResponseDto } from './dto/patient-response.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { RolesGuard } from '../../core/auth/guards/roles.guard';
@@ -30,7 +31,11 @@ export class PatientsController {
   @UseGuards(RolesGuard)
   @Roles('clinical_staff', 'admin')
   @ApiOperation({ summary: 'Create a patient (clinical staff and admin only)' })
-  @ApiResponse({ status: 201, description: 'Patient created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Patient created successfully',
+    type: PatientResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({
     status: 403,
@@ -49,6 +54,7 @@ export class PatientsController {
   @ApiResponse({
     status: 200,
     description: 'List of patients (filtered by caller role)',
+    type: [PatientResponseDto],
   })
   findAll(@CurrentUser() user: any) {
     return this.patientsService.findAll(user.role);
@@ -59,6 +65,7 @@ export class PatientsController {
   @ApiResponse({
     status: 200,
     description: 'Patient details (filtered by caller role)',
+    type: PatientResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
@@ -69,7 +76,11 @@ export class PatientsController {
   @ApiOperation({
     summary: 'Update a patient (section-level write enforcement)',
   })
-  @ApiResponse({ status: 200, description: 'Patient updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient updated successfully',
+    type: PatientResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Write outside allowed sections' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   update(

@@ -12,6 +12,7 @@ import { UserService } from './user.service';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { ProfileResponseDto } from './dto/profile-response.dto';
 import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { RolesGuard } from '../../core/auth/guards/roles.guard';
 import { Roles } from '../../core/auth/decorators/roles.decorator';
@@ -27,7 +28,11 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Create a new user account (admin only)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    type: ProfileResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
@@ -39,7 +44,11 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all users (admin only)' })
-  @ApiResponse({ status: 200, description: 'List of users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users',
+    type: [ProfileResponseDto],
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   findAll() {
     return this.userService.findAll();
@@ -47,7 +56,11 @@ export class UserController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Current user profile data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile data',
+    type: ProfileResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   getMyProfile(@CurrentUser() currentUser: any) {
     return this.userService.findMe(currentUser.id);
@@ -57,7 +70,11 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Get user by ID (admin only)' })
-  @ApiResponse({ status: 200, description: 'User details' })
+  @ApiResponse({
+    status: 200,
+    description: 'User details',
+    type: ProfileResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   findOne(@Param('id') id: string) {
@@ -68,7 +85,11 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update user role or title (admin only)' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
+    type: ProfileResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({
     status: 403,
@@ -89,7 +110,11 @@ export class UserController {
   @ApiOperation({
     summary: 'Update user status (active/suspended) (admin only)',
   })
-  @ApiResponse({ status: 200, description: 'User status updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User status updated successfully',
+    type: ProfileResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({
     status: 403,
