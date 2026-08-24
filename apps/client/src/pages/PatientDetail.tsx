@@ -174,9 +174,20 @@ export default function PatientDetail() {
             <h4 className="text-sm font-medium text-text-primary">{t('patients.sections.identity')}</h4>
           </div>
           <dl>
-            <DetailRow label={t('patients.fields.documentType')} value={patient.identity.document_type} alternate />
-            <DetailRow label={t('patients.fields.countryNational')} value={resolvedNationality} />
-            <DetailRow label={t('patients.fields.scannedDocument')} value={patient.identity.scanned_document ? t('common.yes') : t('common.no')} alternate />
+            <DetailRow
+              label={t('patients.fields.documentType')}
+              value={
+                patient.identity.document_type === 'national_id'
+                  ? t('patients.fields.documentTypeNationalId')
+                  : patient.identity.document_type === 'passport'
+                    ? t('patients.fields.documentTypePassport')
+                    : patient.identity.document_type
+              }
+              alternate
+            />
+            <DetailRow label={t('patients.fields.documentNumber')} value={patient.identity.document_number} />
+            <DetailRow label={t('patients.fields.countryNational')} value={resolvedNationality} alternate />
+            <DetailRow label={t('patients.fields.scannedDocument')} value={patient.identity.scanned_document ? t('common.yes') : t('common.no')} />
           </dl>
         </Card>
       )}

@@ -67,6 +67,11 @@
     },
     "fields": {
       "documentType": "Type de document",
+      "documentTypeNationalId": "Carte d'identité nationale",
+      "documentTypePassport": "Passeport",
+      "documentTypeOther": "Autre",
+      "documentTypeOtherPlaceholder": "Préciser le type de document",
+      "documentNumber": "Numéro de document",
       "countryNational": "Nationalité",
       "scannedDocument": "Document numérisé",
       "addressStreet": "Rue",

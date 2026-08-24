@@ -33,7 +33,7 @@ export default function PatientForm() {
     phone: '',
     email: '',
     address: { street: '', postal_code: '', city: '', country: '' },
-    identity: { document_type: '', country_national: '', scanned_document: false },
+    identity: { document_type: '', document_number: '', country_national: '', scanned_document: false },
     financials: { health_insurance: '', reimbursement: '', currency: '' },
     emergency_contact: { name: '', relation: '', phone: '', email: '', comments: '' },
     medical_history: '',
@@ -49,6 +49,15 @@ export default function PatientForm() {
   const countryOptions = useMemo(() => getCountryOptions(locale), [locale]);
   const currencyOptions = useMemo(() => getCurrencyOptions(locale), [locale]);
 
+  const documentTypeOptions = useMemo(() => [
+    { value: 'national_id', label: t('patients.fields.documentTypeNationalId') },
+    { value: 'passport', label: t('patients.fields.documentTypePassport') },
+    { value: 'other', label: t('patients.fields.documentTypeOther') },
+  ], [t]);
+
+  // Track whether "Other" is selected in the document type dropdown
+  const [isOtherDocType, setIsOtherDocType] = useState(false);
+
   useEffect(() => {
     if (isEdit && existingPatient) {
       setFormData({
@@ -58,7 +67,7 @@ export default function PatientForm() {
         phone: existingPatient.phone ?? '',
         email: existingPatient.email ?? '',
         address: { street: '', postal_code: '', city: '', country: '', ...existingPatient.address },
-        identity: { document_type: '', country_national: '', scanned_document: false, ...existingPatient.identity },
+        identity: { document_type: '', document_number: '', country_national: '', scanned_document: false, ...existingPatient.identity },
         financials: { health_insurance: '', reimbursement: '', currency: '', ...existingPatient.financials },
         emergency_contact: { name: '', relation: '', phone: '', email: '', comments: '', ...existingPatient.emergency_contact },
         medical_history: existingPatient.medical_history ?? '',
@@ -148,9 +157,10 @@ export default function PatientForm() {
     // Identity section
     if (canWriteSection(role, 'identity')) {
       const ident = formData.identity;
-      if (ident && (ident.document_type || ident.country_national || ident.scanned_document)) {
+      if (ident && (ident.document_type || ident.document_number || ident.country_national || ident.scanned_document)) {
         payload.identity = {
           document_type: ident.document_type || undefined,
+          document_number: ident.document_number || undefined,
           country_national: ident.country_national || undefined,
           scanned_document: ident.scanned_document ?? undefined,
         };
@@ -353,10 +363,27 @@ export default function PatientForm() {
             <div className="space-y-4 pt-6 border-t border-border-default">
               <h4 className="text-sm font-medium text-text-primary">{t('patients.sections.identity')}</h4>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <FormInput
+                <FormSelect
                   label={t('patients.fields.documentType')}
-                  value={formData.identity.document_type}
-                  onChange={handleNestedChange('identity', 'document_type')}
+                  value={isOtherDocType ? 'other' : formData.identity.document_type}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'other') {
+                      setIsOtherDocType(true);
+                      setFormData((prev) => ({
+                        ...prev,
+                        identity: { ...prev.identity, document_type: '' },
+                      }));
+                    } else {
+                      setIsOtherDocType(false);
+                      setFormData((prev) => ({
+                        ...prev,
+                        identity: { ...prev.identity, document_type: val },
+                      }));
+                    }
+                  }}
+                  options={documentTypeOptions}
+                  placeholder={t('patients.fields.documentType')}
                 />
                 <FormSelect
                   label={t('patients.fields.countryNational')}
@@ -366,6 +393,19 @@ export default function PatientForm() {
                   placeholder={t('patients.selectCountry')}
                 />
               </div>
+              {isOtherDocType && (
+                <FormInput
+                  label={t('patients.fields.documentTypeOtherPlaceholder')}
+                  value={formData.identity.document_type}
+                  onChange={handleNestedChange('identity', 'document_type')}
+                  placeholder={t('patients.fields.documentTypeOtherPlaceholder')}
+                />
+              )}
+              <FormInput
+                label={t('patients.fields.documentNumber')}
+                value={formData.identity.document_number}
+                onChange={handleNestedChange('identity', 'document_number')}
+              />
               <label className="flex items-center gap-2 text-sm text-text-primary">
                 <input
                   type="checkbox"

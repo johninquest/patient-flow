@@ -44,11 +44,20 @@ export class AddressDto {
 
 export class IdentityDto {
   @ApiPropertyOptional({
-    description: 'Document type (e.g. passport, ID card)',
+    description: 'Document type: national_id, passport, or a custom string for other types',
+    example: 'national_id',
   })
   @IsOptional()
   @IsString()
   document_type?: string;
+
+  @ApiPropertyOptional({
+    description: 'Document identification number (e.g. passport number, national ID number)',
+    example: 'AB1234567',
+  })
+  @IsOptional()
+  @IsString()
+  document_number?: string;
 
   @ApiPropertyOptional({
     description: 'Nationality (ISO 3166-1 alpha-2)',

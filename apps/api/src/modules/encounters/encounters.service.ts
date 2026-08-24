@@ -10,7 +10,7 @@ import { eq, and } from 'drizzle-orm';
 import { CreateEncounterDto } from './dto/create-encounter.dto';
 import { UpdateEncounterDto } from './dto/update-encounter.dto';
 import { AuditService } from '../audit/audit.service';
-import { AppAbility } from '../../core/auth/ability';
+import type { AppAbility } from '../../core/auth/ability';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 // Finite State Machine: defines valid status transitions

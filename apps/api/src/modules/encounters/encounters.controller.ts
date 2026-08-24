@@ -17,7 +17,7 @@ import { AuthGuard } from '../../core/auth/guards/auth.guard';
 import { CaslGuard } from '../../core/auth/guards/casl.guard';
 import { CurrentUser } from '../../core/auth/decorators/user.decorator';
 import { Ability } from '../../core/auth/decorators/ability.decorator';
-import { AppAbility } from '../../core/auth/ability';
+import type { AppAbility } from '../../core/auth/ability';
 
 @ApiTags('Encounters')
 @Controller('encounters')

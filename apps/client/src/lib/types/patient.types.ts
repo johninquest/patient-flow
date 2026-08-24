@@ -9,6 +9,7 @@ export interface Address {
 
 export interface Identity {
   document_type?: string;
+  document_number?: string;
   country_national?: string;
   scanned_document?: boolean;
 }

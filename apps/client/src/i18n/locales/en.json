@@ -67,6 +67,11 @@
     },
     "fields": {
       "documentType": "Document Type",
+      "documentTypeNationalId": "National ID",
+      "documentTypePassport": "Passport",
+      "documentTypeOther": "Other",
+      "documentTypeOtherPlaceholder": "Specify document type",
+      "documentNumber": "Document Number",
       "countryNational": "Nationality",
       "scannedDocument": "Document scanned",
       "addressStreet": "Street",

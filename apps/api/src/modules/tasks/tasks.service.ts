@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AuditService } from '../audit/audit.service';
-import { AppAbility } from '../../core/auth/ability';
+import type { AppAbility } from '../../core/auth/ability';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 @Injectable()

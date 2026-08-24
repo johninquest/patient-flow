@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AuditService } from '../audit/audit.service';
-import { AppAbility } from '../../core/auth/ability';
+import type { AppAbility } from '../../core/auth/ability';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util';
 
 type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
