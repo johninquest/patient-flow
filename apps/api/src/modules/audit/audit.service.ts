@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { db } from '../../core/db';
-import { audit_log } from '../../core/db/schema';
-import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { db } from '../../core/db/index.js';
+import { audit_log } from '../../core/db/schema.js';
+import { CreateAuditLogDto } from './dto/create-audit-log.dto.js';
 import { eq, desc } from 'drizzle-orm';
 
 @Injectable()

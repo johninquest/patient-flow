@@ -13,7 +13,7 @@
 | Backend | NestJS · Node.js LTS · npm |
 | Database | PostgreSQL 18 · Drizzle ORM |
 | Auth | Better Auth (basic — no org plugin) |
-| Validation | class-validator + class-transformer |
+| Validation | Zod v4 + Standard Schema (`@Body({ schema })`) |
 | API Docs | @nestjs/swagger |
 | Frontend | React 18 · TypeScript · Vite 5 (CSR SPA) |
 | Styling | Tailwind CSS v4 + Design System |
@@ -88,7 +88,7 @@ docs/
 - **AuthGuard + @CurrentUser()** — every protected endpoint uses `@UseGuards(AuthGuard)` at class level and `@CurrentUser()` to access the user.
 - **RBAC** — `@Roles('admin', 'provider')` decorator + `RolesGuard` for role-based access control.
 - **Audit logging** — every mutation (create/update/delete) calls `AuditService.record()`. Read audit for sensitive endpoints logged async.
-- **DTOs** — all request bodies validated via class-validator DTOs. Create DTOs mark required fields, Update DTOs make everything `@IsOptional()`.
+- **DTOs** — all request bodies validated via Zod schemas attached to the route (`@Body({ schema })`), enforced by the global `StandardSchemaValidationPipe`. Schemas use `.strict()` to reject unknown keys (there is no pipe-level whitelist). Create schemas mark required fields, Update schemas make everything `.optional()`. Export the inferred type (`z.infer<...>`) for use in services.
 - **Swagger** — every endpoint documented with `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()`.
 - **Exceptions** — use NestJS built-in: `NotFoundException`, `ForbiddenException`, `BadRequestException`. Never return error objects.
 

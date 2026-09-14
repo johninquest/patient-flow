@@ -1,44 +1,23 @@
-import {
-  IsString,
-  IsEmail,
-  MinLength,
-  IsOptional,
-  IsIn,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class CreateUserDto {
-  @ApiProperty({ description: 'Full name of the user', example: 'John Doe' })
-  @IsString()
-  @MinLength(2)
-  name: string;
+export const USER_ROLES = [
+  'admin',
+  'provider',
+  'clinical_staff',
+  'front_desk',
+] as const;
 
-  @ApiProperty({ description: 'Email address', example: 'john.doe@clinic.com' })
-  @IsEmail()
-  email: string;
-
-  @ApiProperty({
-    description: 'Temporary password (min 8 characters)',
-    example: 'TempPass123!',
+export const createUserSchema = z
+  .object({
+    name: z.string().min(2).describe('Full name of the user'),
+    email: z.email().describe('Email address'),
+    password: z
+      .string()
+      .min(8)
+      .describe('Temporary password (min 8 characters)'),
+    role: z.enum(USER_ROLES).describe('User role'),
+    title: z.string().optional().describe('Professional title/designation'),
   })
-  @IsString()
-  @MinLength(8)
-  password: string;
+  .strict();
 
-  @ApiProperty({
-    description: 'User role',
-    enum: ['admin', 'provider', 'clinical_staff', 'front_desk'],
-    example: 'provider',
-  })
-  @IsString()
-  @IsIn(['admin', 'provider', 'clinical_staff', 'front_desk'])
-  role: string;
-
-  @ApiPropertyOptional({
-    description: 'Professional title/designation',
-    example: 'Doctor',
-  })
-  @IsOptional()
-  @IsString()
-  title?: string;
-}
+export type CreateUserDto = z.infer<typeof createUserSchema>;

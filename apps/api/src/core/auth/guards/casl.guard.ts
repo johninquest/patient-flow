@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { defineAbilitiesFor } from '../ability';
+import { defineAbilitiesFor } from '../ability.js';
 
 /**
  * CASL Guard — attaches the user's ability object to the request.

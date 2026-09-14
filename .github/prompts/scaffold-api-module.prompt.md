@@ -44,7 +44,7 @@ Follow the service pattern:
 - Audit log BEFORE delete operations
 
 ### 4. `apps/api/src/modules/<name>/dto/create-<name>.dto.ts`
-- class-validator decorators
+- Zod schema + inferred type (`z.infer<typeof schema>`)
 - Required fields: `@IsNotEmpty()` + type decorator
 - Optional fields: `@IsOptional()` + type decorator
 

@@ -21,7 +21,7 @@
 | ID format | `uuidv7` for business entities, `text` for auth tables (Better Auth) |
 | Timestamps | ISO 8601 strings in responses (`created_at`, `updated_at`) |
 | Error format | NestJS default: `{ "statusCode": number, "message": string, "error": string }` |
-| Validation | `class-validator` + `class-transformer` — `whitelist: true`, `forbidNonWhitelisted: true` |
+| Validation | Zod v4 schemas via `@Body({ schema })` + `StandardSchemaValidationPipe`. Unknown keys rejected with `.strict()` (replaces `forbidNonWhitelisted`) |
 | Audit | Every mutation logged via `AuditService.record()` with action format `entity.verb` |
 | Roles | `admin`, `provider`, `clinical_staff`, `front_desk` |
 

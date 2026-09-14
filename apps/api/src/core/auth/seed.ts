@@ -1,5 +1,5 @@
-import { db } from '../db';
-import { user, audit_log } from '../db/schema';
+import { db } from '../db/index.js';
+import { user, audit_log } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 /**

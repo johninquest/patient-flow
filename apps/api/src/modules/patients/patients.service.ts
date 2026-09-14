@@ -3,14 +3,14 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { db } from '../../core/db';
-import { patients } from '../../core/db/schema';
+import { db } from '../../core/db/index.js';
+import { patients } from '../../core/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { CreatePatientDto } from './dto/create-patient.dto';
-import { UpdatePatientDto } from './dto/update-patient.dto';
-import { AuditService } from '../audit/audit.service';
-import type { AppAbility } from '../../core/auth/ability';
-import { translateDatabaseError } from '../../core/common/utils/database-error.util';
+import { CreatePatientDto } from './dto/create-patient.dto.js';
+import { UpdatePatientDto } from './dto/update-patient.dto.js';
+import { AuditService } from '../audit/audit.service.js';
+import type { AppAbility } from '../../core/auth/ability.js';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
 type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
 

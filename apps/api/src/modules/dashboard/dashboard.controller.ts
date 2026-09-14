@@ -1,8 +1,8 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { DashboardService } from './dashboard.service';
-import { DashboardStatsDto } from './dto/dashboard-stats.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
+import { DashboardService } from './dashboard.service.js';
+import { DashboardStatsDto } from './dto/dashboard-stats.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
 
 @ApiTags('Dashboard')
 @Controller('dashboard')

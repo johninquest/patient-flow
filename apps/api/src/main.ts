@@ -1,13 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import {
-  ValidationPipe,
-  BadRequestException,
-  ValidationError,
-} from '@nestjs/common';
+import { StandardSchemaValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { seedAdmin } from './core/auth/seed';
-import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter';
+import { createSchema } from 'zod-openapi';
+import { AppModule } from './app.module.js';
+import { seedAdmin } from './core/auth/seed.js';
+import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter.js';
+import { createValidationExceptionFactory } from './core/common/validation-exception.factory.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -35,27 +33,15 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
-  // Global validation pipe for DTOs with structured error responses
+  // Global validation pipe.
+  //
+  // Validation is driven by the Standard Schema (Zod) attached to each route's
+  // `@Body({ schema })` / `@Param({ schema })` decorator. The pipe itself
+  // provides no whitelisting options — unknown-key rejection is expressed in
+  // the Zod schemas via `.strict()`.
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      exceptionFactory: (errors: ValidationError[]) => {
-        const fieldErrors = errors.map((error) => {
-          const constraints = error.constraints || {};
-          const messages = Object.values(constraints);
-          return {
-            field: error.property,
-            message: messages.join(', '),
-          };
-        });
-        return new BadRequestException({
-          error: 'VALIDATION_ERROR',
-          message: 'Validation failed',
-          errors: fieldErrors,
-        });
-      },
+    new StandardSchemaValidationPipe({
+      exceptionFactory: createValidationExceptionFactory(),
     }),
   );
 
@@ -70,7 +56,19 @@ async function bootstrap() {
     .addCookieAuth('session_token')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  // Request bodies are documented from the same Zod schemas used for
+  // validation (attached via `@Body({ schema })`). zod-openapi converts them to
+  // OpenAPI 3.0; `schemaType` distinguishes the input shape from the output
+  // shape once schemas start transforming values.
+  const document = SwaggerModule.createDocument(app, config, {
+    standardSchemaConverter: (schema, { schemaType }) => {
+      const converted = createSchema(schema as never, {
+        io: schemaType,
+        openapiVersion: '3.0.0',
+      });
+      return { schema: converted.schema, components: converted.components };
+    },
+  });
   SwaggerModule.setup('api/docs', app, document);
 
   // Configure logging based on environment

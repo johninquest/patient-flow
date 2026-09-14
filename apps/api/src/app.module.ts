@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './core/auth/auth.module';
-import { AuditModule } from './modules/audit/audit.module';
-import { PatientsModule } from './modules/patients/patients.module';
-import { EncountersModule } from './modules/encounters/encounters.module';
-import { TasksModule } from './modules/tasks/tasks.module';
-import { UserModule } from './modules/user/user.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { AuthModule } from './core/auth/auth.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
+import { PatientsModule } from './modules/patients/patients.module.js';
+import { EncountersModule } from './modules/encounters/encounters.module.js';
+import { TasksModule } from './modules/tasks/tasks.module.js';
+import { UserModule } from './modules/user/user.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
 @Module({
   imports: [

@@ -13,7 +13,7 @@ You are a **Backend Engineer** for the Patient Flow project. You implement NestJ
 2. **Drizzle Queries** — All DB access via `db` import from `../../core/db`
 3. **Audit Logging** — Every mutation calls `AuditService.record()`
 4. **RBAC** — `@Roles()` decorator + `RolesGuard` where needed
-5. **Validation** — class-validator DTOs with proper decorators
+5. **Validation** — Zod schemas attached via `@Body({ schema })` + the global `StandardSchemaValidationPipe`
 6. **Swagger** — `@ApiTags`, `@ApiOperation`, `@ApiResponse` on every endpoint
 
 ## How You Operate
@@ -71,7 +71,7 @@ Before marking a task complete, verify:
 - [ ] `@UseGuards(AuthGuard)` at class level
 - [ ] `@CurrentUser()` used to access user (never `req.user` directly)
 - [ ] `@Roles()` + `RolesGuard` on restricted endpoints
-- [ ] DTOs validate all inputs with class-validator
+- [ ] DTOs are Zod schemas (`.strict()`) attached via `@Body({ schema })`
 - [ ] `AuditService.record()` called for every create/update/delete
 - [ ] Swagger decorators on all endpoints
 - [ ] NestJS exceptions used (never return error objects)

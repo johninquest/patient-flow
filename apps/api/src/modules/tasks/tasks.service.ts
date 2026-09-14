@@ -3,14 +3,14 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { db } from '../../core/db';
-import { tasks, encounters } from '../../core/db/schema';
+import { db } from '../../core/db/index.js';
+import { tasks, encounters } from '../../core/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { AuditService } from '../audit/audit.service';
-import type { AppAbility } from '../../core/auth/ability';
-import { translateDatabaseError } from '../../core/common/utils/database-error.util';
+import { CreateTaskDto } from './dto/create-task.dto.js';
+import { UpdateTaskDto } from './dto/update-task.dto.js';
+import { AuditService } from '../audit/audit.service.js';
+import type { AppAbility } from '../../core/auth/ability.js';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
 @Injectable()
 export class TasksService {

@@ -10,15 +10,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { TasksService } from './tasks.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { TaskResponseDto } from './dto/task-response.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { CaslGuard } from '../../core/auth/guards/casl.guard';
-import { CurrentUser } from '../../core/auth/decorators/user.decorator';
-import { Ability } from '../../core/auth/decorators/ability.decorator';
-import type { AppAbility } from '../../core/auth/ability';
+import { TasksService } from './tasks.service.js';
+import { CreateTaskDto, createTaskSchema } from './dto/create-task.dto.js';
+import { UpdateTaskDto, updateTaskSchema } from './dto/update-task.dto.js';
+import { TaskResponseDto } from './dto/task-response.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
+import { CaslGuard } from '../../core/auth/guards/casl.guard.js';
+import { CurrentUser } from '../../core/auth/decorators/user.decorator.js';
+import { Ability } from '../../core/auth/decorators/ability.decorator.js';
+import type { AppAbility } from '../../core/auth/ability.js';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -37,7 +37,7 @@ export class TasksController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Encounter not found' })
   create(
-    @Body() dto: CreateTaskDto,
+    @Body({ schema: createTaskSchema }) dto: CreateTaskDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {
@@ -81,7 +81,7 @@ export class TasksController {
   @ApiResponse({ status: 404, description: 'Task not found' })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateTaskDto,
+    @Body({ schema: updateTaskSchema }) dto: UpdateTaskDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {

@@ -1,12 +1,101 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  AddressDto,
-  IdentityDto,
-  FinancialsDto,
-  EmergencyContactDto,
-  PhysiciansDto,
-  TransportLogisticsDto,
-} from './create-patient.dto';
+
+/**
+ * Response-side classes for nested patient sections.
+ *
+ * These exist purely to drive OpenAPI documentation for nested response
+ * objects — `@ApiProperty({ type: () => X })` needs a class reference.
+ * Validation for these sections is defined by the Zod schemas in
+ * `create-patient.dto.ts`, which are the single source of truth for input.
+ */
+class AddressDto {
+  @ApiPropertyOptional({ description: 'Street address' })
+  street?: string;
+
+  @ApiPropertyOptional({ description: 'Postal code' })
+  postal_code?: string;
+
+  @ApiPropertyOptional({ description: 'City' })
+  city?: string;
+
+  @ApiPropertyOptional({ description: 'ISO 3166-1 alpha-2 country code' })
+  country?: string;
+}
+
+class IdentityDto {
+  @ApiPropertyOptional({ description: 'Document type' })
+  document_type?: string;
+
+  @ApiPropertyOptional({ description: 'Document identification number' })
+  document_number?: string;
+
+  @ApiPropertyOptional({ description: 'Nationality (ISO 3166-1 alpha-2)' })
+  country_national?: string;
+
+  @ApiPropertyOptional({ description: 'Whether a scanned document is on file' })
+  scanned_document?: boolean;
+}
+
+class FinancialsDto {
+  @ApiPropertyOptional({ description: 'Health insurance provider' })
+  health_insurance?: string;
+
+  @ApiPropertyOptional({ description: 'Reimbursement details' })
+  reimbursement?: string;
+
+  @ApiPropertyOptional({ description: 'Currency (ISO 4217)' })
+  currency?: string;
+}
+
+class EmergencyContactDto {
+  @ApiPropertyOptional({ description: 'Contact name' })
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Relationship to patient' })
+  relation?: string;
+
+  @ApiPropertyOptional({ description: 'Contact phone number' })
+  phone?: string;
+
+  @ApiPropertyOptional({ description: 'Contact email' })
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'Additional comments' })
+  comments?: string;
+}
+
+class PhysiciansDto {
+  @ApiPropertyOptional({ description: 'Attending physician' })
+  attending?: string;
+
+  @ApiPropertyOptional({ description: 'Correspondent physician' })
+  correspondent?: string;
+
+  @ApiPropertyOptional({ description: 'Other physicians' })
+  other?: string;
+}
+
+class TransportModesDto {
+  @ApiPropertyOptional({ description: 'Public transport details' })
+  public_transport?: string;
+
+  @ApiPropertyOptional({ description: 'Taxi details' })
+  taxi?: string;
+
+  @ApiPropertyOptional({ description: 'Ambulance details' })
+  ambulance?: string;
+}
+
+class TransportLogisticsDto {
+  @ApiPropertyOptional({
+    description: 'Transport modes',
+    type: () => TransportModesDto,
+  })
+  modes?: TransportModesDto;
+
+  @ApiPropertyOptional({ description: 'Transport comments' })
+  comments?: string;
+}
 
 export class PatientResponseDto {
   @ApiProperty({

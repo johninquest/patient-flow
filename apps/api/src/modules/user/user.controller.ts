@@ -8,15 +8,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserService } from './user.service';
-import { UpdateUserRoleDto } from './dto/update-user-role.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { ProfileResponseDto } from './dto/profile-response.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { RolesGuard } from '../../core/auth/guards/roles.guard';
-import { Roles } from '../../core/auth/decorators/roles.decorator';
-import { CurrentUser } from '../../core/auth/decorators/user.decorator';
+import { UserService } from './user.service.js';
+import {
+  UpdateUserRoleDto,
+  updateUserRoleSchema,
+} from './dto/update-user-role.dto.js';
+import { CreateUserDto, createUserSchema } from './dto/create-user.dto.js';
+import {
+  UpdateUserStatusDto,
+  updateUserStatusSchema,
+} from './dto/update-user-status.dto.js';
+import { ProfileResponseDto } from './dto/profile-response.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
+import { RolesGuard } from '../../core/auth/guards/roles.guard.js';
+import { Roles } from '../../core/auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../../core/auth/decorators/user.decorator.js';
 
 @ApiTags('Users')
 @Controller('users')
@@ -36,7 +42,10 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
-  create(@Body() dto: CreateUserDto, @CurrentUser() actor: any) {
+  create(
+    @Body({ schema: createUserSchema }) dto: CreateUserDto,
+    @CurrentUser() actor: any,
+  ) {
     return this.userService.createUser(dto, actor.id, actor.role);
   }
 
@@ -98,7 +107,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found' })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateUserRoleDto,
+    @Body({ schema: updateUserRoleSchema }) dto: UpdateUserRoleDto,
     @CurrentUser() actor: any,
   ) {
     return this.userService.updateRole(id, dto, actor.id, actor.role);
@@ -123,7 +132,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found' })
   updateStatus(
     @Param('id') id: string,
-    @Body() dto: UpdateUserStatusDto,
+    @Body({ schema: updateUserStatusSchema }) dto: UpdateUserStatusDto,
     @CurrentUser() actor: any,
   ) {
     return this.userService.updateStatus(id, dto, actor.id, actor.role);

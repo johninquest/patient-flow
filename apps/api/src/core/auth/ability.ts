@@ -1,4 +1,8 @@
-import { AbilityBuilder, MongoAbility, createMongoAbility } from '@casl/ability';
+import {
+  AbilityBuilder,
+  MongoAbility,
+  createMongoAbility,
+} from '@casl/ability';
 
 export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
 export type Subjects = 'Patient' | 'Encounter' | 'Task' | 'User' | 'all';
@@ -15,7 +19,9 @@ export interface User {
  * This is the single source of truth for authorization rules.
  */
 export function defineAbilitiesFor(user: User): AppAbility {
-  const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
+  const { can, cannot, build } = new AbilityBuilder<AppAbility>(
+    createMongoAbility,
+  );
 
   switch (user.role) {
     case 'admin':

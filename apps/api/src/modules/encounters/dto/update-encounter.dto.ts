@@ -1,32 +1,23 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
+import { isoDateString } from '../../../core/common/validation.js';
 
-export class UpdateEncounterDto {
-  @ApiPropertyOptional({
-    description: 'Encounter status',
-    enum: ['scheduled', 'checked_in', 'in_progress', 'completed', 'cancelled'],
+export const updateEncounterSchema = z
+  .object({
+    status: z
+      .string()
+      .optional()
+      .describe(
+        'Encounter status (validated against the workflow FSM in the service)',
+      ),
+    assigned_to: z
+      .string()
+      .optional()
+      .describe('User ID the encounter is assigned to'),
+    scheduled_time: isoDateString
+      .optional()
+      .describe('Scheduled time (ISO 8601)'),
+    notes: z.string().optional().describe('Encounter notes'),
   })
-  @IsOptional()
-  @IsString()
-  status?: string;
+  .strict();
 
-  @ApiPropertyOptional({
-    description: 'User ID the encounter is assigned to',
-  })
-  @IsOptional()
-  @IsString()
-  assigned_to?: string;
-
-  @ApiPropertyOptional({
-    description: 'Scheduled time (ISO 8601)',
-    example: '2026-08-15T10:00:00Z',
-  })
-  @IsOptional()
-  @IsDateString()
-  scheduled_time?: string;
-
-  @ApiPropertyOptional({ description: 'Encounter notes' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
+export type UpdateEncounterDto = z.infer<typeof updateEncounterSchema>;

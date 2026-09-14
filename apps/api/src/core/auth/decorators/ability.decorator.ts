@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { AppAbility } from '../ability';
+import { AppAbility } from '../ability.js';
 
 /**
  * Decorator to access the CASL ability object from the request.

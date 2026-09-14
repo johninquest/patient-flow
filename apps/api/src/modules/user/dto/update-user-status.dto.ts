@@ -1,13 +1,9 @@
-import { IsString, IsIn } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class UpdateUserStatusDto {
-  @ApiProperty({
-    description: 'User account status',
-    enum: ['active', 'suspended'],
-    example: 'suspended',
+export const updateUserStatusSchema = z
+  .object({
+    status: z.enum(['active', 'suspended']).describe('User account status'),
   })
-  @IsString()
-  @IsIn(['active', 'suspended'])
-  status: string;
-}
+  .strict();
+
+export type UpdateUserStatusDto = z.infer<typeof updateUserStatusSchema>;

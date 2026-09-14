@@ -1,9 +1,9 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AuditService } from './audit.service';
-import { AuditLogResponseDto } from './dto/audit-log-response.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { CaslGuard } from '../../core/auth/guards/casl.guard';
+import { AuditService } from './audit.service.js';
+import { AuditLogResponseDto } from './dto/audit-log-response.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
+import { CaslGuard } from '../../core/auth/guards/casl.guard.js';
 
 @ApiTags('Audit')
 @Controller('audit')

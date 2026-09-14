@@ -1,49 +1,26 @@
-import { IsString, IsOptional, IsUUID, IsObject } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class CreateAuditLogDto {
-  @ApiProperty({ description: 'User ID of the actor' })
-  @IsString()
-  actor_user_id: string;
-
-  @ApiProperty({
-    description: 'Role of the actor',
-    example: 'admin',
+/**
+ * Internal shape for audit log records.
+ *
+ * This is not an HTTP boundary: `AuditService.record()` builds these objects
+ * itself from authenticated request context. The schema exists for consistency
+ * with the other DTOs and gives us a validation entry point should this ever
+ * be exposed.
+ */
+export const createAuditLogSchema = z
+  .object({
+    actor_user_id: z.string().describe('User ID of the actor'),
+    actor_role: z.string().describe('Role of the actor'),
+    action: z.string().describe('Action performed'),
+    resource_type: z.string().describe('Resource type affected'),
+    resource_id: z.uuid().describe('Resource ID affected'),
+    diff: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Change diff (field → { from, to })'),
+    ip_address: z.string().optional().describe('IP address of the actor'),
   })
-  @IsString()
-  actor_role: string;
+  .strict();
 
-  @ApiProperty({
-    description: 'Action performed',
-    example: 'patient.created',
-  })
-  @IsString()
-  action: string;
-
-  @ApiProperty({
-    description: 'Resource type affected',
-    example: 'patient',
-  })
-  @IsString()
-  resource_type: string;
-
-  @ApiProperty({
-    description: 'Resource ID affected',
-    example: '0192a3f4-1b2c-7d8e-9f0a-1b2c3d4e5f60',
-  })
-  @IsUUID()
-  resource_id: string;
-
-  @ApiPropertyOptional({
-    description: 'Change diff (field → { from, to })',
-    example: { status: { from: 'scheduled', to: 'checked_in' } },
-  })
-  @IsOptional()
-  @IsObject()
-  diff?: Record<string, any>;
-
-  @ApiPropertyOptional({ description: 'IP address of the actor' })
-  @IsOptional()
-  @IsString()
-  ip_address?: string;
-}
+export type CreateAuditLogDto = z.infer<typeof createAuditLogSchema>;

@@ -1,31 +1,18 @@
-import { IsString, IsOptional, IsDateString, IsUUID } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
+import { isoDateString } from '../../../core/common/validation.js';
 
-export class CreateEncounterDto {
-  @ApiProperty({
-    description: 'Patient the encounter belongs to',
-    example: '0192a3f4-1b2c-7d8e-9f0a-1b2c3d4e5f60',
+export const createEncounterSchema = z
+  .object({
+    patient_id: z.uuid().describe('Patient the encounter belongs to'),
+    assigned_to: z
+      .string()
+      .optional()
+      .describe('User ID the encounter is assigned to'),
+    scheduled_time: isoDateString
+      .optional()
+      .describe('Scheduled time (ISO 8601)'),
+    notes: z.string().optional().describe('Encounter notes'),
   })
-  @IsUUID()
-  patient_id: string;
+  .strict();
 
-  @ApiPropertyOptional({
-    description: 'User ID the encounter is assigned to',
-  })
-  @IsOptional()
-  @IsString()
-  assigned_to?: string;
-
-  @ApiPropertyOptional({
-    description: 'Scheduled time (ISO 8601)',
-    example: '2026-08-15T10:00:00Z',
-  })
-  @IsOptional()
-  @IsDateString()
-  scheduled_time?: string;
-
-  @ApiPropertyOptional({ description: 'Encounter notes' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
+export type CreateEncounterDto = z.infer<typeof createEncounterSchema>;

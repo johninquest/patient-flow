@@ -4,14 +4,14 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { db } from '../../core/db';
-import { encounters, patients } from '../../core/db/schema';
+import { db } from '../../core/db/index.js';
+import { encounters, patients } from '../../core/db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { CreateEncounterDto } from './dto/create-encounter.dto';
-import { UpdateEncounterDto } from './dto/update-encounter.dto';
-import { AuditService } from '../audit/audit.service';
-import type { AppAbility } from '../../core/auth/ability';
-import { translateDatabaseError } from '../../core/common/utils/database-error.util';
+import { CreateEncounterDto } from './dto/create-encounter.dto.js';
+import { UpdateEncounterDto } from './dto/update-encounter.dto.js';
+import { AuditService } from '../audit/audit.service.js';
+import type { AppAbility } from '../../core/auth/ability.js';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
 // Finite State Machine: defines valid status transitions
 const STATUS_TRANSITIONS: Record<string, string[]> = {

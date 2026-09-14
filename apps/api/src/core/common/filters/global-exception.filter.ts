@@ -6,8 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { ValidationError } from 'class-validator';
+import type { Request, Response } from 'express';
 
 /**
  * Structured error response format
@@ -31,8 +30,8 @@ interface FieldError {
  * structured, user-friendly error responses.
  *
  * Handles:
- * - HttpException (NestJS built-in exceptions)
- * - ValidationError (class-validator errors)
+ * - HttpException (NestJS built-in exceptions, including validation errors
+ *   raised by `StandardSchemaValidationPipe` via its exception factory)
  * - Unknown errors (catch-all for unexpected errors)
  */
 @Catch()
@@ -64,13 +63,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = resp.message || exception.message;
         errors = resp.errors;
       }
-    }
-    // Handle validation errors (should be caught by ValidationPipe, but just in case)
-    else if (this.isValidationError(exception)) {
-      statusCode = HttpStatus.BAD_REQUEST;
-      error = 'VALIDATION_ERROR';
-      message = 'Validation failed';
-      errors = this.formatValidationErrors(exception as ValidationError[]);
     }
     // Handle unknown errors
     else {
@@ -121,48 +113,5 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       500: 'INTERNAL_ERROR',
     };
     return statusMap[statusCode] || 'ERROR';
-  }
-
-  /**
-   * Check if the exception is a ValidationError array
-   */
-  private isValidationError(exception: unknown): boolean {
-    return (
-      Array.isArray(exception) &&
-      exception.length > 0 &&
-      exception[0] instanceof ValidationError
-    );
-  }
-
-  /**
-   * Format class-validator ValidationError[] into field-level errors
-   */
-  private formatValidationErrors(errors: ValidationError[]): FieldError[] {
-    const fieldErrors: FieldError[] = [];
-
-    for (const error of errors) {
-      const constraints = error.constraints || {};
-      const messages = Object.values(constraints);
-
-      if (messages.length > 0) {
-        fieldErrors.push({
-          field: error.property,
-          message: messages.join(', '),
-        });
-      }
-
-      // Handle nested validation errors
-      if (error.children && error.children.length > 0) {
-        const nestedErrors = this.formatValidationErrors(error.children);
-        nestedErrors.forEach((nested) => {
-          fieldErrors.push({
-            field: `${error.property}.${nested.field}`,
-            message: nested.message,
-          });
-        });
-      }
-    }
-
-    return fieldErrors;
   }
 }

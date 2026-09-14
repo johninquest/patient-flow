@@ -1,287 +1,142 @@
-import {
-  IsString,
-  IsOptional,
-  IsDateString,
-  IsNotEmpty,
-  IsBoolean,
-  ValidateNested,
-  IsIn,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
 import {
   ISO_COUNTRY_CODES,
   ISO_CURRENCY_CODES,
-} from '../../../core/common/iso-codes';
+} from '../../../core/common/iso-codes.js';
+import { isoDateString } from '../../../core/common/validation.js';
 
-export class AddressDto {
-  @ApiPropertyOptional({ description: 'Street address' })
-  @IsOptional()
-  @IsString()
-  street?: string;
+/**
+ * Nested patient section schemas.
+ *
+ * These are shared between the create and update DTOs and are also referenced
+ * by the response DTO for OpenAPI documentation.
+ */
 
-  @ApiPropertyOptional({ description: 'Postal code' })
-  @IsOptional()
-  @IsString()
-  postal_code?: string;
-
-  @ApiPropertyOptional({ description: 'City' })
-  @IsOptional()
-  @IsString()
-  city?: string;
-
-  @ApiPropertyOptional({
-    description: 'ISO 3166-1 alpha-2 country code',
-    enum: ISO_COUNTRY_CODES,
-    example: 'US',
+export const addressSchema = z
+  .object({
+    street: z.string().optional().describe('Street address'),
+    postal_code: z.string().optional().describe('Postal code'),
+    city: z.string().optional().describe('City'),
+    country: z
+      .enum(ISO_COUNTRY_CODES, {
+        error: 'country must be a valid ISO 3166-1 alpha-2 code',
+      })
+      .optional()
+      .describe('ISO 3166-1 alpha-2 country code'),
   })
-  @IsOptional()
-  @IsString()
-  @IsIn(ISO_COUNTRY_CODES, {
-    message: 'country must be a valid ISO 3166-1 alpha-2 code',
+  .strict();
+
+export const identitySchema = z
+  .object({
+    document_type: z
+      .string()
+      .optional()
+      .describe(
+        'Document type: national_id, passport, or a custom string for other types',
+      ),
+    document_number: z
+      .string()
+      .optional()
+      .describe(
+        'Document identification number (e.g. passport number, national ID number)',
+      ),
+    country_national: z
+      .enum(ISO_COUNTRY_CODES, {
+        error: 'country_national must be a valid ISO 3166-1 alpha-2 code',
+      })
+      .optional()
+      .describe('Nationality (ISO 3166-1 alpha-2)'),
+    scanned_document: z
+      .boolean()
+      .optional()
+      .describe('Whether a scanned document is on file'),
   })
-  country?: string;
-}
+  .strict();
 
-export class IdentityDto {
-  @ApiPropertyOptional({
-    description: 'Document type: national_id, passport, or a custom string for other types',
-    example: 'national_id',
+export const financialsSchema = z
+  .object({
+    health_insurance: z
+      .string()
+      .optional()
+      .describe('Health insurance provider'),
+    reimbursement: z.string().optional().describe('Reimbursement details'),
+    currency: z
+      .enum(ISO_CURRENCY_CODES, {
+        error: 'currency must be a valid ISO 4217 code',
+      })
+      .optional()
+      .describe('Currency (ISO 4217)'),
   })
-  @IsOptional()
-  @IsString()
-  document_type?: string;
+  .strict();
 
-  @ApiPropertyOptional({
-    description: 'Document identification number (e.g. passport number, national ID number)',
-    example: 'AB1234567',
+export const emergencyContactSchema = z
+  .object({
+    name: z.string().optional().describe('Contact name'),
+    relation: z.string().optional().describe('Relationship to patient'),
+    phone: z.string().optional().describe('Contact phone number'),
+    email: z.string().optional().describe('Contact email'),
+    comments: z.string().optional().describe('Additional comments'),
   })
-  @IsOptional()
-  @IsString()
-  document_number?: string;
+  .strict();
 
-  @ApiPropertyOptional({
-    description: 'Nationality (ISO 3166-1 alpha-2)',
-    enum: ISO_COUNTRY_CODES,
-    example: 'US',
+export const physiciansSchema = z
+  .object({
+    attending: z.string().optional().describe('Attending physician'),
+    correspondent: z.string().optional().describe('Correspondent physician'),
+    other: z.string().optional().describe('Other physicians'),
   })
-  @IsOptional()
-  @IsString()
-  @IsIn(ISO_COUNTRY_CODES, {
-    message: 'country_national must be a valid ISO 3166-1 alpha-2 code',
+  .strict();
+
+export const transportModesSchema = z
+  .object({
+    public_transport: z
+      .string()
+      .optional()
+      .describe('Public transport details'),
+    taxi: z.string().optional().describe('Taxi details'),
+    ambulance: z.string().optional().describe('Ambulance details'),
   })
-  country_national?: string;
+  .strict();
 
-  @ApiPropertyOptional({
-    description: 'Whether a scanned document is on file',
+export const transportLogisticsSchema = z
+  .object({
+    modes: transportModesSchema.optional().describe('Transport modes'),
+    comments: z.string().optional().describe('Transport comments'),
   })
-  @IsOptional()
-  @IsBoolean()
-  scanned_document?: boolean;
-}
+  .strict();
 
-export class FinancialsDto {
-  @ApiPropertyOptional({ description: 'Health insurance provider' })
-  @IsOptional()
-  @IsString()
-  health_insurance?: string;
-
-  @ApiPropertyOptional({ description: 'Reimbursement details' })
-  @IsOptional()
-  @IsString()
-  reimbursement?: string;
-
-  @ApiPropertyOptional({
-    description: 'Currency (ISO 4217)',
-    enum: ISO_CURRENCY_CODES,
-    example: 'USD',
+export const createPatientSchema = z
+  .object({
+    first_name: z.string().min(1).describe('Patient first name'),
+    last_name: z.string().min(1).describe('Patient last name'),
+    date_of_birth: isoDateString
+      .optional()
+      .describe('Date of birth (ISO 8601)'),
+    phone: z.string().optional().describe('Phone number'),
+    email: z.string().optional().describe('Email address'),
+    address: addressSchema.optional().describe('Address'),
+    identity: identitySchema.optional().describe('Identity information'),
+    financials: financialsSchema.optional().describe('Financial information'),
+    emergency_contact: emergencyContactSchema
+      .optional()
+      .describe('Emergency contact'),
+    medical_history: z.string().optional().describe('Medical history notes'),
+    medical_history_date: isoDateString
+      .optional()
+      .describe('Medical history date (ISO 8601)'),
+    physicians: physiciansSchema.optional().describe('Physicians'),
+    transport_logistics: transportLogisticsSchema
+      .optional()
+      .describe('Transport logistics'),
+    notes: z.string().optional().describe('General notes'),
   })
-  @IsOptional()
-  @IsString()
-  @IsIn(ISO_CURRENCY_CODES, {
-    message: 'currency must be a valid ISO 4217 code',
-  })
-  currency?: string;
-}
+  .strict();
 
-export class EmergencyContactDto {
-  @ApiPropertyOptional({ description: 'Contact name' })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional({ description: 'Relationship to patient' })
-  @IsOptional()
-  @IsString()
-  relation?: string;
-
-  @ApiPropertyOptional({ description: 'Contact phone number' })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiPropertyOptional({ description: 'Contact email' })
-  @IsOptional()
-  @IsString()
-  email?: string;
-
-  @ApiPropertyOptional({ description: 'Additional comments' })
-  @IsOptional()
-  @IsString()
-  comments?: string;
-}
-
-export class PhysiciansDto {
-  @ApiPropertyOptional({ description: 'Attending physician' })
-  @IsOptional()
-  @IsString()
-  attending?: string;
-
-  @ApiPropertyOptional({ description: 'Correspondent physician' })
-  @IsOptional()
-  @IsString()
-  correspondent?: string;
-
-  @ApiPropertyOptional({ description: 'Other physicians' })
-  @IsOptional()
-  @IsString()
-  other?: string;
-}
-
-export class TransportModesDto {
-  @ApiPropertyOptional({ description: 'Public transport details' })
-  @IsOptional()
-  @IsString()
-  public_transport?: string;
-
-  @ApiPropertyOptional({ description: 'Taxi details' })
-  @IsOptional()
-  @IsString()
-  taxi?: string;
-
-  @ApiPropertyOptional({ description: 'Ambulance details' })
-  @IsOptional()
-  @IsString()
-  ambulance?: string;
-}
-
-export class TransportLogisticsDto {
-  @ApiPropertyOptional({
-    description: 'Transport modes',
-    type: () => TransportModesDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => TransportModesDto)
-  modes?: TransportModesDto;
-
-  @ApiPropertyOptional({ description: 'Transport comments' })
-  @IsOptional()
-  @IsString()
-  comments?: string;
-}
-
-export class CreatePatientDto {
-  @ApiProperty({ description: 'Patient first name', example: 'Jane' })
-  @IsString()
-  @IsNotEmpty()
-  first_name: string;
-
-  @ApiProperty({ description: 'Patient last name', example: 'Doe' })
-  @IsString()
-  @IsNotEmpty()
-  last_name: string;
-
-  @ApiPropertyOptional({
-    description: 'Date of birth (ISO 8601)',
-    example: '1990-01-15',
-  })
-  @IsOptional()
-  @IsDateString()
-  date_of_birth?: string;
-
-  @ApiPropertyOptional({ description: 'Phone number', example: '+1-555-0100' })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiPropertyOptional({
-    description: 'Email address',
-    example: 'jane.doe@example.com',
-  })
-  @IsOptional()
-  @IsString()
-  email?: string;
-
-  @ApiPropertyOptional({
-    description: 'Address',
-    type: () => AddressDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => AddressDto)
-  address?: AddressDto;
-
-  @ApiPropertyOptional({
-    description: 'Identity information',
-    type: () => IdentityDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => IdentityDto)
-  identity?: IdentityDto;
-
-  @ApiPropertyOptional({
-    description: 'Financial information',
-    type: () => FinancialsDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => FinancialsDto)
-  financials?: FinancialsDto;
-
-  @ApiPropertyOptional({
-    description: 'Emergency contact',
-    type: () => EmergencyContactDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => EmergencyContactDto)
-  emergency_contact?: EmergencyContactDto;
-
-  @ApiPropertyOptional({ description: 'Medical history notes' })
-  @IsOptional()
-  @IsString()
-  medical_history?: string;
-
-  @ApiPropertyOptional({
-    description: 'Medical history date (ISO 8601)',
-    example: '2026-01-15',
-  })
-  @IsOptional()
-  @IsDateString()
-  medical_history_date?: string;
-
-  @ApiPropertyOptional({
-    description: 'Physicians',
-    type: () => PhysiciansDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => PhysiciansDto)
-  physicians?: PhysiciansDto;
-
-  @ApiPropertyOptional({
-    description: 'Transport logistics',
-    type: () => TransportLogisticsDto,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => TransportLogisticsDto)
-  transport_logistics?: TransportLogisticsDto;
-
-  @ApiPropertyOptional({ description: 'General notes' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
+export type CreatePatientDto = z.infer<typeof createPatientSchema>;
+export type AddressDto = z.infer<typeof addressSchema>;
+export type IdentityDto = z.infer<typeof identitySchema>;
+export type FinancialsDto = z.infer<typeof financialsSchema>;
+export type EmergencyContactDto = z.infer<typeof emergencyContactSchema>;
+export type PhysiciansDto = z.infer<typeof physiciansSchema>;
+export type TransportModesDto = z.infer<typeof transportModesSchema>;
+export type TransportLogisticsDto = z.infer<typeof transportLogisticsSchema>;

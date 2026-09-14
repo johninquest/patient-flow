@@ -4,16 +4,16 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
-import { db } from '../../core/db';
-import { user, session } from '../../core/db/schema';
+import { db } from '../../core/db/index.js';
+import { user, session } from '../../core/db/schema.js';
 import { eq, sql, desc } from 'drizzle-orm';
-import { UpdateUserRoleDto } from './dto/update-user-role.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { ProfileResponseDto } from './dto/profile-response.dto';
-import { AuditService } from '../audit/audit.service';
-import { getAuth } from '../../core/auth/auth';
-import { translateDatabaseError } from '../../core/common/utils/database-error.util';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
+import { ProfileResponseDto } from './dto/profile-response.dto.js';
+import { AuditService } from '../audit/audit.service.js';
+import { getAuth } from '../../core/auth/auth.js';
+import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
 @Injectable()
 export class UserService {

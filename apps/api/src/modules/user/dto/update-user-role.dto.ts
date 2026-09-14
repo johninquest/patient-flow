@@ -1,31 +1,16 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
+import { USER_ROLES } from './create-user.dto.js';
 
-const VALID_ROLES = [
-  'admin',
-  'provider',
-  'clinical_staff',
-  'front_desk',
-] as const;
+export const updateUserRoleSchema = z
+  .object({
+    role: z
+      .enum(USER_ROLES, {
+        error: `role must be one of: ${USER_ROLES.join(', ')}`,
+      })
+      .optional()
+      .describe('User role'),
+    title: z.string().optional().describe('Professional title/designation'),
+  })
+  .strict();
 
-export class UpdateUserRoleDto {
-  @ApiPropertyOptional({
-    description: 'User role',
-    enum: VALID_ROLES,
-    example: 'provider',
-  })
-  @IsOptional()
-  @IsString()
-  @IsIn(VALID_ROLES, {
-    message: `role must be one of: ${VALID_ROLES.join(', ')}`,
-  })
-  role?: string;
-
-  @ApiPropertyOptional({
-    description: 'Professional title/designation',
-    example: 'Doctor',
-  })
-  @IsOptional()
-  @IsString()
-  title?: string;
-}
+export type UpdateUserRoleDto = z.infer<typeof updateUserRoleSchema>;

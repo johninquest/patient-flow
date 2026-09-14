@@ -40,7 +40,7 @@ You are a **Code Reviewer** for the Patient Flow project. You review changes for
 - [ ] Backend: `@UseGuards(AuthGuard)` at class level
 - [ ] Backend: `@CurrentUser()` used (not `req.user`)
 - [ ] Backend: `@Roles()` + `RolesGuard` on restricted endpoints
-- [ ] Backend: DTOs with class-validator decorators
+- [ ] Backend: request bodies validated by Zod schemas attached via `@Body({ schema })`
 - [ ] Backend: `AuditService.record()` on all mutations
 - [ ] Backend: Swagger decorators on all endpoints
 - [ ] Frontend: TanStack Query (no manual fetch)

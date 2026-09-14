@@ -9,17 +9,23 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PatientsService } from './patients.service';
-import { CreatePatientDto } from './dto/create-patient.dto';
-import { UpdatePatientDto } from './dto/update-patient.dto';
-import { PatientResponseDto } from './dto/patient-response.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { CaslGuard } from '../../core/auth/guards/casl.guard';
-import { RolesGuard } from '../../core/auth/guards/roles.guard';
-import { Roles } from '../../core/auth/decorators/roles.decorator';
-import { CurrentUser } from '../../core/auth/decorators/user.decorator';
-import { Ability } from '../../core/auth/decorators/ability.decorator';
-import type { AppAbility } from '../../core/auth/ability';
+import { PatientsService } from './patients.service.js';
+import {
+  CreatePatientDto,
+  createPatientSchema,
+} from './dto/create-patient.dto.js';
+import {
+  UpdatePatientDto,
+  updatePatientSchema,
+} from './dto/update-patient.dto.js';
+import { PatientResponseDto } from './dto/patient-response.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
+import { CaslGuard } from '../../core/auth/guards/casl.guard.js';
+import { RolesGuard } from '../../core/auth/guards/roles.guard.js';
+import { Roles } from '../../core/auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../../core/auth/decorators/user.decorator.js';
+import { Ability } from '../../core/auth/decorators/ability.decorator.js';
+import type { AppAbility } from '../../core/auth/ability.js';
 
 @ApiTags('Patients')
 @Controller('patients')
@@ -42,7 +48,7 @@ export class PatientsController {
     description: 'Forbidden — clinical staff or admin role required',
   })
   create(
-    @Body() dto: CreatePatientDto,
+    @Body({ schema: createPatientSchema }) dto: CreatePatientDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {
@@ -85,7 +91,7 @@ export class PatientsController {
   @ApiResponse({ status: 404, description: 'Patient not found' })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdatePatientDto,
+    @Body({ schema: updatePatientSchema }) dto: UpdatePatientDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {

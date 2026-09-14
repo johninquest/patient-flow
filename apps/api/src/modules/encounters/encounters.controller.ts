@@ -9,15 +9,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { EncountersService } from './encounters.service';
-import { CreateEncounterDto } from './dto/create-encounter.dto';
-import { UpdateEncounterDto } from './dto/update-encounter.dto';
-import { EncounterResponseDto } from './dto/encounter-response.dto';
-import { AuthGuard } from '../../core/auth/guards/auth.guard';
-import { CaslGuard } from '../../core/auth/guards/casl.guard';
-import { CurrentUser } from '../../core/auth/decorators/user.decorator';
-import { Ability } from '../../core/auth/decorators/ability.decorator';
-import type { AppAbility } from '../../core/auth/ability';
+import { EncountersService } from './encounters.service.js';
+import {
+  CreateEncounterDto,
+  createEncounterSchema,
+} from './dto/create-encounter.dto.js';
+import {
+  UpdateEncounterDto,
+  updateEncounterSchema,
+} from './dto/update-encounter.dto.js';
+import { EncounterResponseDto } from './dto/encounter-response.dto.js';
+import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
+import { CaslGuard } from '../../core/auth/guards/casl.guard.js';
+import { CurrentUser } from '../../core/auth/decorators/user.decorator.js';
+import { Ability } from '../../core/auth/decorators/ability.decorator.js';
+import type { AppAbility } from '../../core/auth/ability.js';
 
 @ApiTags('Encounters')
 @Controller('encounters')
@@ -36,7 +42,7 @@ export class EncountersController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   create(
-    @Body() dto: CreateEncounterDto,
+    @Body({ schema: createEncounterSchema }) dto: CreateEncounterDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {
@@ -84,7 +90,7 @@ export class EncountersController {
   @ApiResponse({ status: 404, description: 'Encounter not found' })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateEncounterDto,
+    @Body({ schema: updateEncounterSchema }) dto: UpdateEncounterDto,
     @CurrentUser() user: any,
     @Ability() ability: AppAbility,
   ) {

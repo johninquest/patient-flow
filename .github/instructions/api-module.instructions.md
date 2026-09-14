@@ -15,7 +15,7 @@ modules/<name>/
   <name>.controller.ts    # Thin controller (HTTP concerns only)
   <name>.service.ts       # Business logic + DB queries
   dto/
-    create-<name>.dto.ts  # Create DTO with class-validator
+    create-<name>.dto.ts  # Zod schema + inferred type
     update-<name>.dto.ts  # Update DTO (all fields optional)
 ```
 
@@ -44,13 +44,13 @@ export class ResourceController {
 
   @Post()
   @ApiOperation({ summary: 'Create resource' })
-  create(@Body() dto: CreateResourceDto, @CurrentUser() user: any) {
+  create(@Body({ schema: createResourceSchema }) dto: CreateResourceDto, @CurrentUser() user: any) {
     return this.resourceService.create(dto, user.id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update resource' })
-  update(@Param('id') id: string, @Body() dto: UpdateResourceDto, @CurrentUser() user: any) {
+  update(@Param('id') id: string, @Body({ schema: updateResourceSchema }) dto: UpdateResourceDto, @CurrentUser() user: any) {
     return this.resourceService.update(id, dto, user.id);
   }
 
@@ -71,7 +71,7 @@ Use the `@Roles()` decorator + `RolesGuard` for endpoints that require specific 
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('admin', 'provider')
 @ApiOperation({ summary: 'Create clinical note' })
-create(@Body() dto: CreateNoteDto, @CurrentUser() user: any) {
+create(@Body({ schema: createNoteSchema }) dto: CreateNoteDto, @CurrentUser() user: any) {
   return this.service.create(dto, user.id);
 }
 ```
@@ -146,59 +146,76 @@ export class ResourceService {
 - For deletes: audit log BEFORE the delete operation
 - Never return raw DB errors to the client — let NestJS exception filters handle it
 
-## DTO Pattern
+## DTO Pattern (Zod)
 
-### Create DTO — required fields marked, optional fields use `@IsOptional()`
+Request DTOs are **Zod schemas**, not classes. Validation is performed by the
+global `StandardSchemaValidationPipe`, which reads the schema attached to the
+route's `@Body({ schema })` option.
+
+> ⚠️ A `@Body()` without a `schema` is **not validated at all** — there is no
+> global whitelist fallback. Always attach the schema.
+
+### Create DTO — required fields marked, optional fields use `.optional()`
 
 ```typescript
-import { IsString, IsOptional, IsNotEmpty, IsDateString, IsEnum, IsBoolean } from 'class-validator';
+import { z } from 'zod';
+import { isoDateString } from '../../../core/common/validation.js';
 
-export class CreatePatientDto {
-  @IsString()
-  @IsNotEmpty()
-  first_name: string;
+export const createPatientSchema = z
+  .object({
+    first_name: z.string().min(1),
+    last_name: z.string().min(1),
+    date_of_birth: isoDateString.optional(),
+    phone: z.string().optional(),
+    email: z.string().optional(),
+  })
+  .strict(); // rejects unknown keys (replaces forbidNonWhitelisted)
 
-  @IsString()
-  @IsNotEmpty()
-  last_name: string;
-
-  @IsDateString()
-  @IsNotEmpty()
-  date_of_birth: string;
-
-  @IsString()
-  @IsOptional()
-  phone?: string;
-
-  @IsString()
-  @IsOptional()
-  email?: string;
-}
+export type CreatePatientDto = z.infer<typeof createPatientSchema>;
 ```
 
 ### Update DTO — all fields optional
 
 ```typescript
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { z } from 'zod';
+import { isoDateString } from '../../../core/common/validation.js';
 
-export class UpdatePatientDto {
-  @IsString()
-  @IsOptional()
-  first_name?: string;
+export const updatePatientSchema = z
+  .object({
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+    date_of_birth: isoDateString.optional(),
+    phone: z.string().optional(),
+  })
+  .strict();
 
-  @IsString()
-  @IsOptional()
-  last_name?: string;
+export type UpdatePatientDto = z.infer<typeof updatePatientSchema>;
+```
 
-  @IsDateString()
-  @IsOptional()
-  date_of_birth?: string;
+### Controller usage
 
-  @IsString()
-  @IsOptional()
-  phone?: string;
+```typescript
+@Post()
+create(@Body({ schema: createPatientSchema }) dto: CreatePatientDto) {
+  return this.patientsService.create(dto);
 }
 ```
+
+### Zod conventions
+
+- **`.strict()`** on every object schema — replaces `forbidNonWhitelisted`.
+  There is no pipe-level whitelisting.
+- **`.describe(...)`** on fields — feeds the generated OpenAPI documentation.
+- **`z.iso.date()` / `z.iso.datetime()`** for strict ISO values; use the shared
+  `isoDateString` helper when the client sends HTML `datetime-local` values
+  (e.g. `2026-08-15T10:00`, which lacks seconds).
+- **`z.uuid()`**, **`z.email()`**, **`z.enum([...])`** — Zod v4 top-level APIs.
+- **Enums from `as const` tuples**: `ISO_COUNTRY_CODES` and `ISO_CURRENCY_CODES`
+  in `core/common/iso-codes.ts` are already const tuples.
+- **Export both** the schema and the inferred type from the `.dto.ts` file.
+- **Services keep their FSM/business validation** (e.g. encounter status
+  transitions) — do not duplicate it as a schema enum, which would change error
+  messages and layering.
 
 ## Audit Logging
 
@@ -272,6 +289,6 @@ export class PatientsController {
   @ApiOperation({ summary: 'Create a patient' })
   @ApiResponse({ status: 201, description: 'Patient created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  create(@Body() dto: CreatePatientDto, @CurrentUser() user: any) { ... }
+  create(@Body({ schema: createPatientSchema }) dto: CreatePatientDto, @CurrentUser() user: any) { ... }
 }
 ```

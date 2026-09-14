@@ -26,11 +26,11 @@ import { Pool } from 'pg';
 import { eq } from 'drizzle-orm';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import * as schema from '../core/db/schema';
-import { ISO_COUNTRY_CODES } from '../core/common/iso-codes';
+import * as schema from '../core/db/schema.js';
+import { ISO_COUNTRY_CODES } from '../core/common/iso-codes.js';
 
 // Load environment variables from apps/api/.env
-config({ path: resolve(__dirname, '../../.env') });
+config({ path: resolve(import.meta.dirname, '../../.env') });
 
 // Country name to ISO code mapping — split into English and French to avoid
 // duplicate key errors for names that are identical in both languages
