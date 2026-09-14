@@ -58,7 +58,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = exceptionResponse;
         error = this.getErrorTypeFromStatus(statusCode);
       } else if (typeof exceptionResponse === 'object') {
-        const resp = exceptionResponse as any;
+        const resp = exceptionResponse as {
+          error?: string;
+          message?: string;
+          errors?: FieldError[];
+        };
         error = resp.error || this.getErrorTypeFromStatus(statusCode);
         message = resp.message || exception.message;
         errors = resp.errors;

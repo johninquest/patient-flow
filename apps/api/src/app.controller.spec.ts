@@ -23,7 +23,7 @@ describe('AppController', () => {
 
   describe('status', () => {
     it('should return ok, timestampUtc, uptimeMs', () => {
-      const status = appController.getStatus() as any;
+      const status = appController.getStatus();
       expect(status.ok).toBe(true);
       expect(status.message).toBe('ok');
       expect(typeof status.timestampUtc).toBe('string');
