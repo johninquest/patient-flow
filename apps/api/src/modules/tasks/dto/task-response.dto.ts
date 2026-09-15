@@ -13,6 +13,12 @@ export class TaskResponseDto {
   })
   encounter_id: string;
 
+  @ApiProperty({
+    description: 'Patient full name (read-only, resolved via encounter)',
+    example: 'Amara Diallo',
+  })
+  patient_name: string;
+
   @ApiProperty({ description: 'Task title', example: 'Draw blood' })
   title: string;
 

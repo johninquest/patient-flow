@@ -23,6 +23,14 @@ export const user = pgTable('user', {
   role: text('role').default('front_desk').notNull(), // 'admin' | 'provider' | 'clinical_staff' | 'front_desk'
   title: text('title'), // Professional designation: Doctor, Nurse, Medical Physicist, etc.
   status: text('status').default('active').notNull(), // 'active' | 'suspended'
+  // --- Better Auth admin plugin columns (see core/auth/auth.ts) -------------
+  // Required because the plugin validates its schema against this file at
+  // startup. Only the ban columns are unused: Patient Flow suspends accounts
+  // via `status` above, which AuthGuard enforces, so there is a single
+  // suspend mechanism.
+  banned: boolean('banned').default(false),
+  banReason: text('banReason'),
+  banExpires: timestamp('banExpires'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });
@@ -36,6 +44,9 @@ export const session = pgTable('session', {
   userId: text('userId')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+  // Set by the admin plugin when an admin impersonates a user. Unused by the
+  // app, but required by the plugin's schema validation.
+  impersonatedBy: text('impersonatedBy'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });
@@ -175,7 +186,11 @@ export const audit_log = pgTable(
     actor_role: text('actor_role').notNull(),
     action: text('action').notNull(), // e.g., 'patient.created', 'encounter.status_changed'
     resource_type: text('resource_type').notNull(), // e.g., 'patient', 'encounter', 'task'
-    resource_id: uuid('resource_id').notNull(),
+    // Polymorphic, so it cannot be `uuid`: it holds uuidv7 IDs for business
+    // entities and Better Auth's nanoid text IDs for `user` resources. As
+    // `uuid` every `user.*` audit entry failed at insert; because
+    // AuditService.record() swallows errors, those failures were invisible.
+    resource_id: text('resource_id').notNull(),
     diff: jsonb('diff'), // { field: { from: value, to: value } }
     ip_address: text('ip_address'),
     created_at: timestamp('created_at').defaultNow().notNull(),

@@ -19,6 +19,13 @@
   contexts over France-specific bureaucratic or informal register. If a term has
   both a "Metropolitan France" administrative phrasing and a more neutral
   international-French phrasing, prefer the neutral one.
+
+  > **Clarified (2026-09-15).** The project's working rule is: use **standard
+  > metropolitan French vocabulary** (so the UI reads as natural, correct French
+  > to any Francophone reader), while **avoiding France-only administrative
+  > jargon** that would confuse readers outside France. This reconciles the
+  > "prefer France terminology" product intent with the international-readability
+  > goal above — it is not a licence to use regionally colourful idiom.
 - Gender: use gender-neutral or epicene forms by default for roles and generic
   references to "the patient" / "the staff member," unless a glossary entry
   specifies otherwise. Where French forces agreement (e.g. "prêt/prête"), use the

@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { TasksService } from './tasks.service.js';
 import { CreateTaskDto, createTaskSchema } from './dto/create-task.dto.js';
 import { UpdateTaskDto, updateTaskSchema } from './dto/update-task.dto.js';
@@ -45,17 +45,27 @@ export class TasksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tasks or filter by encounter' })
+  @ApiOperation({ summary: 'List tasks (optionally filtered)' })
+  @ApiQuery({
+    name: 'encounter_id',
+    required: false,
+    description: 'Filter by encounter',
+  })
+  @ApiQuery({
+    name: 'assigned_user_id',
+    required: false,
+    description: 'Filter by assignee',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of tasks',
     type: [TaskResponseDto],
   })
-  findAll(@Query('encounter_id') encounterId?: string) {
-    if (encounterId) {
-      return this.tasksService.findByEncounter(encounterId);
-    }
-    return this.tasksService.findAll();
+  findAll(
+    @Query('encounter_id') encounterId?: string,
+    @Query('assigned_user_id') assignedUserId?: string,
+  ) {
+    return this.tasksService.findAll({ encounterId, assignedUserId });
   }
 
   @Get(':id')

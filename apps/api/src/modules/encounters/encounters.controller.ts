@@ -6,9 +6,10 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { EncountersService } from './encounters.service.js';
 import {
   CreateEncounterDto,
@@ -50,14 +51,33 @@ export class EncountersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all encounters' })
+  @ApiOperation({ summary: 'List encounters (optionally filtered)' })
+  @ApiQuery({
+    name: 'patient_id',
+    required: false,
+    description: 'Filter by patient',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    description: 'Scheduled on/after (ISO 8601)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    description: 'Scheduled on/before (ISO 8601)',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of encounters',
     type: [EncounterResponseDto],
   })
-  findAll() {
-    return this.encountersService.findAll();
+  findAll(
+    @Query('patient_id') patientId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.encountersService.findAll({ patientId, from, to });
   }
 
   @Get(':id')

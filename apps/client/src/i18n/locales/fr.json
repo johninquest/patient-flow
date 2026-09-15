@@ -3,10 +3,14 @@
     "loading": "Chargement...",
     "error": "Une erreur s'est produite",
     "save": "Enregistrer",
+    "saving": "Enregistrement...",
     "cancel": "Annuler",
+    "cancelling": "Annulation...",
     "delete": "Supprimer",
     "edit": "Modifier",
     "create": "Créer",
+    "creating": "Création...",
+    "updating": "Mise à jour...",
     "search": "Rechercher",
     "filter": "Filtrer",
     "actions": "Actions",
@@ -14,7 +18,11 @@
     "back": "Retour",
     "viewAll": "Voir tout",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "empty": "vide",
+    "refresh": "Actualiser",
+    "noResults": "Aucun résultat",
+    "all": "Tous"
   },
   "auth": {
     "login": "Connexion",
@@ -38,21 +46,40 @@
     "dashboard": "Tableau de bord",
     "patients": "Patients",
     "encounters": "Consultations",
+    "flow": "Parcours patients",
     "tasks": "Tâches",
     "staff": "Personnel",
     "settings": "Paramètres"
+  },
+  "dashboard": {
+    "activeEncounters": "Consultations en cours",
+    "pendingTasks": "Tâches en attente",
+    "todayEncounters": "Consultations du jour"
   },
   "patients": {
     "title": "Patients",
     "create": "Nouveau patient",
     "firstName": "Prénom",
     "lastName": "Nom",
+    "firstNameRequired": "Le prénom est obligatoire",
+    "lastNameRequired": "Le nom est obligatoire",
     "dateOfBirth": "Date de naissance",
     "phone": "Téléphone",
     "email": "Email",
     "address": "Adresse",
     "notes": "Notes",
     "notFound": "Patient introuvable",
+    "encounters": "Consultations",
+    "tasks": "Tâches",
+    "activity": "Historique des activités",
+    "noEncounters": "Aucune consultation enregistrée",
+    "noTasks": "Aucune tâche assignée",
+    "tabs": {
+      "overview": "Aperçu",
+      "encounters": "Consultations",
+      "tasks": "Tâches",
+      "activity": "Activité"
+    },
     "status": {
       "active": "Actif"
     },
@@ -105,31 +132,96 @@
     "title": "Consultations",
     "create": "Nouvelle consultation",
     "status": "Statut",
+    "phase": "Étape",
     "scheduledTime": "Heure prévue",
     "assignedTo": "Assigné à",
     "notes": "Notes",
+    "notesPlaceholder": "Notes facultatives...",
     "notFound": "Consultation introuvable",
+    "patient": "Patient",
+    "patientRequired": "Le patient est obligatoire",
+    "selectPatient": "Sélectionner un patient",
+    "unassigned": "Non assigné",
+    "checkIn": "Enregistrer l'arrivée",
+    "start": "Démarrer",
+    "complete": "Terminer",
+    "cancel": "Annuler",
+    "noShow": "Absent",
+    "activity": "Historique des activités",
+    "tabs": {
+      "upcoming": "À venir",
+      "inProgress": "En cours",
+      "completed": "Terminées",
+      "details": "Détails",
+      "tasks": "Tâches",
+      "activity": "Activité"
+    },
     "statuses": {
       "scheduled": "Planifié",
       "checked_in": "Arrivé",
       "in_progress": "En cours",
       "completed": "Terminé",
-      "cancelled": "Annulé"
+      "cancelled": "Annulé",
+      "no_show": "Absent"
+    },
+    "phases": {
+      "consultation": "Consultation",
+      "awaiting_lab": "En attente de laboratoire",
+      "awaiting_results": "En attente des résultats",
+      "treatment": "Traitement",
+      "discharge": "Prêt(e) pour la sortie"
+    },
+    "phaseActions": {
+      "title": "Étape de la consultation",
+      "description": "Suivez le déroulement de cette consultation."
+    },
+    "confirmCancel": {
+      "title": "Annuler la consultation",
+      "message": "Voulez-vous vraiment annuler cette consultation ? Cette action est irréversible."
     },
     "empty": {
       "title": "Aucune consultation pour le moment",
       "description": "Créez votre première consultation pour commencer à suivre les visites des patients."
     }
   },
+  "schedule": {
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "thisWeek": "Cette semaine",
+    "later": "Plus tard"
+  },
+  "flow": {
+    "title": "Parcours patients",
+    "description": "Où se trouve chaque patient en ce moment.",
+    "blocked": "Bloqué",
+    "columnEmpty": "Aucun patient",
+    "tasksProgress": "{done}/{total} tâches",
+    "columns": {
+      "scheduled": "Planifié",
+      "checked_in": "Arrivé",
+      "in_progress": "En cours",
+      "completed": "Terminé"
+    },
+    "empty": {
+      "title": "Aucun patient dans le parcours",
+      "description": "Les patients apparaîtront ici dès qu'une consultation sera créée."
+    }
+  },
   "tasks": {
     "title": "Tâches",
     "create": "Nouvelle tâche",
+    "edit": "Modifier la tâche",
     "title_field": "Titre",
     "description": "Description",
     "status": "Statut",
     "priority": "Priorité",
     "assignedTo": "Assigné à",
+    "unassigned": "Non assigné",
     "dueDate": "Date d'échéance",
+    "encounter": "Consultation",
+    "selectEncounter": "Sélectionner une consultation",
+    "blocking": "Bloquant",
+    "confirmDelete": "Voulez-vous vraiment supprimer cette tâche ?",
     "statuses": {
       "todo": "À faire",
       "in_progress": "En cours",
@@ -167,11 +259,50 @@
     "activate": "Activer",
     "confirmSuspend": "Suspendre le compte utilisateur",
     "suspendWarning": "Cet utilisateur sera immédiatement déconnecté et ne pourra pas accéder au système jusqu'à sa réactivation.",
+    "activity": "Historique des activités du personnel",
+    "tabs": {
+      "list": "Personnel",
+      "activity": "Activité"
+    },
     "roles": {
       "admin": "Administrateur",
-      "provider": "Prestataire",
-      "clinical_staff": "Personnel clinique",
+      "provider": "Médecin",
+      "clinical_staff": "Personnel infirmier",
       "front_desk": "Accueil"
+    }
+  },
+  "audit": {
+    "noActivity": "Aucune activité enregistrée",
+    "actions": {
+      "created": "créé",
+      "updated": "modifié",
+      "deleted": "supprimé",
+      "phase_changed": "étape modifiée",
+      "status_changed": "statut modifié",
+      "seeded": "initialisé"
+    },
+    "resources": {
+      "patient": "patient",
+      "encounter": "consultation",
+      "task": "tâche",
+      "user": "utilisateur"
+    },
+    "fields": {
+      "status": "Statut",
+      "phase": "Étape",
+      "assigned_to": "Assigné à",
+      "scheduled_time": "Heure prévue",
+      "notes": "Notes",
+      "title": "Titre",
+      "description": "Description",
+      "priority": "Priorité",
+      "assigned_user_id": "Assigné à",
+      "assigned_role": "Rôle assigné",
+      "blocking": "Bloquant",
+      "due_at": "Date d'échéance",
+      "role": "Rôle",
+      "name": "Nom",
+      "email": "Email"
     }
   },
   "profile": {

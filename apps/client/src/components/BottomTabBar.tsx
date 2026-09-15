@@ -7,6 +7,7 @@ import {
   ClipboardDocumentListIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -14,6 +15,7 @@ import {
   ClipboardDocumentListIcon as ClipboardDocumentListIconSolid,
   CheckCircleIcon as CheckCircleIconSolid,
   ShieldCheckIcon as ShieldCheckIconSolid,
+  Squares2X2Icon as Squares2X2IconSolid,
 } from '@heroicons/react/24/solid';
 
 export default function BottomTabBar() {
@@ -40,6 +42,12 @@ export default function BottomTabBar() {
       label: t('nav.encounters'),
       icon: ClipboardDocumentListIcon,
       iconActive: ClipboardDocumentListIconSolid,
+    },
+    {
+      path: '/flow',
+      label: t('nav.flow'),
+      icon: Squares2X2Icon,
+      iconActive: Squares2X2IconSolid,
     },
     {
       path: '/tasks',

@@ -14,8 +14,21 @@ export class EncounterResponseDto {
   patient_id: string;
 
   @ApiProperty({
+    description: 'Patient full name (read-only convenience field)',
+    example: 'Amara Diallo',
+  })
+  patient_name: string;
+
+  @ApiProperty({
     description: 'Encounter status',
-    enum: ['scheduled', 'checked_in', 'in_progress', 'completed', 'cancelled'],
+    enum: [
+      'scheduled',
+      'checked_in',
+      'in_progress',
+      'completed',
+      'cancelled',
+      'no_show',
+    ],
     example: 'scheduled',
   })
   status: string;

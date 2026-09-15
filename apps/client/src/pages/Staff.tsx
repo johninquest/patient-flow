@@ -190,7 +190,7 @@ export default function Staff() {
                   : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-default'
               }`}
             >
-              {t(`staff.tabs.${tab}`, tab.charAt(0).toUpperCase() + tab.slice(1))}
+              {t(`staff.tabs.${tab}`)}
             </button>
           ))}
         </nav>
@@ -429,7 +429,7 @@ export default function Staff() {
       )}
 
       {activeTab === 'activity' && (
-        <AuditTimeline logs={auditLogs || []} title={t('staff.activity', 'Staff Activity History')} />
+        <AuditTimeline logs={auditLogs || []} title={t('staff.activity')} />
       )}
     </div>
   );

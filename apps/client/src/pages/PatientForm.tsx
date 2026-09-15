@@ -120,10 +120,10 @@ export default function PatientForm() {
 
     const newErrors: Record<string, string> = {};
     if (!formData.first_name.trim()) {
-      newErrors.first_name = t('patients.firstName') + ' is required';
+      newErrors.first_name = t('patients.firstNameRequired');
     }
     if (!formData.last_name.trim()) {
-      newErrors.last_name = t('patients.lastName') + ' is required';
+      newErrors.last_name = t('patients.lastNameRequired');
     }
 
     if (Object.keys(newErrors).length > 0) {

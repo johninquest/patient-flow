@@ -24,6 +24,46 @@ Each entry: English term | French | German | Notes
 | Ready for discharge | Prêt(e) pour la sortie | Entlassbereit (unreviewed) | French: gender-neutral written form `Prêt(e)` acceptable in UI; prefer full inclusive phrasing in printed documents if that scope is ever added. |
 | Referred to specialist | Référé(e) à un spécialiste | An Facharzt überwiesen (unreviewed) | |
 
+## Encounter lifecycle statuses
+
+These map to the `encounters.status` column and the workflow FSM. They are
+**distinct from the patient flow statuses above** — do not reuse keys across the
+two tables.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Scheduled | Planifié | Geplant (unreviewed) | Encounter booked but patient not yet arrived. |
+| Checked in | Arrivé | Eingecheckt (unreviewed) | Patient has arrived at reception. |
+| In progress | En cours | In Bearbeitung (unreviewed) | Care is actively being delivered. |
+| Completed | Terminé | Abgeschlossen (unreviewed) | Encounter finished normally. |
+| Cancelled | Annulé | Storniert (unreviewed) | Encounter cancelled before or during care. |
+| No show | Absent | Nicht erschienen (unreviewed) | Patient did not attend a booked appointment. Distinct from "Cancelled" — the patient never arrived rather than the visit being called off. |
+
+## Encounter phases (sub-states within "In progress")
+
+Per ADR 0008, `phase` tracks what is happening *within* an in-progress
+encounter. These are separate keys from the lifecycle statuses above.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Consultation | Consultation | Konsultation (unreviewed) | Clinician examining the patient. |
+| Awaiting lab | En attente de laboratoire | Warten auf Labor (unreviewed) | Patient sent for lab work. |
+| Awaiting results | En attente des résultats | Warten auf Ergebnisse (unreviewed) | Samples taken, results outstanding. High-stakes: must not be confused with "Awaiting lab". |
+| Treatment | Traitement | Behandlung (unreviewed) | Treatment being administered. |
+| Ready for discharge | Prêt(e) pour la sortie | Entlassbereit (unreviewed) | Same term as the patient flow status — intentionally consistent. |
+
+## Task terms
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Task | Tâche | Aufgabe (unreviewed) | |
+| To do | À faire | Zu erledigen (unreviewed) | |
+| Done | Terminé | Erledigt (unreviewed) | |
+| Blocking | Bloquant | Blockierend (unreviewed) | A task that prevents the encounter from progressing. |
+| Unassigned | Non assigné | Nicht zugewiesen (unreviewed) | |
+| Priority | Priorité | Priorität (unreviewed) | |
+| Low / Medium / High | Faible / Moyenne / Élevée | Niedrig / Mittel / Hoch (unreviewed) | |
+
 ## Roles
 
 | English | French | German | Notes |
@@ -34,6 +74,23 @@ Each entry: English term | French | German | Notes
 | Lab technician | Technicien(ne) de laboratoire | Labortechniker(in) (unreviewed) | |
 | Medical physicist | Physicien(ne) médical(e) | Medizinphysiker(in) (unreviewed) | |
 | IT admin | Administrateur/Administratrice IT | IT-Administrator(in) (unreviewed) | |
+
+### App role slugs → glossary terms
+
+The application's role slugs do not map one-to-one onto the glossary role names
+above. This table is the authoritative mapping used by `staff.roles.*` in the
+locale files.
+
+| App slug | English label | French label | Glossary term |
+|---|---|---|---|
+| `admin` | Admin | Administrateur | IT admin |
+| `provider` | Provider | **Médecin** | Doctor |
+| `clinical_staff` | Clinical Staff | **Personnel infirmier** | Nurse |
+| `front_desk` | Front Desk | Accueil | Frontdesk |
+
+> **Note:** `provider` and `clinical_staff` were previously translated as
+> "Prestataire" and "Personnel clinique". Both were realigned to the glossary
+> terms above — see `i18n-review-queue.md`.
 
 ## Common UI actions
 

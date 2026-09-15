@@ -4,13 +4,39 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { db } from '../../core/db/index.js';
-import { tasks, encounters } from '../../core/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { tasks, encounters, patients } from '../../core/db/schema.js';
+import { eq, and, sql, type SQL } from 'drizzle-orm';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppAbility } from '../../core/auth/ability.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
+
+/**
+ * Shared projection for task reads. `patient_name` is resolved through the
+ * task's encounter so clients can display a patient without extra requests.
+ */
+const taskSelect = {
+  id: tasks.id,
+  encounter_id: tasks.encounter_id,
+  patient_name: sql<string>`${patients.first_name} || ' ' || ${patients.last_name}`,
+  title: tasks.title,
+  description: tasks.description,
+  status: tasks.status,
+  priority: tasks.priority,
+  assigned_user_id: tasks.assigned_user_id,
+  assigned_role: tasks.assigned_role,
+  blocking: tasks.blocking,
+  due_at: tasks.due_at,
+  created_at: tasks.created_at,
+  updated_at: tasks.updated_at,
+};
+
+/** Joins needed to resolve `patient_name` for any task query. */
+export interface FindTasksFilters {
+  encounterId?: string;
+  assignedUserId?: string;
+}
 
 @Injectable()
 export class TasksService {
@@ -68,21 +94,38 @@ export class TasksService {
       resource_id: task.id,
     });
 
-    return task;
+    return this.findOne(task.id);
   }
 
-  async findAll() {
-    return db.select().from(tasks);
+  async findAll(filters: FindTasksFilters = {}) {
+    const conditions: SQL[] = [];
+
+    if (filters.encounterId) {
+      conditions.push(eq(tasks.encounter_id, filters.encounterId));
+    }
+    if (filters.assignedUserId) {
+      conditions.push(eq(tasks.assigned_user_id, filters.assignedUserId));
+    }
+
+    return db
+      .select(taskSelect)
+      .from(tasks)
+      .leftJoin(encounters, eq(tasks.encounter_id, encounters.id))
+      .leftJoin(patients, eq(encounters.patient_id, patients.id))
+      .where(and(...conditions))
+      .orderBy(tasks.created_at);
   }
 
   async findByEncounter(encounterId: string) {
-    return db.select().from(tasks).where(eq(tasks.encounter_id, encounterId));
+    return this.findAll({ encounterId });
   }
 
   async findOne(id: string) {
     const [task] = await db
-      .select()
+      .select(taskSelect)
       .from(tasks)
+      .leftJoin(encounters, eq(tasks.encounter_id, encounters.id))
+      .leftJoin(patients, eq(encounters.patient_id, patients.id))
       .where(eq(tasks.id, id))
       .limit(1);
 
@@ -150,7 +193,7 @@ export class TasksService {
       });
     }
 
-    return updated;
+    return this.findOne(id);
   }
 
   async remove(

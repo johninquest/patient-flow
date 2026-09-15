@@ -17,14 +17,14 @@ target)** → **German (secondary, lower-confidence, rolling out later)**.
 
 ## Before translating anything
 
-1. Read `references/glossary.md`. Every clinical, workflow, or status term used more
+1. Read `glossary.md`. Every clinical, workflow, or status term used more
    than once **must** go through the glossary. Never translate the same source term
    two different ways in two different places — that's the single most common source
    of staff confusion in multilingual clinical software.
 2. If the term isn't in the glossary yet, this is a **new term event**: propose a
    translation, add it to the glossary with a one-line rationale, and flag it for
    human review (see "Flagging for review" below) rather than silently deciding alone.
-3. Read `references/style-guide.md` for register, tone, and phrasing rules per
+3. Read `style-guide.md` for register, tone, and phrasing rules per
    language. Do not improvise formality — it's specified there and should not vary
    screen to screen.
 
@@ -72,6 +72,14 @@ target)** → **German (secondary, lower-confidence, rolling out later)**.
   locale-switched) for cross-clinic consistency. Default to ISO 8601 for dates
   (`2026-09-14`) and explicit units, regardless of UI language. Do not introduce
   locale-specific date/number formatting unless this decision is explicitly revisited.
+
+  > **⚠️ SUPERSEDED for dates (2026-09-15).** This rule was explicitly revisited
+  > and **overridden**. The project now uses **locale-aware date formatting**
+  > (`fr-FR` / `en-US` via `toLocaleDateString` / `toLocaleString`), because a
+  > French-speaking clinician expects `14/09/2026` rather than ISO `2026-09-14`.
+  >
+  > **Do not re-introduce the neutral-ISO rule for dates.** Number and currency
+  > formatting remain neutral unless separately revisited.
 - **Context comments:** When adding a translation key, include a short translator
   context comment in the source file (screen name, and what the string means if it's
   ambiguous out of context — e.g. "Pending" as a lab-result status vs. an
@@ -100,7 +108,7 @@ etc.). Regardless of which one is in use:
 
 No professional reviewer is confirmed yet, so the agent is the first line of
 defense. Before considering a translation done, run this checklist (see
-`references/qa-checklist.md` for the full version):
+`qa-checklist.md` for the full version):
 
 1. **Back-translate mentally** — translate the FR/DE string back to English in your
    head. Does it mean the same clinical thing as the source, with no drift?
@@ -122,14 +130,22 @@ or alert), mark it in a dedicated review queue rather than merging it silently:
 - Append an entry to `i18n-review-queue.md` in the project root (create it if it
   doesn't exist) with: the key, source English, proposed translation(s), and a
   one-line reason it's flagged.
-- Add an inline code comment `// i18n-review: <short reason>` next to the key in the
-  locale file so it's visible in code review too.
+- Locale files are **strict JSON**, so the `// i18n-review: <reason>` inline
+  comment convention cannot be used. The review-queue entry is the sole record;
+  do not attempt to add comments to `en.json` / `fr.json`.
 - German gets flagged more readily than French by default — it's the lower-priority,
   lower-confidence language until its purpose and audience are clarified. When in
   doubt on a German string, flag it rather than ship a confident-sounding guess.
 
 ## Adding a new language later
 
-Follow the same pattern: a `references/style-guide.md` entry for register/tone, and
+Follow the same pattern: a `style-guide.md` entry for register/tone, and
 every term passing through the shared glossary before use. Don't let a new language
 skip the glossary step even under time pressure — that's how terminology drift starts.
+
+## Enforcement
+
+Run `pnpm --filter patient-flow-client run i18n:check` to verify every locale file
+defines exactly the same key set. The script discovers locale files automatically,
+so adding a new language requires no changes to it. It exits non-zero on drift and
+should be run before merging any change that touches user-facing strings.

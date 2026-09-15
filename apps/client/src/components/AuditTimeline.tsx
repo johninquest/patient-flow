@@ -1,18 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from './ui';
 import { ClockIcon, UserIcon } from '@heroicons/react/24/outline';
-
-interface AuditLog {
-  id: string;
-  actor_user_id: string;
-  actor_role: string;
-  action: string;
-  resource_type: string;
-  resource_id: string;
-  diff?: Record<string, { from: any; to: any }>;
-  ip_address?: string;
-  created_at: string;
-}
+import { api } from '../lib/api/client';
+import type { AuditLog, AssignableUser } from '../lib/types/flow.types';
 
 interface AuditTimelineProps {
   logs: AuditLog[];
@@ -22,15 +13,26 @@ interface AuditTimelineProps {
 export function AuditTimeline({ logs, title }: AuditTimelineProps) {
   const { t } = useTranslation();
 
+  // Resolve actor IDs to display names. Cached across every timeline on screen.
+  const { data: staff } = useQuery({
+    queryKey: ['users', 'assignable'],
+    queryFn: () => api.get<AssignableUser[]>('/api/users/assignable'),
+  });
+
   if (!logs || logs.length === 0) {
     return (
       <Card>
         <p className="text-sm text-text-secondary text-center py-4">
-          {t('audit.noActivity', 'No activity recorded yet')}
+          {t('audit.noActivity')}
         </p>
       </Card>
     );
   }
+
+  const actorName = (userId: string): string => {
+    const member = staff?.find((m) => m.id === userId);
+    return member ? member.name || member.email : `${userId.substring(0, 8)}…`;
+  };
 
   const formatAction = (action: string) => {
     const parts = action.split('.');
@@ -44,11 +46,11 @@ export function AuditTimeline({ logs, title }: AuditTimelineProps) {
     return t(`audit.resources.${type}`, type);
   };
 
-  const formatDiff = (diff: Record<string, { from: any; to: any }>) => {
+  const formatDiff = (diff: Record<string, { from: unknown; to: unknown }>) => {
     const changes = Object.entries(diff).map(([field, { from, to }]) => {
       const fieldName = t(`audit.fields.${field}`, field);
-      const fromValue = from === null ? t('common.empty', 'empty') : String(from);
-      const toValue = to === null ? t('common.empty', 'empty') : String(to);
+      const fromValue = from === null ? t('common.empty') : String(from);
+      const toValue = to === null ? t('common.empty') : String(to);
       return (
         <div key={field} className="text-xs text-text-secondary mt-1">
           <span className="font-medium">{fieldName}:</span>{' '}
@@ -78,10 +80,10 @@ export function AuditTimeline({ logs, title }: AuditTimelineProps) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium text-text-primary">
-                        {log.actor_user_id.substring(0, 8)}...
+                        {actorName(log.actor_user_id)}
                       </span>
                       <span className="text-text-secondary">
-                        ({t(`roles.${log.actor_role}`, log.actor_role)})
+                        ({t(`staff.roles.${log.actor_role}`, log.actor_role)})
                       </span>
                     </div>
                     <div className="mt-1 text-sm text-text-primary">

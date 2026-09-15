@@ -8,37 +8,17 @@ import { ArrowLeftIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import type { Patient } from '../lib/types/patient.types';
 import { getCountryName, getCurrencyName } from '../lib/iso-data';
 import { AuditTimeline } from '../components/AuditTimeline';
+import {
+  type Encounter,
+  type Task,
+  type AuditLog,
+  encounterStatusToDesignSystem,
+  taskStatusToDesignSystem,
+} from '../lib/types/flow.types';
 
 type TabType = 'overview' | 'encounters' | 'tasks' | 'activity';
 
-interface Encounter {
-  id: string;
-  status: string;
-  phase?: string;
-  scheduled_time?: string;
-  created_at: string;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  encounter_id: string;
-  created_at: string;
-}
-
-interface AuditLog {
-  id: string;
-  actor_user_id: string;
-  actor_role: string;
-  action: string;
-  resource_type: string;
-  resource_id: string;
-  diff?: Record<string, { from: any; to: any }>;
-  ip_address?: string;
-  created_at: string;
-}
+const TABS: TabType[] = ['overview', 'encounters', 'tasks', 'activity'];
 
 function DetailRow({ label, value, alternate }: { label: string; value?: string | null; alternate?: boolean }) {
   if (!value) return null;
@@ -134,7 +114,7 @@ export default function PatientDetail() {
       {/* Tab Navigation */}
       <div className="border-b border-border-default">
         <nav className="-mb-px flex space-x-8">
-          {(['overview', 'encounters', 'tasks', 'activity'] as TabType[]).map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -144,7 +124,7 @@ export default function PatientDetail() {
                   : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-default'
               }`}
             >
-              {t(`patients.tabs.${tab}`, tab.charAt(0).toUpperCase() + tab.slice(1))}
+              {t(`patients.tabs.${tab}`)}
             </button>
           ))}
         </nav>
@@ -290,7 +270,7 @@ export default function PatientDetail() {
       {activeTab === 'encounters' && (
         <Card>
           <h3 className="text-lg font-medium text-text-primary mb-4">
-            {t('patients.encounters', 'Encounters')}
+            {t('patients.encounters')}
           </h3>
           {encounters && encounters.length > 0 ? (
             <div className="space-y-3">
@@ -307,13 +287,13 @@ export default function PatientDetail() {
                       </p>
                       {encounter.phase && (
                         <p className="text-xs text-text-secondary mt-1">
-                          {t(`encounters.phases.${encounter.phase}`, encounter.phase)}
+                          {t(`encounters.phases.${encounter.phase}`)}
                         </p>
                       )}
                     </div>
                     <StatusPill
-                      status={encounter.status === 'completed' ? 'ready' : encounter.status === 'cancelled' ? 'delayed' : 'waiting'}
-                      label={t(`encounters.statuses.${encounter.status}`, encounter.status)}
+                      status={encounterStatusToDesignSystem(encounter.status)}
+                      label={t(`encounters.statuses.${encounter.status}`)}
                     />
                   </div>
                 </Link>
@@ -321,7 +301,7 @@ export default function PatientDetail() {
             </div>
           ) : (
             <p className="text-sm text-text-secondary text-center py-8">
-              {t('patients.noEncounters', 'No encounters recorded')}
+              {t('patients.noEncounters')}
             </p>
           )}
         </Card>
@@ -330,7 +310,7 @@ export default function PatientDetail() {
       {activeTab === 'tasks' && (
         <Card>
           <h3 className="text-lg font-medium text-text-primary mb-4">
-            {t('patients.tasks', 'Tasks')}
+            {t('patients.tasks')}
           </h3>
           {tasks && tasks.length > 0 ? (
             <div className="space-y-3">
@@ -343,12 +323,12 @@ export default function PatientDetail() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-text-primary">{task.title}</p>
                       <p className="text-xs text-text-secondary mt-1">
-                        {t(`tasks.statuses.${task.status}`, task.status)} · {t(`tasks.priorities.${task.priority}`, task.priority)}
+                        {t(`tasks.statuses.${task.status}`)} · {t(`tasks.priorities.${task.priority}`)}
                       </p>
                     </div>
                     <StatusPill
-                      status={task.status === 'done' ? 'ready' : task.status === 'in_progress' ? 'in_progress' : 'waiting'}
-                      label={t(`tasks.statuses.${task.status}`, task.status)}
+                      status={taskStatusToDesignSystem(task.status)}
+                      label={t(`tasks.statuses.${task.status}`)}
                     />
                   </div>
                 </div>
@@ -356,14 +336,14 @@ export default function PatientDetail() {
             </div>
           ) : (
             <p className="text-sm text-text-secondary text-center py-8">
-              {t('patients.noTasks', 'No tasks assigned')}
+              {t('patients.noTasks')}
             </p>
           )}
         </Card>
       )}
 
       {activeTab === 'activity' && (
-        <AuditTimeline logs={auditLogs || []} title={t('patients.activity', 'Activity History')} />
+        <AuditTimeline logs={auditLogs || []} title={t('patients.activity')} />
       )}
     </div>
   );

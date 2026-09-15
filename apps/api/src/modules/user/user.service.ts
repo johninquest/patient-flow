@@ -40,6 +40,27 @@ export class UserService {
   }
 
   /**
+   * List users that can be assigned work (active accounts only).
+   *
+   * Deliberately separate from `findAll()` which is admin-only: any
+   * authenticated user needs to populate "assign to" pickers. Returns only the
+   * fields required to render a picker.
+   */
+  async findAssignable() {
+    return db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        title: user.title,
+      })
+      .from(user)
+      .where(eq(user.status, 'active'))
+      .orderBy(user.name);
+  }
+
+  /**
    * Get a single user by ID.
    */
   async findOne(id: string) {
@@ -109,11 +130,22 @@ export class UserService {
 
   /**
    * Create a new user account (admin only).
-   * Uses Better Auth's server-side API to create the user + account,
-   * then updates the user record with role, title, and status.
+   *
+   * Delegates to Better Auth's admin plugin, which creates the user row and the
+   * linked `credential` account with a hashed password in a single transaction.
+   * `role` and `title` travel in the same call because the plugin accepts
+   * additional fields, so there is no follow-up write to keep in sync.
+   *
+   * `status` is deliberately not sent — the column default (`'active'`) applies.
+   *
+   * Note: `dto.role` reaches an auth API without plugin-side validation. That is
+   * intentional: `createUserSchema` already constrains it to USER_ROLES, and the
+   * plugin's role allow-list is only consulted when it is configured (we pass no
+   * `roles`, since CASL owns authorization).
    */
   async createUser(dto: CreateUserDto, actorUserId: string, actorRole: string) {
-    // Check if email already exists
+    // Check if email already exists. Kept ahead of the auth call so a duplicate
+    // returns 409 Conflict rather than the plugin's 400.
     const [existing] = await db
       .select({ id: user.id })
       .from(user)
@@ -128,42 +160,25 @@ export class UserService {
 
     const auth = getAuth();
 
-    // Create user via Better Auth server-side API
+    // `role` travels inside `data` rather than as the top-level `role` param.
+    // The plugin types that param as its built-in vocabulary ("user" | "admin"),
+    // which excludes ours, while `data` is an open additional-fields map. Both
+    // are read through the same code path, and the plugin only validates against
+    // a role allow-list when `roles` is configured — we configure none, because
+    // CASL owns authorization. `createUserSchema` is the real validator.
     const created = await auth.api.createUser({
       body: {
         name: dto.name,
         email: dto.email,
         password: dto.password,
+        data: {
+          role: dto.role,
+          title: dto.title ?? null,
+        },
       },
     });
 
     const userId = created.user.id;
-
-    // Update with role, title, and status
-    let updated;
-    try {
-      [updated] = await db
-        .update(user)
-        .set({
-          role: dto.role,
-          title: dto.title ?? null,
-          status: 'active',
-          updatedAt: new Date(),
-        })
-        .where(eq(user.id, userId))
-        .returning({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          title: user.title,
-          status: user.status,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        });
-    } catch (error) {
-      throw translateDatabaseError(error);
-    }
 
     await this.auditService.record({
       actor_user_id: actorUserId,
@@ -179,7 +194,11 @@ export class UserService {
       },
     });
 
-    return updated;
+    // Re-read through `findOne` so the response has the exact shape the rest of
+    // this service (and ProfileResponseDto) returns — notably `status`, which
+    // the plugin's own user object does not include. This also avoids leaking
+    // the plugin-managed ban columns to API clients.
+    return this.findOne(userId);
   }
 
   /**

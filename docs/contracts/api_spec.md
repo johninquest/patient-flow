@@ -163,12 +163,15 @@
 ### `POST /api/encounters` — Create Encounter
 **Roles:** All authenticated users
 
+> An encounter **is** the appointment record (see ADR and `requirements/plan_v1.md` §4.2).
+> Provide `scheduled_time` to book a future appointment; omit it for a walk-in.
+
 **Request:**
 ```json
 {
   "patient_id": "uuid (required)",
   "assigned_to": "text user ID (optional)",
-  "scheduled_time": "ISO 8601 datetime (optional)",
+  "scheduled_time": "ISO 8601 datetime (optional) — omit for a walk-in",
   "notes": "string (optional)"
 }
 ```
@@ -178,7 +181,9 @@
 {
   "id": "uuidv7",
   "patient_id": "uuid",
+  "patient_name": "string",
   "status": "scheduled",
+  "phase": null,
   "assigned_to": "text | null",
   "scheduled_time": "timestamp | null",
   "notes": "string | null",
@@ -188,21 +193,34 @@
 }
 ```
 
+**Notes:**
+- Every encounter starts as `scheduled`. `phase` is **not** settable at creation — it only applies while the status is `in_progress`.
+- `patient_name` is a read-only convenience field (`patients.first_name` + `' '` + `patients.last_name`).
+
 **Errors:** `400` Validation · `404` Patient not found
 
 ---
 
-### `GET /api/encounters` — List All Encounters
+### `GET /api/encounters` — List Encounters
 **Roles:** All authenticated users
 
-**Response:** `200 OK` — Array of Encounter objects
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `patient_id` | uuid | Filter encounters by patient |
+| `from` | ISO 8601 date | Only encounters with `scheduled_time` on/after this instant |
+| `to` | ISO 8601 date | Only encounters with `scheduled_time` on/before this instant |
+
+**Ordering:** Results are ordered by `scheduled_time` ascending. Encounters with a `NULL` `scheduled_time` (walk-ins) sort last.
+
+**Response:** `200 OK` — Array of Encounter objects (each includes `patient_name`)
 
 ---
 
 ### `GET /api/encounters/:id` — Get Encounter by ID
 **Roles:** All authenticated users
 
-**Response:** `200 OK` — Encounter object
+**Response:** `200 OK` — Encounter object (includes `patient_name`)
 
 **Errors:** `404` Encounter not found
 
@@ -214,7 +232,8 @@
 **Request:** All fields optional:
 ```json
 {
-  "status": "string (optional) — one of: scheduled, checked_in, in_progress, completed, cancelled",
+  "status": "string (optional) — one of: scheduled, checked_in, in_progress, completed, cancelled, no_show",
+  "phase": "string (optional) — one of: consultation, awaiting_lab, awaiting_results, treatment, discharge",
   "assigned_to": "text user ID (optional)",
   "scheduled_time": "ISO 8601 datetime (optional)",
   "notes": "string (optional)"
@@ -223,12 +242,20 @@
 
 **Status Transition Rules (FSM):**
 ```
-scheduled   → checked_in, cancelled
+scheduled   → checked_in, cancelled, no_show
 checked_in  → in_progress, cancelled
 in_progress → completed, cancelled
 completed   → (terminal)
 cancelled   → (terminal)
+no_show     → (terminal)
 ```
+
+**Phase Rules:**
+- `phase` tracks the sub-state **within** `in_progress` (see ADR 0008). It is deliberately separate from `status` — the FSM itself is unchanged.
+- Setting a `phase` requires the encounter's **current** status to be `in_progress`. Otherwise `400 Bad Request`.
+- Transitioning to `completed` or `cancelled` automatically clears `phase` to `null`.
+- A phase change is audited as `encounter.phase_changed`, distinct from `encounter.updated`.
+- Valid phases: `consultation`, `awaiting_lab`, `awaiting_results`, `treatment`, `discharge`.
 
 **Ownership Lock:** If `assigned_to` is set and differs from the requesting user, only `admin` role can change status.
 
@@ -264,7 +291,7 @@ cancelled   → (terminal)
   "title": "string (required)",
   "description": "string (optional)",
   "status": "string (optional) — one of: todo, in_progress, done. Default: todo",
-  "priority": "string (optional) — one of: low, medium, high. Default: low",
+  "priority": "string (optional) — one of: low, medium, high. Default: medium",
   "assigned_user_id": "text user ID (optional)",
   "assigned_role": "string (optional)",
   "blocking": "boolean (optional) — default: false",
@@ -277,10 +304,11 @@ cancelled   → (terminal)
 {
   "id": "uuidv7",
   "encounter_id": "uuid",
+  "patient_name": "string",
   "title": "string",
   "description": "string | null",
   "status": "todo",
-  "priority": "low",
+  "priority": "medium",
   "assigned_user_id": "text | null",
   "assigned_role": "string | null",
   "blocking": false,
@@ -290,19 +318,22 @@ cancelled   → (terminal)
 }
 ```
 
+**Notes:** `patient_name` is a read-only convenience field resolved via the task's encounter.
+
 **Errors:** `400` Validation · `404` Encounter not found
 
 ---
 
-### `GET /api/tasks` — List All Tasks (with optional filter)
+### `GET /api/tasks` — List Tasks (with optional filter)
 **Roles:** All authenticated users
 
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
 | `encounter_id` | uuid | Filter tasks by encounter |
+| `assigned_user_id` | text | Filter tasks assigned to a specific user |
 
-**Response:** `200 OK` — Array of Task objects
+**Response:** `200 OK` — Array of Task objects (each includes `patient_name`)
 
 ---
 
@@ -379,6 +410,29 @@ cancelled   → (terminal)
 
 ---
 
+### `GET /api/users/assignable` — List Assignable Users
+**Roles:** All authenticated users
+
+> Lightweight picker endpoint for populating "assign to" dropdowns. Unlike `GET /api/users`
+> (admin-only), any authenticated user may call this. Only non-sensitive identity fields are returned.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "text",
+    "name": "string | null",
+    "email": "string",
+    "role": "string",
+    "title": "string | null"
+  }
+]
+```
+
+**Notes:** Only users with `status = 'active'` are returned. Ordered by `name`.
+
+---
+
 ### `GET /api/users/me` — Get Current User Profile
 **Roles:** All authenticated users
 
@@ -451,6 +505,55 @@ cancelled   → (terminal)
 
 ---
 
+## Dashboard
+
+### `GET /api/dashboard/stats` — Get Dashboard Statistics
+**Roles:** All authenticated users
+
+**Response:** `200 OK`
+```json
+{
+  "totalPatients": 0,
+  "activeEncounters": 0,
+  "pendingTasks": 0,
+  "todayEncounters": 0
+}
+```
+
+---
+
+### `GET /api/dashboard/flow` — Get Patient Flow Board
+**Roles:** All authenticated users
+
+> Powers the patient flow board: "where is every patient right now?".
+> Returns all encounters that are **not** terminal, plus today's completed encounters.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuidv7",
+    "patient_id": "uuid",
+    "patient_name": "string",
+    "status": "scheduled | checked_in | in_progress | completed",
+    "phase": "string | null",
+    "assigned_to": "text | null",
+    "assigned_to_name": "string | null",
+    "scheduled_time": "timestamp | null",
+    "updated_at": "timestamp",
+    "task_count": 0,
+    "task_done_count": 0,
+    "task_blocking_open_count": 0
+  }
+]
+```
+
+**Notes:**
+- `task_count` / `task_done_count` / `task_blocking_open_count` are aggregate counts across the encounter's tasks.
+- Ordered by `status` then `scheduled_time` ascending.
+
+---
+
 ## Status Type Mappings (Frontend)
 
 | Entity Field | API Value | Design System Status |
@@ -460,6 +563,7 @@ cancelled   → (terminal)
 | Encounter `in_progress` | `in_progress` | `in_progress` |
 | Encounter `completed` | `completed` | `ready` |
 | Encounter `cancelled` | `cancelled` | `delayed` |
+| Encounter `no_show` | `no_show` | `delayed` |
 | Task `todo` | `todo` | `waiting` |
 | Task `in_progress` | `in_progress` | `in_progress` |
 | Task `done` | `done` | `ready` |
@@ -474,5 +578,13 @@ cancelled   → (terminal)
 > Audit logging is performed server-side by `AuditService.record()`. No public API endpoints expose audit logs in the current version.
 
 **Action naming convention:** `entity.verb` (e.g., `patient.created`, `encounter.updated`, `task.deleted`, `encounter.status_changed`)
+
+**Encounter-specific actions:**
+| Action | When |
+|--------|------|
+| `encounter.created` | Encounter created |
+| `encounter.updated` | Non-phase field changed |
+| `encounter.phase_changed` | `phase` field changed (see ADR 0008) |
+| `encounter.deleted` | Encounter deleted |
 
 **Diff format:** `{ "field": { "from": oldValue, "to": newValue } }`

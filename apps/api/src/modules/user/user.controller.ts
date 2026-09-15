@@ -19,6 +19,7 @@ import {
   updateUserStatusSchema,
 } from './dto/update-user-status.dto.js';
 import { ProfileResponseDto } from './dto/profile-response.dto.js';
+import { AssignableUserDto } from './dto/assignable-user.dto.js';
 import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
 import { RolesGuard } from '../../core/auth/guards/roles.guard.js';
 import { Roles } from '../../core/auth/decorators/roles.decorator.js';
@@ -61,6 +62,21 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   findAll() {
     return this.userService.findAll();
+  }
+
+  @Get('assignable')
+  @ApiOperation({
+    summary: 'List assignable users (all authenticated users)',
+    description:
+      'Lightweight picker source for "assign to" dropdowns. Unlike GET /users this is not admin-only and returns only non-sensitive identity fields.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active users available for assignment',
+    type: [AssignableUserDto],
+  })
+  findAssignable() {
+    return this.userService.findAssignable();
   }
 
   @Get('me')

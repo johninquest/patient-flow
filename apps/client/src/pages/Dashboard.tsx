@@ -42,7 +42,7 @@ export default function Dashboard() {
         />
 
         <MetricCard
-          label={`Active ${t('encounters.title')}`}
+          label={t('dashboard.activeEncounters')}
           value={stats?.activeEncounters || 0}
           icon={<ClipboardDocumentListIcon className="w-6 h-6" />}
           linkTo="/encounters"
@@ -50,7 +50,7 @@ export default function Dashboard() {
         />
 
         <MetricCard
-          label={`Pending ${t('tasks.title')}`}
+          label={t('dashboard.pendingTasks')}
           value={stats?.pendingTasks || 0}
           icon={<CheckCircleIcon className="w-6 h-6" />}
           linkTo="/tasks"
@@ -58,7 +58,7 @@ export default function Dashboard() {
         />
 
         <MetricCard
-          label={`Today's ${t('encounters.title')}`}
+          label={t('dashboard.todayEncounters')}
           value={stats?.todayEncounters || 0}
           icon={<CalendarIcon className="w-6 h-6" />}
           linkTo="/encounters"

@@ -3,21 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api/client';
-import { Card, Button, FormInput } from '../components/ui';
+import { Card, Button, FormInput, FormSelect } from '../components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { ApiError } from '../lib/api/errors';
+import type { AssignableUser } from '../lib/types/flow.types';
 
 interface Patient {
   id: string;
   first_name: string;
   last_name: string;
-}
-
-interface StaffMember {
-  id: string;
-  name: string | null;
-  email: string;
-  role: string;
 }
 
 export default function EncounterForm() {
@@ -41,10 +35,11 @@ export default function EncounterForm() {
     queryFn: () => api.get<Patient[]>('/api/patients'),
   });
 
-  // Fetch staff for assignment dropdown
+  // Fetch staff for assignment dropdown. Uses the assignable endpoint because
+  // GET /api/users is admin-only and would 403 for other roles.
   const { data: staff } = useQuery({
-    queryKey: ['staff'],
-    queryFn: () => api.get<StaffMember[]>('/api/users'),
+    queryKey: ['users', 'assignable'],
+    queryFn: () => api.get<AssignableUser[]>('/api/users/assignable'),
   });
 
   const createMutation = useMutation({
@@ -76,7 +71,7 @@ export default function EncounterForm() {
 
     const newErrors: Record<string, string> = {};
     if (!formData.patient_id) {
-      newErrors.patient_id = t('encounters.patientRequired', 'Patient is required');
+      newErrors.patient_id = t('encounters.patientRequired');
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -114,13 +109,13 @@ export default function EncounterForm() {
       <div className="flex items-center justify-between">
         <Link to="/encounters" className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
           <ArrowLeftIcon className="w-4 h-4" />
-          <span>{t('common.back', 'Back')}</span>
+          <span>{t('common.back')}</span>
         </Link>
       </div>
 
       <Card>
         <h2 className="text-xl font-medium text-text-primary mb-6">
-          {t('encounters.create', 'Create Encounter')}
+          {t('encounters.create')}
         </h2>
 
         {generalError && (
@@ -131,61 +126,43 @@ export default function EncounterForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Patient Selection */}
-          <div>
-            <label htmlFor="patient_id" className="block text-sm font-medium text-text-primary mb-1.5">
-              {t('encounters.patient', 'Patient')} *
-            </label>
-            <select
-              id="patient_id"
-              value={formData.patient_id}
-              onChange={handleChange('patient_id')}
-              className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              required
-            >
-              <option value="">{t('encounters.selectPatient', 'Select a patient')}</option>
-              {patients?.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.first_name} {patient.last_name}
-                </option>
-              ))}
-            </select>
-            {errors.patient_id && (
-              <p className="mt-1 text-sm text-status-delayed-text">{errors.patient_id}</p>
-            )}
-          </div>
+          <FormSelect
+            label={t('encounters.patient')}
+            value={formData.patient_id}
+            placeholder={t('encounters.selectPatient')}
+            options={(patients || []).map((patient) => ({
+              value: patient.id,
+              label: `${patient.first_name} ${patient.last_name}`,
+            }))}
+            onChange={handleChange('patient_id')}
+            error={errors.patient_id}
+            required
+          />
 
           {/* Scheduled Time */}
           <FormInput
-            label={t('encounters.scheduledTime', 'Scheduled Time')}
+            label={t('encounters.scheduledTime')}
             type="datetime-local"
             value={formData.scheduled_time}
             onChange={handleChange('scheduled_time')}
           />
 
           {/* Assignment */}
-          <div>
-            <label htmlFor="assigned_to" className="block text-sm font-medium text-text-primary mb-1.5">
-              {t('encounters.assignedTo', 'Assign To')}
-            </label>
-            <select
-              id="assigned_to"
-              value={formData.assigned_to}
-              onChange={handleChange('assigned_to')}
-              className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-            >
-              <option value="">{t('encounters.unassigned', 'Unassigned')}</option>
-              {staff?.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name || member.email} ({member.role})
-                </option>
-              ))}
-            </select>
-          </div>
+          <FormSelect
+            label={t('encounters.assignedTo')}
+            value={formData.assigned_to}
+            placeholder={t('encounters.unassigned')}
+            options={(staff || []).map((member) => ({
+              value: member.id,
+              label: `${member.name || member.email} (${t(`staff.roles.${member.role}`, member.role)})`,
+            }))}
+            onChange={handleChange('assigned_to')}
+          />
 
           {/* Notes */}
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-text-primary mb-1.5">
-              {t('encounters.notes', 'Notes')}
+              {t('encounters.notes')}
             </label>
             <textarea
               id="notes"
@@ -193,7 +170,7 @@ export default function EncounterForm() {
               onChange={handleChange('notes')}
               rows={4}
               className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              placeholder={t('encounters.notesPlaceholder', 'Optional notes...')}
+              placeholder={t('encounters.notesPlaceholder')}
             />
           </div>
 
@@ -204,15 +181,15 @@ export default function EncounterForm() {
               disabled={createMutation.isPending}
             >
               {createMutation.isPending
-                ? t('common.creating', 'Creating...')
-                : t('encounters.create', 'Create Encounter')}
+                ? t('common.creating')
+                : t('encounters.create')}
             </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={() => navigate('/encounters')}
             >
-              {t('common.cancel', 'Cancel')}
+              {t('common.cancel')}
             </Button>
           </div>
         </form>

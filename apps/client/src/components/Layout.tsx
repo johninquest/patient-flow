@@ -11,6 +11,7 @@ import {
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -18,6 +19,7 @@ import {
   ClipboardDocumentListIcon as ClipboardDocumentListIconSolid,
   CheckCircleIcon as CheckCircleIconSolid,
   ShieldCheckIcon as ShieldCheckIconSolid,
+  Squares2X2Icon as Squares2X2IconSolid,
 } from '@heroicons/react/24/solid';
 
 export default function Layout() {
@@ -50,6 +52,7 @@ export default function Layout() {
     { path: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon, iconActive: HomeIconSolid },
     { path: '/patients', label: t('nav.patients'), icon: UserGroupIcon, iconActive: UserGroupIconSolid },
     { path: '/encounters', label: t('nav.encounters'), icon: ClipboardDocumentListIcon, iconActive: ClipboardDocumentListIconSolid },
+    { path: '/flow', label: t('nav.flow'), icon: Squares2X2Icon, iconActive: Squares2X2IconSolid },
     { path: '/tasks', label: t('nav.tasks'), icon: CheckCircleIcon, iconActive: CheckCircleIconSolid },
     ...(user?.role === 'admin' ? [{ path: '/staff', label: t('nav.staff'), icon: ShieldCheckIcon, iconActive: ShieldCheckIconSolid }] : []),
   ];

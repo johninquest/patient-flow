@@ -14,7 +14,9 @@ export const createAuditLogSchema = z
     actor_role: z.string().describe('Role of the actor'),
     action: z.string().describe('Action performed'),
     resource_type: z.string().describe('Resource type affected'),
-    resource_id: z.uuid().describe('Resource ID affected'),
+    // Not `z.uuid()`: this is polymorphic. Business entities use uuidv7, but
+    // Better Auth user ids are nanoid text (see ADR 0001).
+    resource_id: z.string().describe('Resource ID affected'),
     diff: z
       .record(z.string(), z.unknown())
       .optional()

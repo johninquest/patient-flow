@@ -41,9 +41,12 @@
 | `email` | `text` | NOT NULL, UNIQUE | |
 | `emailVerified` | `boolean` | default `false` | |
 | `image` | `text` | nullable | Avatar URL |
-| `role` | `text` | NOT NULL, default `'front_desk'` | `admin` \| `provider` \| `clinical_staff` \| `front_desk` |
+| `role` | `text` | NOT NULL, default `'front_desk'` | `admin` \| `provider` \| `clinical_staff` \| `front_desk`. Server-owned (not client-writable) |
 | `title` | `text` | nullable | Professional designation |
-| `status` | `text` | NOT NULL, default `'active'` | `active` \| `suspended` |
+| `status` | `text` | NOT NULL, default `'active'` | `active` \| `suspended`. Server-owned. The only suspend mechanism |
+| `banned` | `boolean` | default `false` | Added by the Better Auth admin plugin. Unused by app code |
+| `banReason` | `text` | nullable | Added by the Better Auth admin plugin. Unused by app code |
+| `banExpires` | `timestamp` | nullable | Added by the Better Auth admin plugin. Unused by app code |
 | `createdAt` | `timestamp` | NOT NULL, default now | |
 | `updatedAt` | `timestamp` | NOT NULL, default now | |
 
@@ -57,6 +60,7 @@
 | `ipAddress` | `text` | nullable |
 | `userAgent` | `text` | nullable |
 | `userId` | `text` | NOT NULL, FK → `user.id` (cascade) |
+| `impersonatedBy` | `text` | nullable | Added by the Better Auth admin plugin. Unused by app code |
 | `createdAt` | `timestamp` | NOT NULL, default now |
 | `updatedAt` | `timestamp` | NOT NULL, default now |
 
@@ -234,7 +238,7 @@ cancelled   → [] (terminal)
 | `actor_role` | `text` | NOT NULL | |
 | `action` | `text` | NOT NULL | Format: `entity.verb` (e.g., `patient.created`) |
 | `resource_type` | `text` | NOT NULL | e.g., `patient`, `encounter`, `task` |
-| `resource_id` | `uuid` | NOT NULL | |
+| `resource_id` | `text` | NOT NULL | Polymorphic. `uuidv7` for business entities, Better Auth text id for `user` |
 | `diff` | `jsonb` | nullable | `{ field: { from, to } }` |
 | `ip_address` | `text` | nullable | |
 | `created_at` | `timestamp` | NOT NULL, default now | |

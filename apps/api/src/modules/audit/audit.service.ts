@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { db } from '../../core/db/index.js';
 import { audit_log } from '../../core/db/schema.js';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto.js';
-import { eq, desc } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 @Injectable()
 export class AuditService {
@@ -52,13 +52,20 @@ export class AuditService {
   }
 
   /**
-   * Get audit logs for a specific resource
+   * Get audit logs for a specific resource instance.
+   * Filters on BOTH resource type and resource ID — matching on type alone
+   * would return every record of that type.
    */
   async findByResource(resourceType: string, resourceId: string) {
     return db
       .select()
       .from(audit_log)
-      .where(eq(audit_log.resource_type, resourceType))
+      .where(
+        and(
+          eq(audit_log.resource_type, resourceType),
+          eq(audit_log.resource_id, resourceId),
+        ),
+      )
       .orderBy(desc(audit_log.created_at));
   }
 
