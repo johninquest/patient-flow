@@ -273,20 +273,29 @@
   },
   "audit": {
     "noActivity": "Aucune activité enregistrée",
-    "actions": {
-      "created": "créé",
-      "updated": "modifié",
-      "deleted": "supprimé",
-      "phase_changed": "étape modifiée",
-      "status_changed": "statut modifié",
-      "seeded": "initialisé"
+    "titles": {
+      "patient.created": "Patient créé",
+      "patient.updated": "Patient modifié",
+      "patient.deleted": "Patient supprimé",
+      "encounter.created": "Consultation créée",
+      "encounter.updated": "Consultation modifiée",
+      "encounter.phase_changed": "Étape modifiée",
+      "encounter.deleted": "Consultation supprimée",
+      "task.created": "Tâche créée",
+      "task.updated": "Tâche modifiée",
+      "task.deleted": "Tâche supprimée",
+      "user.created": "Utilisateur créé",
+      "user.status_changed": "Statut du compte modifié",
+      "user.role_changed": "Rôle modifié",
+      "admin.seeded": "Administrateur accordé",
+      "admin.bootstrapped": "Administrateur créé",
+      "generic": "Enregistrement modifié"
     },
-    "resources": {
-      "patient": "patient",
-      "encounter": "consultation",
-      "task": "tâche",
-      "user": "utilisateur"
-    },
+    "before": "Avant",
+    "after": "Après",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins",
+    "notSet": "Non défini",
     "fields": {
       "status": "Statut",
       "phase": "Étape",

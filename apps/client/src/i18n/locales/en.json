@@ -273,20 +273,29 @@
   },
   "audit": {
     "noActivity": "No activity recorded yet",
-    "actions": {
-      "created": "created",
-      "updated": "updated",
-      "deleted": "deleted",
-      "phase_changed": "phase changed",
-      "status_changed": "status changed",
-      "seeded": "seeded"
+    "titles": {
+      "patient.created": "Patient created",
+      "patient.updated": "Patient updated",
+      "patient.deleted": "Patient deleted",
+      "encounter.created": "Encounter created",
+      "encounter.updated": "Encounter updated",
+      "encounter.phase_changed": "Phase changed",
+      "encounter.deleted": "Encounter deleted",
+      "task.created": "Task created",
+      "task.updated": "Task updated",
+      "task.deleted": "Task deleted",
+      "user.created": "User created",
+      "user.status_changed": "Account status changed",
+      "user.role_changed": "Role changed",
+      "admin.seeded": "Admin granted",
+      "admin.bootstrapped": "Admin created",
+      "generic": "Record updated"
     },
-    "resources": {
-      "patient": "patient",
-      "encounter": "encounter",
-      "task": "task",
-      "user": "user"
-    },
+    "before": "Before",
+    "after": "After",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "notSet": "Not set",
     "fields": {
       "status": "Status",
       "phase": "Phase",

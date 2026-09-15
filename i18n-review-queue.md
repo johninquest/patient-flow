@@ -49,8 +49,17 @@ introduced a new term — see `.github/skills/clinic-i18n/SKILL.md`.
 | `tasks.blocking` | Blocking | Bloquant | Confirm this reads as a task property (adjective) rather than an action. |
 | `flow.tasksProgress` | {done}/{total} tasks | {done}/{total} tâches | Uses a named-placeholder pattern. French pluralisation is handled by the fixed "tâches" form — verify it reads acceptably when `total` is 1. |
 
----
+### Activity timeline titles (added 2026-09-16)
 
-## Resolved
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `audit.titles.patient.created` | Patient created | Patient créé | French past-participle gender agreement with "patient" (masculine vs feminine patient) — epicene form "créé" chosen as default. |
+| `audit.titles.encounter.created` | Encounter created | Consultation créée | Feminine agreement ("consultation") confirmed. |
+| `audit.titles.encounter.updated` | Encounter updated | Consultation modifiée | Feminine agreement for "consultation". |
+| `audit.titles.user.status_changed` | Account status changed | Statut du compte modifié | "compte" (m.) → "modifié". |
+| `audit.titles.admin.seeded` | Admin granted | Administrateur accordé | Past-participle phrasing for an out-of-band promotion; confirm "accordé" reads as "granted". |
+| `audit.notSet` | Not set | Non défini | Fallback for null/undefined diff values; confirm "Non défini" over "Non renseigné". |
+
+---
 
 _None yet._
