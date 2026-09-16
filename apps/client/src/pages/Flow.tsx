@@ -106,7 +106,7 @@ export default function Flow() {
                               <span>
                                 {t('flow.tasksProgress', {
                                   done: encounter.task_done_count,
-                                  total: encounter.task_count,
+                                  count: encounter.task_count,
                                 })}
                               </span>
                             )}

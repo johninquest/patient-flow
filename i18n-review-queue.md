@@ -63,7 +63,18 @@ no role until an admin grants one.
 | `flow.title` | Patient Flow | Parcours patients | "Parcours patients" is standard French healthcare vocabulary for the patient journey. Confirm it reads correctly as a navigation label. |
 | `encounters.checkIn` | Check In | Enregistrer l'arrivée | Chosen over the shorter "Arrivée" for clarity as an action button. Verify it fits the button width. |
 | `tasks.blocking` | Blocking | Bloquant | Confirm this reads as a task property (adjective) rather than an action. |
-| `flow.tasksProgress` | {done}/{total} tasks | {done}/{total} tâches | Uses a named-placeholder pattern. French pluralisation is handled by the fixed "tâches" form — verify it reads acceptably when `total` is 1. |
+
+> **Resolved (2026-09-16):** `flow.tasksProgress` was reworked into CLDR plural
+> keys — `tasksProgress_one` / `tasksProgress_other` (EN: `{{done}}/{{count}} task`
+> / `... tasks`; FR: `{{done}}/{{count}} tâche` / `... tâches`). The open question
+> about the fixed "tâches" form at `total` 1 is answered: the noun now agrees with
+> the *total* task count, so a single-task encounter reads "1/1 tâche".
+> Pluralisation is driven by `{{count}}` (i18next's plural variable) carrying the
+> total, while `{{done}}` carries the completed count.
+>
+> The original single-brace `{done}` placeholders were also rendering literally in
+> the UI, because i18next substitutes double-braced names — see the placeholder
+> checks now enforced by `pnpm run i18n:check`.
 
 ### Activity timeline titles (added 2026-09-16)
 

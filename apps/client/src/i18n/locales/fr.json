@@ -196,7 +196,8 @@
     "description": "Où se trouve chaque patient en ce moment.",
     "blocked": "Bloqué",
     "columnEmpty": "Aucun patient",
-    "tasksProgress": "{done}/{total} tâches",
+    "tasksProgress_one": "{{done}}/{{count}} tâche",
+    "tasksProgress_other": "{{done}}/{{count}} tâches",
     "columns": {
       "scheduled": "Planifié",
       "checked_in": "Arrivé",

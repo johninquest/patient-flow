@@ -2,10 +2,17 @@
 /**
  * i18n parity check.
  *
- * Verifies that every locale file defines exactly the same set of translation
- * keys. A key present in one locale but missing from another means users of
- * that language silently fall back to English (or see a raw key), which is the
- * most common way translation drift reaches production.
+ * Verifies that every locale file defines the same translation keys, and that
+ * the messages behind those keys are structurally sound.
+ *
+ * Two classes of drift are caught:
+ *
+ *   1. Key drift — a key present in one locale but missing from another. Users
+ *      of that language silently fall back to English, or see a raw key.
+ *   2. Placeholder drift — a message whose placeholders are malformed or differ
+ *      between locales. i18next interpolates `{{name}}`; a single-braced
+ *      `{name}` is not recognised and is rendered to the user verbatim, so the
+ *      screen shows the raw template instead of the value.
  *
  * Locale files are discovered automatically, so adding a new language (e.g.
  * `de.json`) requires no changes here — it is picked up and enforced on the
@@ -15,8 +22,8 @@
  *   pnpm run i18n:check
  *
  * Exit codes:
- *   0 — all locales have identical key sets
- *   1 — drift detected (missing/extra keys) or a locale file is unreadable
+ *   0 — locales have identical key sets and no placeholder problems
+ *   1 — drift detected (keys or placeholders) or a locale file is unreadable
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -26,18 +33,44 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOCALES_DIR = join(__dirname, '..', 'src', 'i18n', 'locales');
 
-/** Recursively flattens a nested object into dotted key paths. */
-function flattenKeys(value, prefix = '') {
-  const keys = [];
+/** Recursively flattens a nested object into `[dottedKey, value]` leaf entries. */
+function flattenEntries(value, prefix = '') {
+  const entries = [];
   for (const [key, child] of Object.entries(value)) {
     const path = prefix ? `${prefix}.${key}` : key;
     if (child !== null && typeof child === 'object' && !Array.isArray(child)) {
-      keys.push(...flattenKeys(child, path));
+      entries.push(...flattenEntries(child, path));
     } else {
-      keys.push(path);
+      entries.push([path, child]);
     }
   }
-  return keys;
+  return entries;
+}
+
+/** CLDR plural suffixes recognised by i18next's default (v4) JSON format. */
+const PLURAL_SUFFIXES = ['_zero', '_one', '_two', '_few', '_many', '_other'];
+
+const hasPluralSuffix = (key) => PLURAL_SUFFIXES.some((suffix) => key.endsWith(suffix));
+
+/** The interpolation syntax i18next actually substitutes: `{{name}}`. */
+const PLACEHOLDER_PATTERN = /\{\{\s*([\w.]+)\s*\}\}/g;
+
+/**
+ * A braced token that is *not* a well-formed `{{name}}` placeholder.
+ *
+ * The lookarounds keep the two braces of a valid placeholder from being read as
+ * a stray single-braced token, so `{{count}}` yields nothing here.
+ */
+const MALFORMED_PLACEHOLDER_PATTERN = /(?<!\{)\{\s*([\w.]+)\s*\}(?!\})/g;
+
+/** Names of every `{{name}}` placeholder in a message. */
+function extractPlaceholders(message) {
+  return new Set([...message.matchAll(PLACEHOLDER_PATTERN)].map((match) => match[1]));
+}
+
+/** Single-braced tokens in a message, which i18next will not substitute. */
+function findMalformedPlaceholders(message) {
+  return [...message.matchAll(MALFORMED_PLACEHOLDER_PATTERN)].map((match) => match[0]);
 }
 
 function loadLocales() {
@@ -57,12 +90,74 @@ function loadLocales() {
       console.error(`Failed to parse ${file}: ${error.message}`);
       process.exit(1);
     }
+    const values = new Map(flattenEntries(parsed));
     return {
       locale: file.replace(/\.json$/, ''),
       file,
-      keys: new Set(flattenKeys(parsed)),
+      keys: new Set(values.keys()),
+      values,
     };
   });
+}
+
+/**
+ * Validates the messages themselves, independent of which keys exist.
+ *
+ * Runs over every locale — including the reference — because a malformed
+ * placeholder is broken wherever it lives, not only where it differs.
+ * Returns a list of human-readable problems rather than throw/exit, so a single
+ * run reports everything that needs fixing.
+ */
+function checkPlaceholders(locales, reference) {
+  const problems = [];
+
+  for (const locale of locales) {
+    for (const [key, message] of locale.values) {
+      if (typeof message !== 'string') continue;
+
+      const malformed = findMalformedPlaceholders(message);
+      if (malformed.length > 0) {
+        const tokens = malformed.map((token) => `'${token}'`).join(', ');
+        problems.push(
+          `${locale.file} → "${key}": ${tokens} is not a valid placeholder and would render literally. ` +
+            `i18next substitutes double-braced names ({{...}}).`,
+        );
+      }
+
+      const placeholders = extractPlaceholders(message);
+
+      // i18next picks the plural category from a variable named exactly
+      // `count`, so a plural key without it never selects a variant.
+      if (hasPluralSuffix(key) && !placeholders.has('count')) {
+        problems.push(
+          `${locale.file} → "${key}": plural key has no {{count}} placeholder. ` +
+            `i18next pluralises on a variable named "count".`,
+        );
+      }
+
+      const referenceMessage = reference.values.get(key);
+      if (typeof referenceMessage !== 'string') continue;
+
+      const expected = extractPlaceholders(referenceMessage);
+      const missing = [...expected].filter((name) => !placeholders.has(name));
+      const unexpected = [...placeholders].filter((name) => !expected.has(name));
+
+      if (missing.length > 0 || unexpected.length > 0) {
+        const details = [];
+        if (missing.length > 0) {
+          details.push(`missing ${missing.map((name) => `{{${name}}}`).join(', ')}`);
+        }
+        if (unexpected.length > 0) {
+          details.push(`unexpected ${unexpected.map((name) => `{{${name}}}`).join(', ')}`);
+        }
+        problems.push(
+          `${locale.file} → "${key}": placeholders differ from ${reference.locale} (${details.join('; ')}).`,
+        );
+      }
+    }
+  }
+
+  return problems;
 }
 
 function main() {
@@ -100,12 +195,20 @@ function main() {
     console.error('');
   }
 
+  const placeholderProblems = checkPlaceholders(locales, reference);
+  if (placeholderProblems.length > 0) {
+    hasDrift = true;
+    console.error(`Placeholder problems (${placeholderProblems.length}):`);
+    for (const problem of placeholderProblems) console.error(`  - ${problem}`);
+    console.error('');
+  }
+
   if (hasDrift) {
-    console.error('i18n parity check failed. Add the missing keys to every locale.');
+    console.error('i18n check failed. Fix the key and placeholder problems reported above.');
     process.exit(1);
   }
 
-  console.log('\ni18n parity check passed.');
+  console.log(`\ni18n check passed (${reference.keys.size} keys, placeholders valid).`);
 }
 
 main();
