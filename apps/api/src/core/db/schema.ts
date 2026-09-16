@@ -20,7 +20,10 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').default(false),
   image: text('image'),
-  role: text('role').default('front_desk').notNull(), // 'admin' | 'provider' | 'clinical_staff' | 'front_desk'
+  // Defaults to 'pending', not 'front_desk': the default is the value a
+  // self-service Google signup receives, and it must be the zero-access one.
+  // 'pending' = authenticated but granted nothing (see core/auth/roles.ts).
+  role: text('role').default('pending').notNull(), // 'pending' | 'admin' | 'provider' | 'clinical_staff' | 'front_desk'
   title: text('title'), // Professional designation: Doctor, Nurse, Medical Physicist, etc.
   status: text('status').default('active').notNull(), // 'active' | 'suspended'
   // --- Better Auth admin plugin columns (see core/auth/auth.ts) -------------

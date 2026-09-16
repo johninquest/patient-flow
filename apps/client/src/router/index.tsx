@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../components/ui';
 
 // Lazy load all page components
 const Login = lazy(() => import('../pages/Login'));
+const Pending = lazy(() => import('../pages/Pending'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Patients = lazy(() => import('../pages/Patients'));
 const PatientDetail = lazy(() => import('../pages/PatientDetail'));
@@ -18,6 +19,11 @@ const Tasks = lazy(() => import('../pages/Tasks'));
 const Staff = lazy(() => import('../pages/Staff'));
 const Profile = lazy(() => import('../pages/Profile'));
 
+/** Users holding no role yet are parked on the waiting room. */
+function isPending(role: string | undefined): boolean {
+  return role === 'pending';
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -27,6 +33,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // A pending user has no permissions, so every screen behind this guard would
+  // fail. Send them to the one page that is designed for them.
+  if (isPending(user.role)) {
+    return <Navigate to="/pending" replace />;
   }
 
   return <>{children}</>;
@@ -40,7 +52,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={isPending(user.role) ? '/pending' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -55,6 +67,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isPending(user.role)) {
+    return <Navigate to="/pending" replace />;
   }
 
   if (user.role !== 'admin') {
@@ -77,6 +93,9 @@ export default function AppRouter() {
               </PublicRoute>
             }
           />
+          {/* Outside ProtectedRoute on purpose: the whole point of this screen
+              is that the account authenticated but has not been granted access. */}
+          <Route path="/pending" element={<Pending />} />
           <Route
             path="/"
             element={

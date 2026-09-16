@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { db } from '../../core/db/index.js';
 import { user, session } from '../../core/db/schema.js';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, ne, and, sql, desc } from 'drizzle-orm';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { ProfileResponseDto } from './dto/profile-response.dto.js';
 import { AuditService } from '../audit/audit.service.js';
 import { getAuth } from '../../core/auth/auth.js';
+import { PENDING_ROLE } from '../../core/auth/roles.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
 @Injectable()
@@ -45,6 +46,10 @@ export class UserService {
    * Deliberately separate from `findAll()` which is admin-only: any
    * authenticated user needs to populate "assign to" pickers. Returns only the
    * fields required to render a picker.
+   *
+   * `pending` users are excluded as well as suspended ones. They cannot act on
+   * anything yet, so assigning work to them would create tasks that nobody can
+   * progress. `findAll()` still returns them so admins can grant access.
    */
   async findAssignable() {
     return db
@@ -56,7 +61,7 @@ export class UserService {
         title: user.title,
       })
       .from(user)
-      .where(eq(user.status, 'active'))
+      .where(and(eq(user.status, 'active'), ne(user.role, PENDING_ROLE)))
       .orderBy(user.name);
   }
 

@@ -41,7 +41,7 @@
 | `email` | `text` | NOT NULL, UNIQUE | |
 | `emailVerified` | `boolean` | default `false` | |
 | `image` | `text` | nullable | Avatar URL |
-| `role` | `text` | NOT NULL, default `'front_desk'` | `admin` \| `provider` \| `clinical_staff` \| `front_desk`. Server-owned (not client-writable) |
+| `role` | `text` | NOT NULL, default `'pending'` | `pending` \| `admin` \| `provider` \| `clinical_staff` \| `front_desk`. Server-owned (not client-writable). Defaults to `pending` so any creation path that does not set a role explicitly — notably a self-service Google signup — fails closed |
 | `title` | `text` | nullable | Professional designation |
 | `status` | `text` | NOT NULL, default `'active'` | `active` \| `suspended`. Server-owned. The only suspend mechanism |
 | `banned` | `boolean` | default `false` | Added by the Better Auth admin plugin. Unused by app code |

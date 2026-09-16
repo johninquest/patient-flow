@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, Button, FormInput, Modal, StatusPill, LoadingSpinner } from '../components/ui';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { AuditTimeline } from '../components/AuditTimeline';
 import { ApiError } from '../lib/api/errors';
 
@@ -33,6 +33,16 @@ interface AuditLog {
 }
 
 const ROLES = ['admin', 'provider', 'clinical_staff', 'front_desk'] as const;
+
+/**
+ * Roles an admin can assign from the staff table.
+ *
+ * Includes `pending` so access can be revoked without suspending the account —
+ * the user stays signed in and lands on the waiting room instead of being
+ * locked out. The "New Staff" modal deliberately uses `ROLES` only: creating a
+ * user who cannot do anything is never the intent there.
+ */
+const ASSIGNABLE_ROLES = [...ROLES, 'pending'] as const;
 
 const TITLES = [
   'Doctor',
@@ -347,6 +357,7 @@ export default function Staff() {
               {staff?.map((member) => {
                 const isSelf = member.id === currentUser?.id;
                 const isSuspended = member.status === 'suspended';
+                const isPending = member.role === 'pending';
                 return (
                   <tr key={member.id} className={`${isSelf ? 'bg-status-progress-bg/30' : ''} ${isSuspended ? 'opacity-60' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -374,7 +385,7 @@ export default function Staff() {
                         className="text-sm border border-border-default rounded-[var(--radius-control)] px-2 py-1 bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                         title={isSelf && member.role === 'admin' ? t('staff.cannotDemoteSelf') : undefined}
                       >
-                        {ROLES.map((role) => (
+                        {ASSIGNABLE_ROLES.map((role) => (
                           <option key={role} value={role}>
                             {t(`staff.roles.${role}`)}
                           </option>
@@ -397,10 +408,18 @@ export default function Staff() {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusPill
-                        status={isSuspended ? 'delayed' : 'ready'}
-                        label={isSuspended ? t('staff.suspended') : t('staff.active')}
-                      />
+                      {isPending ? (
+                        <StatusPill
+                          status="waiting"
+                          label={t('staff.pendingAccess')}
+                          icon={<ClockIcon className="w-4 h-4" />}
+                        />
+                      ) : (
+                        <StatusPill
+                          status={isSuspended ? 'delayed' : 'ready'}
+                          label={isSuspended ? t('staff.suspended') : t('staff.active')}
+                        />
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       {new Date(member.createdAt).toLocaleDateString()}

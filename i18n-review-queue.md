@@ -38,6 +38,22 @@ introduced a new term — see `.github/skills/clinic-i18n/SKILL.md`.
 | Key | Source (EN) | Proposed (FR) | Reason flagged |
 |---|---|---|---|
 | `staff.roles.provider` | Provider | Médecin | **Changed** from "Prestataire" to align with the glossary (Doctor = Médecin). "Prestataire" reads as a contractor/vendor in French and was misleading for a clinical role. Confirm this is the right label for the `provider` slug. |
+
+### Pending-access terms (added 2026-09-16)
+
+Introduced with Google self-registration: new staff sign in with Google and hold
+no role until an admin grants one.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `staff.roles.pending` | Pending Access | Accès en attente | New term. Not a job function but an account state, so it has no glossary role counterpart. Chosen over bare "En attente" to avoid colliding with the patient-flow "Waiting" term. Confirm it reads as a permission state, not a queue position. |
+| `staff.pendingAccess` | Pending Access | Accès en attente | Same string as `staff.roles.pending`, kept as a separate key because one is a dropdown option and the other a status badge — they may diverge later. Confirm the duplication is acceptable. |
+| `pending.title` | Access pending | Accès en attente | Waiting-room page heading. |
+| `pending.description` | Your account has been created, but an administrator must grant you access before you can use Patient Flow. | Votre compte a été créé, mais un administrateur doit vous accorder l'accès avant que vous puissiez utiliser Patient Flow. | Full sentence, no concatenation. Confirm "Patient Flow" stays untranslated as the product name. |
+| `pending.signedInAs` | Signed in as | Connecté en tant que | Gender-neutral form chosen; confirm it is acceptable before a name/email. |
+| `pending.checkAgain` | Check again | Vérifier à nouveau | Button label — confirm length fits. |
+| `pending.contactAdmin` | If you have been waiting a while, contact your administrator. | Si vous attendez depuis un moment, contactez votre administrateur. | Softer register than `auth.contactAdmin`; confirm the tone is consistent with the rest of the app. |
+| `audit.titles.user.registered` | Registered | Inscription | New audit action for a self-service Google signup. Confirm "Inscription" is not confused with `user.created` ("Utilisateur créé"), which is an admin provisioning an account. |
 | `staff.roles.clinical_staff` | Clinical Staff | Personnel infirmier | **Changed** from "Personnel clinique" to align with the glossary (Nurse = Personnel infirmier). Note the app slug is broader than "nurse" — if this role ever covers non-nursing clinical staff, a broader term may be needed. |
 
 ### Register / terminology decisions

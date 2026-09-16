@@ -2,7 +2,14 @@
 
 **Date:** 2026-09-15  
 **Status:** decided  
-**Relates to:** [0001](./0001-text-fk-for-better-auth-user-id.md), [0007](./0007-casl-authorization-implementation.md), [0012](./0012-casl-v7-ability-api-migration.md)
+**Relates to:** [0001](./0001-text-fk-for-better-auth-user-id.md), [0007](./0007-casl-authorization-implementation.md), [0012](./0012-casl-v7-ability-api-migration.md), [0019](./0019-google-self-registration-with-pending-approval.md)
+
+> **Amended by [0019](./0019-google-self-registration-with-pending-approval.md).**
+> Two decisions here were reversed once self-service Google signup was wanted:
+> `disableImplicitSignUp: true` is gone, and `defaultRole` is now `'pending'`
+> rather than `'front_desk'` — the default must be the zero-access role, since
+> it is what a self-registered user receives. The reasoning below about *why*
+> `defaultRole` is mandatory still holds exactly.
 
 ## Problem
 

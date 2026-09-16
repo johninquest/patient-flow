@@ -77,11 +77,14 @@ Configuration is split by responsibility:
 - **Modules**: `apps/api/src/modules/` — each feature (patients, encounters, tasks, audit, user) is a self-contained NestJS module.
 - **Database**: `apps/api/src/core/db/schema.ts` — single Drizzle schema file. All IDs are UUIDs generated with `uuidv7()`, **not** `gen_random_uuid()`.
 - **Auth**: Better Auth via `apps/api/src/core/auth/auth.ts`. The `AuthGuard` resolves the session and attaches `request.user`. Use `@CurrentUser()` to access the user in controllers.
-- **Access control**: Role-based access control (RBAC) with four roles:
+- **Access control**: Role-based access control (RBAC) with four access roles, plus one account state:
   - **admin** – full access: staff management, all data, configuration
   - **provider** – clinical access: own patients/encounters, clinical notes
   - **clinical_staff** – clinical support tasks, vitals, lab prep
   - **front_desk** – scheduling, intake, demographics; no clinical notes
+  - **pending** – authenticated but granted nothing. New staff reach this by self-registering with Google; `AuthGuard` rejects every protected endpoint for them until an admin assigns a real role (see ADR 0019).
+
+  The vocabulary lives in `apps/api/src/core/auth/roles.ts`: `ASSIGNABLE_ROLES` (the four real roles, used when *creating* a user) and `ALL_ROLES` (plus `pending`, used when *updating* one).
 
 #### Controller pattern
 ```ts

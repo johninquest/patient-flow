@@ -36,6 +36,7 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "signInWithGoogle": "Sign in with Google",
+    "googleSignInFailed": "Could not start Google sign-in. Please try again.",
     "orDivider": "or",
     "contactAdmin": "Need an account? Contact your administrator.",
     "accountSuspended": "Your account has been suspended. Please contact your administrator.",
@@ -255,6 +256,7 @@
     "status": "Status",
     "active": "Active",
     "suspended": "Suspended",
+    "pendingAccess": "Pending Access",
     "suspend": "Suspend",
     "activate": "Activate",
     "confirmSuspend": "Suspend User Account",
@@ -268,7 +270,8 @@
       "admin": "Admin",
       "provider": "Provider",
       "clinical_staff": "Clinical Staff",
-      "front_desk": "Front Desk"
+      "front_desk": "Front Desk",
+      "pending": "Pending Access"
     }
   },
   "audit": {
@@ -285,6 +288,7 @@
       "task.updated": "Task updated",
       "task.deleted": "Task deleted",
       "user.created": "User created",
+      "user.registered": "Registered",
       "user.status_changed": "Account status changed",
       "user.role_changed": "Role changed",
       "admin.seeded": "Admin granted",
@@ -326,5 +330,12 @@
     "status": "Status",
     "noTitle": "No title set",
     "never": "Never"
+  },
+  "pending": {
+    "title": "Access pending",
+    "description": "Your account has been created, but an administrator must grant you access before you can use Patient Flow.",
+    "signedInAs": "Signed in as",
+    "checkAgain": "Check again",
+    "contactAdmin": "If you have been waiting a while, contact your administrator."
   }
 }

@@ -1,11 +1,13 @@
 import { z } from 'zod';
-import { USER_ROLES } from './create-user.dto.js';
+import { ALL_ROLES } from '../../../core/auth/roles.js';
 
 export const updateUserRoleSchema = z
   .object({
+    // `ALL_ROLES`, not `USER_ROLES`: an admin must be able to both grant access
+    // and revoke it by setting a user back to `pending`.
     role: z
-      .enum(USER_ROLES, {
-        error: `role must be one of: ${USER_ROLES.join(', ')}`,
+      .enum(ALL_ROLES, {
+        error: `role must be one of: ${ALL_ROLES.join(', ')}`,
       })
       .optional()
       .describe('User role'),

@@ -23,7 +23,13 @@
 | Error format | NestJS default: `{ "statusCode": number, "message": string, "error": string }` |
 | Validation | Zod v4 schemas via `@Body({ schema })` + `StandardSchemaValidationPipe`. Unknown keys rejected with `.strict()` (replaces `forbidNonWhitelisted`) |
 | Audit | Every mutation logged via `AuditService.record()` with action format `entity.verb` |
-| Roles | `admin`, `provider`, `clinical_staff`, `front_desk` |
+| Roles | `admin`, `provider`, `clinical_staff`, `front_desk`, `pending` |
+
+> **`pending`** is an account state, not a job function: the user is authenticated
+> but has been granted no role. New staff reach it by self-registering with
+> Google. `AuthGuard` rejects every protected endpoint for these users with
+> `403`, so they can only reach the client's waiting-room screen. An admin grants
+> access by assigning one of the four real roles via `PATCH /api/users/:id`.
 
 ---
 
@@ -40,6 +46,20 @@
 | POST | `/auth/sign-in/social` | OAuth sign-in (Google) | Public |
 
 **Session cookie:** `session_token` — HttpOnly, SameSite=Lax, scoped to `.patientflow.app` in production.
+
+### Google self-registration
+
+`POST /auth/sign-in/social` with `{ "provider": "google" }` returns
+`{ "url": "..." }`; the client must redirect to that URL (the endpoint does not
+redirect on its own).
+
+Implicit sign-up is **enabled**, so an unknown Google account creates a user
+rather than being rejected. The new user is created with `role = 'pending'` and
+`status = 'active'`, and a `user.registered` audit entry is written. Email/password
+sign-up remains disabled (`emailAndPassword.disableSignUp`).
+
+> To restrict signup to a Google Workspace domain, set the `hd` provider option
+> (currently commented out in `core/auth/auth.ts`).
 
 ---
 
@@ -397,6 +417,10 @@ no_show     → (terminal)
 }
 ```
 
+> `pending` is **not** accepted here. Creating a user who cannot do anything is
+> never the intent of "New Staff"; `pending` is reached only by self-service
+> Google signup, or by an admin revoking access via `PATCH /api/users/:id`.
+
 **Response:** `201 Created` — User object (no password returned)
 
 **Errors:** `400` Validation · `403` Not admin · `409` Email already exists
@@ -407,6 +431,9 @@ no_show     → (terminal)
 **Roles:** `admin` only
 
 **Response:** `200 OK` — Array of User objects
+
+> Includes `pending` users, so an admin can see who has self-registered and is
+> awaiting access. The client renders these with a "Pending Access" badge.
 
 ---
 
@@ -429,7 +456,11 @@ no_show     → (terminal)
 ]
 ```
 
-**Notes:** Only users with `status = 'active'` are returned. Ordered by `name`.
+**Notes:** Only users with `status = 'active'` **and** a role other than `pending`
+are returned. Ordered by `name`.
+
+> `pending` users are excluded because they cannot act on anything yet —
+> assigning work to them would create tasks nobody can progress.
 
 ---
 
@@ -470,7 +501,7 @@ no_show     → (terminal)
 **Request:**
 ```json
 {
-  "role": "string (optional) — admin, provider, clinical_staff, front_desk",
+  "role": "string (optional) — admin, provider, clinical_staff, front_desk, pending",
   "title": "string (optional)"
 }
 ```
@@ -478,6 +509,8 @@ no_show     → (terminal)
 **Business Rules:**
 - Cannot demote self
 - Cannot demote last remaining admin
+- Setting `role` to `pending` revokes access without suspending the account: the
+  user stays signed in and is routed to the waiting-room screen
 
 **Response:** `200 OK` — Updated User object
 
@@ -578,6 +611,16 @@ no_show     → (terminal)
 > Audit logging is performed server-side by `AuditService.record()`. No public API endpoints expose audit logs in the current version.
 
 **Action naming convention:** `entity.verb` (e.g., `patient.created`, `encounter.updated`, `task.deleted`, `encounter.status_changed`)
+
+**User-specific actions:**
+| Action | When |
+|--------|------|
+| `user.created` | Admin provisioned an account via `POST /api/users` |
+| `user.registered` | A user self-registered via Google. Written by a Better Auth `databaseHooks.user.create.after` hook, since signup bypasses every service |
+| `user.role_changed` | Role or title changed via `PATCH /api/users/:id` |
+| `user.status_changed` | Status changed via `PATCH /api/users/:id/status` |
+| `admin.seeded` | `ADMIN_EMAIL` promoted on startup |
+| `admin.bootstrapped` | First admin created by `pnpm run db:create-admin` |
 
 **Encounter-specific actions:**
 | Action | When |

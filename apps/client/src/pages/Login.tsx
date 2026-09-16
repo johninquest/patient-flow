@@ -7,12 +7,12 @@ import { Card, FormInput, Button } from '../components/ui';
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
+  const { login, signInWithGoogle } = useAuth();  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,8 +21,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const signedIn = await login(email, password);
+      // A pending user has no permissions, so send them to the waiting room
+      // rather than the dashboard, which would only show errors.
+      navigate(signedIn.role === 'pending' ? '/pending' : '/dashboard');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       if (message.includes('suspended')) {
@@ -32,6 +34,20 @@ export default function Login() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setGoogleLoading(true);
+
+    try {
+      // On success this navigates away to Google, so the loading state is
+      // intentionally left set — clearing it would flash the button back.
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('auth.googleSignInFailed'));
+      setGoogleLoading(false);
     }
   };
 
@@ -105,7 +121,9 @@ export default function Login() {
           <Button
             type="button"
             variant="secondary"
-            onClick={signInWithGoogle}
+            onClick={handleGoogleSignIn}
+            loading={googleLoading}
+            disabled={googleLoading}
             className="w-full"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

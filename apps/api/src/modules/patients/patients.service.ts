@@ -10,9 +10,10 @@ import { CreatePatientDto } from './dto/create-patient.dto.js';
 import { UpdatePatientDto } from './dto/update-patient.dto.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppAbility } from '../../core/auth/ability.js';
+import type { Role as AppRole } from '../../core/auth/roles.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
-type Role = 'admin' | 'provider' | 'clinical_staff' | 'front_desk';
+type Role = AppRole;
 
 type PatientSection =
   | 'identity'
@@ -67,6 +68,8 @@ const PATIENT_READ_VISIBILITY: Record<Role, PatientSection[]> = {
     'notes',
   ],
   front_desk: ['identity', 'contact', 'financials', 'emergency', 'transport'],
+  // Authenticated but not yet granted a role. Reads nothing.
+  pending: [],
 };
 
 /** Which sections each role can WRITE. */
@@ -83,6 +86,8 @@ const PATIENT_WRITE_VISIBILITY: Record<Role, PatientSection[]> = {
   provider: ['emergency', 'medical', 'notes'],
   clinical_staff: ['contact', 'emergency', 'medical', 'transport', 'notes'],
   front_desk: ['identity', 'contact', 'financials', 'emergency', 'transport'],
+  // Authenticated but not yet granted a role. Writes nothing.
+  pending: [],
 };
 
 const PATIENT_FIELDS_TO_TRACK = [

@@ -87,10 +87,28 @@ locale files.
 | `provider` | Provider | **Médecin** | Doctor |
 | `clinical_staff` | Clinical Staff | **Personnel infirmier** | Nurse |
 | `front_desk` | Front Desk | Accueil | Frontdesk |
+| `pending` | Pending Access | **Accès en attente** | — (no glossary role; see note) |
 
 > **Note:** `provider` and `clinical_staff` were previously translated as
 > "Prestataire" and "Personnel clinique". Both were realigned to the glossary
 > terms above — see `i18n-review-queue.md`.
+
+> **Note:** `pending` is not a job function, so it has no counterpart in the
+> Roles table above. It is an account state — signed in, but not yet granted a
+> role. "Accès en attente" was chosen over "En attente" alone so the label
+> reads as a permission state rather than a queue position, which would collide
+> with the patient-flow "Waiting" term.
+
+## Account access states
+
+Distinct from the Roles table: these describe whether an account may use the
+app at all, not what job the person does.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Pending access | Accès en attente | Zugang ausstehend (unreviewed) | Signed in but granted no role yet. Must not be confused with "Waiting" (patient queue) or "Suspended" (account disabled). |
+| Active | Actif | Aktiv (unreviewed) | Account may use the app. |
+| Suspended | Suspendu | Gesperrt (unreviewed) | Account disabled by an admin. Distinct from "Pending access" — a suspended user is blocked, a pending one is merely unprivileged. |
 
 ## Common UI actions
 

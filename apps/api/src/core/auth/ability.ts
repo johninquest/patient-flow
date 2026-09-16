@@ -3,6 +3,7 @@ import {
   MongoAbility,
   createMongoAbility,
 } from '@casl/ability';
+import { Role } from './roles.js';
 
 export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
 export type Subjects = 'Patient' | 'Encounter' | 'Task' | 'User' | 'all';
@@ -23,7 +24,7 @@ export function defineAbilitiesFor(user: User): AppAbility {
     createMongoAbility,
   );
 
-  switch (user.role) {
+  switch (user.role as Role) {
     case 'admin':
       // Admins have full access
       can('manage', 'all');
@@ -106,6 +107,13 @@ export function defineAbilitiesFor(user: User): AppAbility {
 
       // Front desk cannot manage users
       cannot('manage', 'User');
+      break;
+
+    case 'pending':
+      // Self-registered, awaiting an admin to grant a role. Authenticated but
+      // deliberately grants nothing. AuthGuard rejects these users before any
+      // route runs, so this branch is defence in depth rather than the primary
+      // gate.
       break;
 
     default:

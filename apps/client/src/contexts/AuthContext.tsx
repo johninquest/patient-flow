@@ -13,9 +13,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
-  signInWithGoogle: () => void;
+  signInWithGoogle: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,9 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{ user: User }>('/api/auth/sign-in/email', { email, password });
     setUser(response.user);
+    // Returned so callers can route on the fresh role — reading `user` from
+    // context immediately after this call would still see the previous value.
+    return response.user;
   };
 
   const logout = async () => {
@@ -49,13 +53,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const signInWithGoogle = () => {
-    // Redirect to Better Auth's Google OAuth endpoint
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/sign-in/google`;
+  /**
+   * Starts the Google OAuth flow.
+   *
+   * Better Auth exposes social sign-in as `POST /api/auth/sign-in/social`, which
+   * answers with the provider's authorization URL rather than redirecting. We
+   * have to follow it ourselves — navigating straight to an `/api/auth/sign-in/google`
+   * URL would issue a GET, which Better Auth does not serve.
+   */
+  const signInWithGoogle = async () => {
+    const { url } = await api.post<{ url: string }>('/api/auth/sign-in/social', {
+      provider: 'google',
+      callbackURL: `${window.location.origin}/dashboard`,
+    });
+
+    window.location.href = url;
+  };
+
+  /**
+   * Re-reads the session. Used by the waiting room so a user who has just been
+   * granted a role can continue without signing out and back in.
+   */
+  const refresh = async () => {
+    await checkAuth();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, signInWithGoogle }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        signInWithGoogle,
+        refresh,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

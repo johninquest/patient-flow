@@ -70,6 +70,9 @@ docs/
 | `provider` | Provider | Clinical access: own patients/encounters, clinical notes |
 | `clinical_staff` | Clinical Staff | Clinical support tasks, vitals, lab prep |
 | `front_desk` | Front Desk | Scheduling, intake, demographics; no clinical notes |
+| `pending` | Pending Access | **Account state, not a job function.** Authenticated but granted nothing. Reached by self-registering with Google; `AuthGuard` rejects every protected endpoint until an admin assigns a real role (ADR 0019) |
+
+Vocabulary lives in `apps/api/src/core/auth/roles.ts`: `ASSIGNABLE_ROLES` (the four real roles — used when *creating* a user) and `ALL_ROLES` (plus `pending` — used when *updating* one, so an admin can revoke access).
 
 ## Workflow States (Encounter FSM)
 

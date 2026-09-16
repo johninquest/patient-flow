@@ -1,11 +1,16 @@
 import { z } from 'zod';
+import { ASSIGNABLE_ROLES } from '../../../core/auth/roles.js';
 
-export const USER_ROLES = [
-  'admin',
-  'provider',
-  'clinical_staff',
-  'front_desk',
-] as const;
+/**
+ * Role vocabulary for *creating* a staff account.
+ *
+ * Deliberately excludes `pending`: an admin who clicks "New Staff" intends to
+ * provision a working account, so offering "Pending Access" there would just
+ * produce a user who cannot sign in to anything. `pending` is reachable only
+ * through self-service Google signup, or by an admin revoking access later via
+ * `updateUserRoleSchema`.
+ */
+export const USER_ROLES = ASSIGNABLE_ROLES;
 
 export const createUserSchema = z
   .object({

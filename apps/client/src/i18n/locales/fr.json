@@ -36,6 +36,7 @@
     "noAccount": "Vous n'avez pas de compte ?",
     "hasAccount": "Vous avez déjà un compte ?",
     "signInWithGoogle": "Se connecter avec Google",
+    "googleSignInFailed": "Impossible de démarrer la connexion Google. Veuillez réessayer.",
     "orDivider": "ou",
     "contactAdmin": "Besoin d'un compte ? Contactez votre administrateur.",
     "accountSuspended": "Votre compte a été suspendu. Veuillez contacter votre administrateur.",
@@ -255,6 +256,7 @@
     "status": "Statut",
     "active": "Actif",
     "suspended": "Suspendu",
+    "pendingAccess": "Accès en attente",
     "suspend": "Suspendre",
     "activate": "Activer",
     "confirmSuspend": "Suspendre le compte utilisateur",
@@ -268,7 +270,8 @@
       "admin": "Administrateur",
       "provider": "Médecin",
       "clinical_staff": "Personnel infirmier",
-      "front_desk": "Accueil"
+      "front_desk": "Accueil",
+      "pending": "Accès en attente"
     }
   },
   "audit": {
@@ -285,6 +288,7 @@
       "task.updated": "Tâche modifiée",
       "task.deleted": "Tâche supprimée",
       "user.created": "Utilisateur créé",
+      "user.registered": "Inscription",
       "user.status_changed": "Statut du compte modifié",
       "user.role_changed": "Rôle modifié",
       "admin.seeded": "Administrateur accordé",
@@ -326,5 +330,12 @@
     "status": "Statut",
     "noTitle": "Aucun titre défini",
     "never": "Jamais"
+  },
+  "pending": {
+    "title": "Accès en attente",
+    "description": "Votre compte a été créé, mais un administrateur doit vous accorder l'accès avant que vous puissiez utiliser Patient Flow.",
+    "signedInAs": "Connecté en tant que",
+    "checkAgain": "Vérifier à nouveau",
+    "contactAdmin": "Si vous attendez depuis un moment, contactez votre administrateur."
   }
 }
