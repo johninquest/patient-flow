@@ -70,7 +70,8 @@ export default function Staff() {
 
   const { data: auditLogs } = useQuery({
     queryKey: ['staff-audit'],
-    queryFn: () => api.get<AuditLog[]>('/api/audit/resource/user'),
+    queryFn: () => api.get<AuditLog[]>('/api/audit/users'),
+    enabled: activeTab === 'activity',
   });
 
   const updateMutation = useMutation({
@@ -78,6 +79,7 @@ export default function Staff() {
       api.patch<StaffMember>(`/api/users/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-audit'] });
       setError(null);
     },
     onError: (err: Error) => {
@@ -94,6 +96,7 @@ export default function Staff() {
       api.post<StaffMember>('/api/users', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-audit'] });
       setShowCreateModal(false);
       setError(null);
     },
@@ -111,6 +114,7 @@ export default function Staff() {
       api.patch<StaffMember>(`/api/users/${id}/status`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-audit'] });
       setShowSuspendConfirm(null);
       setError(null);
     },

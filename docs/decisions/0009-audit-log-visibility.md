@@ -50,8 +50,15 @@ Create **audit log query endpoints** for each resource type (patient, encounter,
   - Display `AuditTimeline` component
 - Update `Staff.tsx`:
   - Add "Activity" tab (admin only)
-  - Fetch audit logs via `GET /api/audit/resource/user`
+  - Fetch audit logs via `GET /api/audit/users`
   - Display `AuditTimeline` component
+
+> **Correction (2026-09-16):** The original Frontend section named
+> `GET /api/audit/resource/user`, which was never implemented; backend shipped
+> `GET /api/audit/user/:id` (actor-scoped) instead. To restore the intended
+> "Staff page shows activity for all users" behavior, a collection endpoint
+> `GET /api/audit/users` (admin-only) was added, backed by
+> `AuditService.findByResourceType('user')`. `user/:id` was also made admin-only.
 
 **Audit Log Display Format:**
 ```

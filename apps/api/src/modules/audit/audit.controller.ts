@@ -4,6 +4,8 @@ import { AuditService } from './audit.service.js';
 import { AuditLogResponseDto } from './dto/audit-log-response.dto.js';
 import { AuthGuard } from '../../core/auth/guards/auth.guard.js';
 import { CaslGuard } from '../../core/auth/guards/casl.guard.js';
+import { RolesGuard } from '../../core/auth/guards/roles.guard.js';
+import { Roles } from '../../core/auth/decorators/roles.decorator.js';
 
 @ApiTags('Audit')
 @Controller('audit')
@@ -44,14 +46,31 @@ export class AuditController {
     return this.auditService.findByResource('task', id);
   }
 
+  @Get('users')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get all user audit logs (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'All user-provisioning and access audit logs',
+    type: [AuditLogResponseDto],
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
+  async getUserAuditLogs() {
+    return this.auditService.findByResourceType('user');
+  }
+
   @Get('user/:id')
-  @ApiOperation({ summary: 'Get audit logs for a user' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get audit logs for a user (admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Audit logs for the user',
     type: [AuditLogResponseDto],
   })
-  async getUserAuditLogs(@Param('id') id: string) {
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
+  async getAuditLogsByActor(@Param('id') id: string) {
     return this.auditService.findByActor(id);
   }
 }

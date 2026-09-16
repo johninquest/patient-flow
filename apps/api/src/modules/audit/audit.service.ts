@@ -79,4 +79,19 @@ export class AuditService {
       .where(eq(audit_log.actor_user_id, actorUserId))
       .orderBy(desc(audit_log.created_at));
   }
+
+  /**
+   * Get every audit log of a given resource type, newest first.
+   *
+   * Backs the admin-only staff Activity tab, which lists all
+   * `resource_type = 'user'` events (provisioning, registration, role and
+   * status changes, admin seeding) regardless of the specific user.
+   */
+  async findByResourceType(resourceType: string) {
+    return db
+      .select()
+      .from(audit_log)
+      .where(eq(audit_log.resource_type, resourceType))
+      .orderBy(desc(audit_log.created_at));
+  }
 }

@@ -606,9 +606,19 @@ are returned. Ordered by `name`.
 
 ---
 
-## Audit Log (Internal Service)
+## Audit Log
 
-> Audit logging is performed server-side by `AuditService.record()`. No public API endpoints expose audit logs in the current version.
+Audit logging is performed server-side by `AuditService.record()`. Read access is
+served by these endpoints (all require authentication via `AuthGuard`; the user
+collection is admin-only via `RolesGuard`):
+
+| Endpoint | Description | Roles |
+|----------|-------------|-------|
+| `GET /api/audit/patient/:id` | Audit logs for a single patient | All authenticated |
+| `GET /api/audit/encounter/:id` | Audit logs for a single encounter | All authenticated |
+| `GET /api/audit/task/:id` | Audit logs for a single task | All authenticated |
+| `GET /api/audit/user/:id` | Audit logs authored by a user | `admin` only |
+| `GET /api/audit/users` | All `resource_type='user'` logs (provisioning/access events) | `admin` only |
 
 **Action naming convention:** `entity.verb` (e.g., `patient.created`, `encounter.updated`, `task.deleted`, `encounter.status_changed`)
 
