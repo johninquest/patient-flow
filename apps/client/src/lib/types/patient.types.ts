@@ -34,14 +34,9 @@ export interface Physicians {
   other?: string;
 }
 
-export interface TransportModes {
-  public_transport?: string;
-  taxi?: string;
-  ambulance?: string;
-}
-
 export interface TransportLogistics {
-  modes?: TransportModes;
+  /** Transport mode slugs — a patient may use more than one. */
+  modes?: string[];
   comments?: string;
 }
 

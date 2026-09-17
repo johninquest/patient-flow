@@ -72,7 +72,15 @@ export const financialsSchema = z
 export const emergencyContactSchema = z
   .object({
     name: z.string().optional().describe('Contact name'),
-    relation: z.string().optional().describe('Relationship to patient'),
+    relation: z
+      .string()
+      .optional()
+      .describe(
+        'Relationship to patient. The client renders a standard list ' +
+          '(partner, parent, child, sibling, grandparent, other_relative, ' +
+          'friend_neighbour, carer, other) but any string is accepted so ' +
+          'records written before the dropdown existed still round-trip.',
+      ),
     phone: z.string().optional().describe('Contact phone number'),
     email: z.string().optional().describe('Contact email'),
     comments: z.string().optional().describe('Additional comments'),
@@ -87,20 +95,34 @@ export const physiciansSchema = z
   })
   .strict();
 
+/**
+ * Transport modes a patient may use to reach the clinic.
+ *
+ * A patient can use more than one (e.g. taxi some days, public transport
+ * others), so this is a set rather than a single choice. The values are the
+ * persisted slugs — the client renders them as translated checkbox labels.
+ */
+export const TRANSPORT_MODES = [
+  'public_transport',
+  'taxi',
+  'ambulance',
+] as const;
+
 export const transportModesSchema = z
-  .object({
-    public_transport: z
-      .string()
-      .optional()
-      .describe('Public transport details'),
-    taxi: z.string().optional().describe('Taxi details'),
-    ambulance: z.string().optional().describe('Ambulance details'),
+  .array(
+    z.enum(TRANSPORT_MODES, {
+      error: `each transport mode must be one of: ${TRANSPORT_MODES.join(', ')}`,
+    }),
+  )
+  .max(TRANSPORT_MODES.length, {
+    error: 'at most one entry per transport mode is allowed',
   })
-  .strict();
+  .optional()
+  .describe('Transport modes used by the patient (any subset)');
 
 export const transportLogisticsSchema = z
   .object({
-    modes: transportModesSchema.optional().describe('Transport modes'),
+    modes: transportModesSchema.describe('Transport modes'),
     comments: z.string().optional().describe('Transport comments'),
   })
   .strict();
@@ -138,5 +160,6 @@ export type IdentityDto = z.infer<typeof identitySchema>;
 export type FinancialsDto = z.infer<typeof financialsSchema>;
 export type EmergencyContactDto = z.infer<typeof emergencyContactSchema>;
 export type PhysiciansDto = z.infer<typeof physiciansSchema>;
+export type TransportMode = (typeof TRANSPORT_MODES)[number];
 export type TransportModesDto = z.infer<typeof transportModesSchema>;
 export type TransportLogisticsDto = z.infer<typeof transportLogisticsSchema>;

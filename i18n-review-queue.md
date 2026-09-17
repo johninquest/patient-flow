@@ -87,6 +87,37 @@ no role until an admin grants one.
 | `audit.titles.admin.seeded` | Admin granted | Administrateur accordé | Past-participle phrasing for an out-of-band promotion; confirm "accordé" reads as "granted". |
 | `audit.notSet` | Not set | Non défini | Fallback for null/undefined diff values; confirm "Non défini" over "Non renseigné". |
 
+### Emergency contact relations (added 2026-09-17)
+
+Introduced when the emergency-contact `relation` field changed from free text to
+a standard-list dropdown. Nine new terms — all need review.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `patients.relations.partner` | Spouse or partner | Conjoint(e) ou partenaire | New term. Slash form chosen for the epicene pair; confirm it is acceptable in a dropdown option (not just a button). |
+| `patients.relations.parent` | Parent | Parent | Identical in EN/FR — listed for completeness. |
+| `patients.relations.child` | Child | Enfant | New term. **Ambiguity risk:** "Enfant" also means a paediatric patient. Confirm the dropdown context makes the "offspring" sense unambiguous. |
+| `patients.relations.sibling` | Sibling | Frère ou sœur | New term. Spelled out rather than slashed — confirm this is preferred over `Frère(s)/sœur(s)`. |
+| `patients.relations.grandparent` | Grandparent | Grand-parent | New term. Confirm the hyphenated form. |
+| `patients.relations.other_relative` | Other relative | Autre membre de la famille | New term. Chosen over "Autre parent" because "parent" in French means *relative* generally, which would collide with the `parent` option directly above it in the same list. |
+| `patients.relations.friend_neighbour` | Friend or neighbour | Ami(e) ou voisin(e) | New term. Two slash forms in one option — confirm it does not read as cluttered. |
+| `patients.relations.carer` | Carer or guardian | Aidant(e) ou tuteur/tutrice | New term. "Aidant" is the standard French term for an unpaid carer; confirm it is understood outside France. |
+| `patients.relations.other` | Other | Autre | Escape hatch. **Known limitation:** unlike `document_type`, this option does not reveal a free-text box, so an off-list relationship cannot be recorded. Flagged for a product decision, not a translation one. |
+| `patients.fields.transportModes` | Transport Modes | Modes de transport | New group label for the multi-select. Confirm plural form. |
+| `patients.selectRelation` | Select a relationship | Sélectionner un lien de parenté | New placeholder. "Lien de parenté" is narrower than the list (it excludes friend/neighbour/carer) — confirm whether a broader placeholder such as "Sélectionner" is better. |
+
+### Transport mode labels (added 2026-09-17)
+
+These three keys already existed as free-text field labels; they are now checkbox
+labels. The strings are unchanged, but the **context** changed, so they are
+re-flagged for a quick confirmation that they still read correctly as options.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `patients.fields.transportPublic` | Public Transport | Transport public | Now a checkbox option rather than a field label. |
+| `patients.fields.transportTaxi` | Taxi | Taxi | Identical in EN/FR. |
+| `patients.fields.transportAmbulance` | Ambulance | Ambulance | Identical in EN/FR. |
+
 ---
 
 _None yet._

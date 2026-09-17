@@ -1,4 +1,8 @@
 import type { TFunction } from 'i18next';
+import {
+  TRANSPORT_MODE_LABEL_KEYS,
+  type TransportModeSlug,
+} from '../lib/patient-options';
 
 export interface AuditDiffEntry {
   from: unknown;
@@ -70,9 +74,21 @@ const NESTED_FIELD_KEYS: Record<string, string> = {
   attending: 'patients.fields.attendingPhysician',
   correspondent: 'patients.fields.correspondentPhysician',
   other: 'patients.fields.otherPhysician',
-  public_transport: 'patients.fields.transportPublic',
-  taxi: 'patients.fields.transportTaxi',
-  ambulance: 'patients.fields.transportAmbulance',
+  modes: 'patients.fields.transportModes',
+};
+
+/**
+ * Nested values that are stored as slugs and must be translated before display.
+ * Keyed by the parent field name so `relation` and `modes` resolve to the right
+ * namespace. Returns `undefined` for an unrecognised slug, which makes the
+ * caller fall back to rendering the raw value.
+ */
+const NESTED_ENUM_KEYS: Record<
+  string,
+  (value: string) => string | undefined
+> = {
+  relation: (value) => `patients.relations.${value}`,
+  modes: (value) => TRANSPORT_MODE_LABEL_KEYS[value as TransportModeSlug],
 };
 
 /**
@@ -109,20 +125,51 @@ function formatNestedObject(
   const parts = Object.entries(value).map(([key, nested]) => {
     const mapped = NESTED_FIELD_KEYS[key];
     const label = mapped ? ctx.t(mapped) : key.replace(/_/g, ' ');
-    return `${label}: ${formatNestedValue(nested, ctx)}`;
+    return `${label}: ${formatNestedValue(nested, ctx, key)}`;
   });
   return parts.length === 0 ? ctx.t('audit.notSet') : parts.join(' · ');
 }
 
-function formatNestedValue(value: unknown, ctx: AuditValueContext): string {
+/**
+ * Render a nested value. `parentKey` is the field the value belongs to, which
+ * is what lets slug-valued fields (`relation`, `modes`) be translated rather
+ * than printed raw.
+ */
+function formatNestedValue(
+  value: unknown,
+  ctx: AuditValueContext,
+  parentKey?: string,
+): string {
   if (value === null || value === undefined) {
     return ctx.t('audit.notSet');
   }
   if (typeof value === 'boolean') {
     return ctx.t(value ? 'common.yes' : 'common.no');
   }
+  if (Array.isArray(value)) {
+    // Transport modes are stored as an array of slugs. Without this branch the
+    // array would be stringified as "public_transport,taxi".
+    if (value.length === 0) {
+      return ctx.t('audit.notSet');
+    }
+    const translate = parentKey ? NESTED_ENUM_KEYS[parentKey] : undefined;
+    return value
+      .map((entry) => {
+        const key = translate && typeof entry === 'string' ? translate(entry) : undefined;
+        return key
+          ? ctx.t(key, { defaultValue: String(entry) })
+          : formatNestedValue(entry, ctx);
+      })
+      .join(', ');
+  }
   if (isPlainObject(value)) {
     return formatNestedObject(value, ctx);
+  }
+  if (typeof value === 'string' && parentKey) {
+    const key = NESTED_ENUM_KEYS[parentKey]?.(value);
+    if (key) {
+      return ctx.t(key, { defaultValue: value });
+    }
   }
   return String(value);
 }

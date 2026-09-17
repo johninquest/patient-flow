@@ -120,6 +120,33 @@ app at all, not what job the person does.
 | Edit | Modifier | Bearbeiten (unreviewed) | |
 | Delete | Supprimer | Löschen (unreviewed) | |
 
+## Emergency contact relationships
+
+Used by `patients.relations.*` for the emergency-contact `relation` dropdown.
+The slugs are persisted values; the labels are what staff see.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Spouse or partner | Conjoint(e) ou partenaire | Ehepartner(in) oder Partner(in) (unreviewed) | Slash form used for the epicene French pair, per the style guide's compact-UI rule. |
+| Parent | Parent | Elternteil (unreviewed) | Same word in EN/FR. |
+| Child | Enfant | Kind (unreviewed) | Means "offspring" here, not a paediatric patient — do not reuse the patient-age sense. |
+| Sibling | Frère ou sœur | Geschwister (unreviewed) | French spells out both forms rather than using a slash, as it reads more naturally in a dropdown. |
+| Grandparent | Grand-parent | Großelternteil (unreviewed) | |
+| Other relative | Autre membre de la famille | Sonstige(r) Angehörige(r) (unreviewed) | Deliberately broader than "other family member" so cousins, in-laws and aunts/uncles all fit. |
+| Friend or neighbour | Ami(e) ou voisin(e) | Freund(in) oder Nachbar(in) (unreviewed) | Front desk frequently records a neighbour rather than kin. |
+| Carer or guardian | Aidant(e) ou tuteur/tutrice | Pflegeperson oder Vormund (unreviewed) | "Aidant" is the standard French term for an unpaid carer; "tuteur/tutrice" covers legal guardianship. |
+| Other | Autre | Sonstige(s) (unreviewed) | Escape hatch. Note there is no free-text companion field — see `i18n-review-queue.md`. |
+
+## Transport modes
+
+Used by `transport_logistics.modes[]`. A patient may select more than one.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Public transport | Transport public | Öffentliche Verkehrsmittel (unreviewed) | |
+| Taxi | Taxi | Taxi (unreviewed) | Identical in all three languages. |
+| Ambulance | Ambulance | Krankenwagen (unreviewed) | French uses the same word as English; German differs. |
+
 ## How to extend this table
 
 1. New term appears in a PR → check this table first.

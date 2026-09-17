@@ -7,6 +7,11 @@ import { Card, LoadingSpinner, Button, StatusPill } from '../components/ui';
 import { ArrowLeftIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import type { Patient } from '../lib/types/patient.types';
 import { getCountryName, getCurrencyName } from '../lib/iso-data';
+import {
+  isKnownRelation,
+  normalizeTransportModes,
+  TRANSPORT_MODE_LABEL_KEYS,
+} from '../lib/patient-options';
 import { AuditTimeline } from '../components/AuditTimeline';
 import {
   type Encounter,
@@ -94,6 +99,21 @@ export default function PatientDetail() {
   // Resolve currency code to localized name
   const resolvedCurrency = patient.financials?.currency
     ? getCurrencyName(patient.financials.currency, locale)
+    : null;
+
+  // Standard-list relations are translated; anything else is a legacy free-text
+  // value and is shown verbatim rather than as a raw i18n key.
+  const storedRelation = patient.emergency_contact?.relation;
+  const resolvedRelation = storedRelation
+    ? isKnownRelation(storedRelation)
+      ? t(`patients.relations.${storedRelation}`)
+      : storedRelation
+    : null;
+
+  // Transport modes are stored as slugs; render them as translated labels.
+  const transportModes = normalizeTransportModes(patient.transport_logistics?.modes);
+  const resolvedTransportModes = transportModes.length
+    ? transportModes.map((mode) => t(TRANSPORT_MODE_LABEL_KEYS[mode])).join(', ')
     : null;
 
   return (
@@ -206,7 +226,7 @@ export default function PatientDetail() {
           </div>
           <dl>
             <DetailRow label={t('patients.fields.emergencyName')} value={patient.emergency_contact.name} alternate />
-            <DetailRow label={t('patients.fields.emergencyRelation')} value={patient.emergency_contact.relation} />
+            <DetailRow label={t('patients.fields.emergencyRelation')} value={resolvedRelation} />
             <DetailRow label={t('patients.phone')} value={patient.emergency_contact.phone} alternate />
             <DetailRow label={t('patients.email')} value={patient.emergency_contact.email} />
             <DetailRow label={t('patients.fields.emergencyComments')} value={patient.emergency_contact.comments} alternate />
@@ -241,13 +261,7 @@ export default function PatientDetail() {
             <h4 className="text-sm font-medium text-text-primary">{t('patients.sections.transport')}</h4>
           </div>
           <dl>
-            {patient.transport_logistics.modes && (
-              <>
-                <DetailRow label={t('patients.fields.transportPublic')} value={patient.transport_logistics.modes.public_transport} alternate />
-                <DetailRow label={t('patients.fields.transportTaxi')} value={patient.transport_logistics.modes.taxi} />
-                <DetailRow label={t('patients.fields.transportAmbulance')} value={patient.transport_logistics.modes.ambulance} alternate />
-              </>
-            )}
+            <DetailRow label={t('patients.fields.transportModes')} value={resolvedTransportModes} alternate />
             <DetailRow label={t('patients.fields.transportComments')} value={patient.transport_logistics.comments} />
           </dl>
         </Card>

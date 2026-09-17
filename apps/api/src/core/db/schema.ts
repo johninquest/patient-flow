@@ -103,7 +103,7 @@ export const patients = pgTable(
     medical_history: text('medical_history'),
     medical_history_date: timestamp('medical_history_date'),
     physicians: jsonb('physicians'), // { attending, correspondent, other }
-    transport_logistics: jsonb('transport_logistics'), // { modes: { public_transport, taxi, ambulance }, comments }
+    transport_logistics: jsonb('transport_logistics'), // { modes: string[], comments } — modes is a subset of public_transport | taxi | ambulance
     notes: text('notes'),
     created_at: timestamp('created_at').defaultNow().notNull(),
     updated_at: timestamp('updated_at').defaultNow().notNull(),

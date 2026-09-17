@@ -120,10 +120,23 @@
       "transportPublic": "Transport public",
       "transportTaxi": "Taxi",
       "transportAmbulance": "Ambulance",
-      "transportComments": "Commentaires transport"
+      "transportModes": "Modes de transport",
+      "transportComments": "Commentaires sur le transport"
+    },
+    "relations": {
+      "partner": "Conjoint(e) ou partenaire",
+      "parent": "Parent",
+      "child": "Enfant",
+      "sibling": "Frère ou sœur",
+      "grandparent": "Grand-parent",
+      "other_relative": "Autre membre de la famille",
+      "friend_neighbour": "Ami(e) ou voisin(e)",
+      "carer": "Aidant(e) ou tuteur/tutrice",
+      "other": "Autre"
     },
     "selectCountry": "Sélectionner un pays",
     "selectCurrency": "Sélectionner une devise",
+    "selectRelation": "Sélectionner un lien de parenté",
     "empty": {
       "title": "Aucun patient pour le moment",
       "description": "Commencez par ajouter votre premier patient au système."

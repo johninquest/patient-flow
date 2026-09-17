@@ -4,11 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, Button, FormInput, FormSelect } from '../components/ui';
+import { Card, Button, FormInput, FormSelect, CheckboxGroup } from '../components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { Patient } from '../lib/types/patient.types';
 import { canWriteSection } from '../lib/types/patient.types';
 import { getCountryOptions, getCurrencyOptions, COUNTRY_DEFAULT_CURRENCY } from '../lib/iso-data';
+import {
+  RELATION_SLUGS,
+  TRANSPORT_MODE_SLUGS,
+  TRANSPORT_MODE_LABEL_KEYS,
+  normalizeTransportModes,
+} from '../lib/patient-options';
 import { ApiError } from '../lib/api/errors';
 
 export default function PatientForm() {
@@ -39,7 +45,7 @@ export default function PatientForm() {
     medical_history: '',
     medical_history_date: '',
     physicians: { attending: '', correspondent: '', other: '' },
-    transport_logistics: { modes: { public_transport: '', taxi: '', ambulance: '' }, comments: '' },
+    transport_logistics: { modes: [] as string[], comments: '' },
     notes: '',
   });
 
@@ -54,6 +60,18 @@ export default function PatientForm() {
     { value: 'passport', label: t('patients.fields.documentTypePassport') },
     { value: 'other', label: t('patients.fields.documentTypeOther') },
   ], [t]);
+
+  const relationOptions = useMemo(() =>
+    RELATION_SLUGS.map((slug) => ({
+      value: slug,
+      label: t(`patients.relations.${slug}`),
+    })), [t]);
+
+  const transportModeOptions = useMemo(() =>
+    TRANSPORT_MODE_SLUGS.map((slug) => ({
+      value: slug,
+      label: t(TRANSPORT_MODE_LABEL_KEYS[slug]),
+    })), [t]);
 
   // Track whether "Other" is selected in the document type dropdown
   const [isOtherDocType, setIsOtherDocType] = useState(false);
@@ -73,7 +91,10 @@ export default function PatientForm() {
         medical_history: existingPatient.medical_history ?? '',
         medical_history_date: existingPatient.medical_history_date ? existingPatient.medical_history_date.split('T')[0] : '',
         physicians: { attending: '', correspondent: '', other: '', ...existingPatient.physicians },
-        transport_logistics: { modes: { public_transport: '', taxi: '', ambulance: '' }, comments: '', ...existingPatient.transport_logistics },
+        transport_logistics: {
+          modes: normalizeTransportModes(existingPatient.transport_logistics?.modes),
+          comments: existingPatient.transport_logistics?.comments ?? '',
+        },
         notes: existingPatient.notes ?? '',
       });
     }
@@ -211,15 +232,10 @@ export default function PatientForm() {
     if (canWriteSection(role, 'transport')) {
       const tl = formData.transport_logistics;
       if (tl) {
-        const modes = tl.modes;
-        const hasModes = modes && (modes.public_transport || modes.taxi || modes.ambulance);
-        if (hasModes || tl.comments) {
+        const modes: string[] = tl.modes ?? [];
+        if (modes.length > 0 || tl.comments) {
           payload.transport_logistics = {
-            modes: hasModes ? {
-              public_transport: modes.public_transport || undefined,
-              taxi: modes.taxi || undefined,
-              ambulance: modes.ambulance || undefined,
-            } : undefined,
+            modes: modes.length > 0 ? modes : undefined,
             comments: tl.comments || undefined,
           };
         }
@@ -249,15 +265,10 @@ export default function PatientForm() {
     }));
   };
 
-  const handleDeepNestedChange = (section: string, subSection: string, field: string) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleTransportModesChange = (modes: string[]) => {
     setFormData((prev) => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [subSection]: { ...prev[section][subSection], [field]: e.target.value },
-      },
+      transport_logistics: { ...prev.transport_logistics, modes },
     }));
   };
 
@@ -485,10 +496,12 @@ export default function PatientForm() {
                   value={formData.emergency_contact.name}
                   onChange={handleNestedChange('emergency_contact', 'name')}
                 />
-                <FormInput
+                <FormSelect
                   label={t('patients.fields.emergencyRelation')}
                   value={formData.emergency_contact.relation}
                   onChange={handleNestedChange('emergency_contact', 'relation')}
+                  options={relationOptions}
+                  placeholder={t('patients.selectRelation')}
                 />
                 <FormInput
                   label={t('patients.phone')}
@@ -564,23 +577,12 @@ export default function PatientForm() {
           {canWriteSection(role, 'transport') && (
             <div className="space-y-4 pt-6 border-t border-border-default">
               <h4 className="text-sm font-medium text-text-primary">{t('patients.sections.transport')}</h4>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                <FormInput
-                  label={t('patients.fields.transportPublic')}
-                  value={formData.transport_logistics.modes.public_transport}
-                  onChange={handleDeepNestedChange('transport_logistics', 'modes', 'public_transport')}
-                />
-                <FormInput
-                  label={t('patients.fields.transportTaxi')}
-                  value={formData.transport_logistics.modes.taxi}
-                  onChange={handleDeepNestedChange('transport_logistics', 'modes', 'taxi')}
-                />
-                <FormInput
-                  label={t('patients.fields.transportAmbulance')}
-                  value={formData.transport_logistics.modes.ambulance}
-                  onChange={handleDeepNestedChange('transport_logistics', 'modes', 'ambulance')}
-                />
-              </div>
+              <CheckboxGroup
+                label={t('patients.fields.transportModes')}
+                options={transportModeOptions}
+                value={formData.transport_logistics.modes ?? []}
+                onChange={handleTransportModesChange}
+              />
               <div>
                 <label htmlFor="transport_comments" className="block text-sm font-medium text-text-primary mb-1.5">
                   {t('patients.fields.transportComments')}

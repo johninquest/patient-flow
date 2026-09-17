@@ -120,10 +120,23 @@
       "transportPublic": "Public Transport",
       "transportTaxi": "Taxi",
       "transportAmbulance": "Ambulance",
+      "transportModes": "Transport Modes",
       "transportComments": "Transport Comments"
+    },
+    "relations": {
+      "partner": "Spouse or partner",
+      "parent": "Parent",
+      "child": "Child",
+      "sibling": "Sibling",
+      "grandparent": "Grandparent",
+      "other_relative": "Other relative",
+      "friend_neighbour": "Friend or neighbour",
+      "carer": "Carer or guardian",
+      "other": "Other"
     },
     "selectCountry": "Select a country",
     "selectCurrency": "Select a currency",
+    "selectRelation": "Select a relationship",
     "empty": {
       "title": "No patients yet",
       "description": "Get started by adding your first patient to the system."

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TRANSPORT_MODES } from './create-patient.dto.js';
 
 /**
  * Response-side classes for nested patient sections.
@@ -51,7 +52,11 @@ class EmergencyContactDto {
   @ApiPropertyOptional({ description: 'Contact name' })
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Relationship to patient' })
+  @ApiPropertyOptional({
+    description:
+      'Relationship to patient (standard-list slug, e.g. partner, parent, carer)',
+    example: 'partner',
+  })
   relation?: string;
 
   @ApiPropertyOptional({ description: 'Contact phone number' })
@@ -75,23 +80,14 @@ class PhysiciansDto {
   other?: string;
 }
 
-class TransportModesDto {
-  @ApiPropertyOptional({ description: 'Public transport details' })
-  public_transport?: string;
-
-  @ApiPropertyOptional({ description: 'Taxi details' })
-  taxi?: string;
-
-  @ApiPropertyOptional({ description: 'Ambulance details' })
-  ambulance?: string;
-}
-
 class TransportLogisticsDto {
   @ApiPropertyOptional({
-    description: 'Transport modes',
-    type: () => TransportModesDto,
+    description: 'Transport modes used by the patient (any subset)',
+    enum: TRANSPORT_MODES,
+    isArray: true,
+    example: ['public_transport', 'taxi'],
   })
-  modes?: TransportModesDto;
+  modes?: string[];
 
   @ApiPropertyOptional({ description: 'Transport comments' })
   comments?: string;

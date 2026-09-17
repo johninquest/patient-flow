@@ -85,10 +85,15 @@ sign-up remains disabled (`emailAndPassword.disableSignUp`).
   "medical_history": "string (optional)",
   "medical_history_date": "ISO 8601 date (optional)",
   "physicians": { "attending": "string", "correspondent": "string", "other": "string" } (optional),
-  "transport_logistics": { "modes": { "public": "string", "taxi": "string", "ambulance": "string" }, "comments": "string" } (optional),
+  "transport_logistics": { "modes": ["public_transport", "taxi", "ambulance"], "comments": "string" } (optional),
   "notes": "string (optional)"
 }
 ```
+
+> `transport_logistics.modes` is an **array** of transport modes (a patient may use more
+> than one). Allowed values: `public_transport`, `taxi`, `ambulance`. Unknown values are
+> rejected with `400`. `emergency_contact.relation` is a free string on the wire; the
+> client renders it as a dropdown from a standard list.
 
 **Write Enforcement:** Caller can only set fields within their writable sections (see write visibility matrix). Attempting to write disallowed sections returns `403`.
 
@@ -108,7 +113,7 @@ sign-up remains disabled (`emailAndPassword.disableSignUp`).
   "medical_history": "string | null",
   "medical_history_date": "timestamp | null",
   "physicians": "{ attending, correspondent, other } | null",
-  "transport_logistics": "{ modes: { public, taxi, ambulance }, comments } | null",
+  "transport_logistics": "{ modes: string[], comments } | null",
   "notes": "string | null",
   "created_at": "timestamp",
   "updated_at": "timestamp"
@@ -153,7 +158,7 @@ sign-up remains disabled (`emailAndPassword.disableSignUp`).
   "medical_history": "string (optional)",
   "medical_history_date": "ISO 8601 date (optional)",
   "physicians": { "attending": "string", "correspondent": "string", "other": "string" } (optional),
-  "transport_logistics": { "modes": { "public": "string", "taxi": "string", "ambulance": "string" }, "comments": "string" } (optional),
+  "transport_logistics": { "modes": ["public_transport", "taxi", "ambulance"], "comments": "string" } (optional),
   "notes": "string (optional)"
 }
 ```

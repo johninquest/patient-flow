@@ -110,11 +110,11 @@
 | `address` | `jsonb` | nullable | `{ street, postal_code, city, country }` — `country` is ISO 3166-1 alpha-2 |
 | `identity` | `jsonb` | nullable | `{ document_type, country_national, scanned_document }` — `country_national` is ISO 3166-1 alpha-2 |
 | `financials` | `jsonb` | nullable | `{ health_insurance, reimbursement, currency }` — `currency` is ISO 4217 |
-| `emergency_contact` | `jsonb` | nullable | `{ name, relation, phone, email, comments }` |
+| `emergency_contact` | `jsonb` | nullable | `{ name, relation, phone, email, comments }` — `relation` is a slug from the standard list (see below) |
 | `medical_history` | `text` | nullable | Clinical history |
 | `medical_history_date` | `timestamp` | nullable | When history was last recorded |
 | `physicians` | `jsonb` | nullable | `{ attending, correspondent, other }` |
-| `transport_logistics` | `jsonb` | nullable | `{ modes: { public, taxi, ambulance }, comments }` |
+| `transport_logistics` | `jsonb` | nullable | `{ modes: string[], comments }` — `modes` is a subset of `public_transport`, `taxi`, `ambulance` |
 | `notes` | `text` | nullable | General non-clinical notes |
 | `created_at` | `timestamp` | NOT NULL, default now | |
 | `updated_at` | `timestamp` | NOT NULL, default now | |
@@ -131,11 +131,22 @@
   "address": { "street": "text", "postal_code": "text", "city": "text", "country": "ISO 3166-1 alpha-2 (e.g. FR, US)" },
   "identity": { "document_type": "text", "country_national": "ISO 3166-1 alpha-2 (e.g. FR, US)", "scanned_document": "boolean" },
   "financials": { "health_insurance": "text", "reimbursement": "text", "currency": "ISO 4217 (e.g. EUR, USD)" },
-  "emergency_contact": { "name": "text", "relation": "text", "phone": "text", "email": "text", "comments": "text" },
+  "emergency_contact": { "name": "text", "relation": "relation slug", "phone": "text", "email": "text", "comments": "text" },
   "physicians": { "attending": "text", "correspondent": "text", "other": "text" },
-  "transport_logistics": { "modes": { "public": "text", "taxi": "text", "ambulance": "text" }, "comments": "text" }
+  "transport_logistics": { "modes": ["public_transport", "taxi", "ambulance"], "comments": "text" }
 }
 ```
+
+**Standard lists (client-rendered, server accepts any string):**
+
+| Field | Allowed values |
+|-------|----------------|
+| `emergency_contact.relation` | `partner`, `parent`, `child`, `sibling`, `grandparent`, `other_relative`, `friend_neighbour`, `carer`, `other` |
+| `transport_logistics.modes[]` | `public_transport`, `taxi`, `ambulance` |
+
+> **Note:** `relation` is constrained in the UI only — the API accepts any string, so
+> records written before the dropdown existed still round-trip. `modes` **is** validated
+> server-side against the list above (unknown values are rejected with `400`).
 
 > **ISO Code Validation:** `address.country`, `identity.country_national` are validated against ISO 3166-1 alpha-2 codes. `financials.currency` is validated against ISO 4217 codes. Validation is enforced at the DTO level via `@IsIn()`. Display names are resolved on the frontend using `Intl.DisplayNames`.
 
