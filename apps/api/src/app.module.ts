@@ -9,6 +9,8 @@ import { EncountersModule } from './modules/encounters/encounters.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { UserModule } from './modules/user/user.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { ClinicalNotesModule } from './modules/clinical-notes/clinical-notes.module.js';
+import { ProblemsModule } from './modules/problems/problems.module.js';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
     TasksModule,
     UserModule,
     DashboardModule,
+    ClinicalNotesModule,
+    ProblemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

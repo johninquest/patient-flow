@@ -245,14 +245,60 @@ cancelled   → [] (terminal)
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
 | `id` | `uuid` | PK, default `uuidv7()` | |
-| `actor_user_id` | `text` | NOT NULL, FK → `user.id` (cascade) | |
-| `actor_role` | `text` | NOT NULL | |
+| `actor_user_id` | `text` | nullable, FK → `user.id` (**set null**) | Nullable so deleting a staff account preserves its audit history |
+| `actor_name` | `text` | nullable | Snapshot of the actor's name at write time; survives rename and deletion |
+| `actor_role` | `text` | NOT NULL | Role held at the time of the action |
 | `action` | `text` | NOT NULL | Format: `entity.verb` (e.g., `patient.created`) |
-| `resource_type` | `text` | NOT NULL | e.g., `patient`, `encounter`, `task` |
+| `resource_type` | `text` | NOT NULL | The entity type the action *targeted*: `patient`, `encounter`, `task`, `user`, `clinical_note`, `problem` |
 | `resource_id` | `text` | NOT NULL | Polymorphic. `uuidv7` for business entities, Better Auth text id for `user` |
+| `patient_id` | `uuid` | nullable, **no FK** | Denormalized scope: the patient this event concerns |
+| `encounter_id` | `uuid` | nullable, **no FK** | Denormalized scope: the encounter this event concerns |
 | `diff` | `jsonb` | nullable | `{ field: { from, to } }` |
 | `ip_address` | `text` | nullable | |
 | `created_at` | `timestamp` | NOT NULL, default now | |
+
+**Why the scope columns exist:** `resource_type`/`resource_id` record only the
+entity an action *targeted*. An encounter created for a patient is therefore
+`resource_type='encounter'`, which a query for a patient's history cannot match —
+the row has no link back to the patient. `patient_id` and `encounter_id` add that
+link so one query returns a patient's complete record: the patient itself, every
+encounter, and every task on those encounters.
+
+**Deliberately no foreign keys** on `patient_id`/`encounter_id`. Audit rows must
+outlive the entities they describe; an FK with `cascade` would erase history at
+exactly the moment it matters most (a deleted encounter), and `set null` would
+silently lose the scope. Same principle as `resource_id` (ADR 0018).
+
+**Scope rules** — what each event populates:
+
+| Action | `resource_id` | `patient_id` | `encounter_id` |
+|---|---|---|---|
+| `patient.*` | patient id | patient id | — |
+| `encounter.*` | encounter id | the encounter's patient | encounter id |
+| `task.*` | task id | the encounter's patient | the task's encounter |
+| `clinical_note.*` | note id | the note's patient | the note's encounter |
+| `problem.*` | problem id | the problem's patient | the problem's encounter (may be null) |
+| `user.*`, `admin.*` | user id | — | — |
+
+**Clinical entries are metadata-only.** `clinical_note.*` and `problem.*` diffs
+never contain note text, diagnosis wording or any other clinical content:
+
+| Action | Diff |
+|---|---|
+| `clinical_note.created` | `{ note_type: { from: null, to: ... } }` |
+| `clinical_note.updated` | `{ version: { from: N, to: N + 1 } }` — **nothing else** |
+| `clinical_note.deleted` | `{ note_type, version }` |
+| `problem.created` | `{ code, status }` |
+| `problem.updated` | `{ status, code }` |
+| `problem.deleted` | `{ code, status }` |
+
+> **Why:** `GET /api/audit/encounter/:id` is open to every authenticated role
+> (unlike the patient audit route, which ADR 0020 restricted to clinical roles).
+> Clinical text in a diff would therefore be readable by `front_desk`. Keeping
+> diffs content-free means the encounter timeline can stay open without leaking
+> PHI. The content trail is `clinical_note_revisions`, which is access-controlled.
+>
+> Locked by a unit test asserting the update diff contains no content keys.
 
 **Indexes:**
 | Name | Columns |
@@ -261,6 +307,159 @@ cancelled   → [] (terminal)
 | `audit_log_resource_idx` | `resource_type`, `resource_id` |
 | `audit_log_action_idx` | `action` |
 | `audit_log_created_at_idx` | `created_at` |
+| `audit_log_patient_idx` | `patient_id`, `created_at` |
+| `audit_log_encounter_idx` | `encounter_id`, `created_at` |
+
+---
+
+### `clinical_notes`
+
+> The SOAP documentation of a visit. This is the **head** row holding current
+> content; superseded versions live in `clinical_note_revisions`.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | `uuid` | PK, default `uuidv7()` | |
+| `patient_id` | `uuid` | NOT NULL, FK → `patients.id` (cascade) | Denormalized from the encounter so a patient's notes need no join |
+| `encounter_id` | `uuid` | NOT NULL, FK → `encounters.id` (cascade) | A note documents a visit |
+| `note_type` | `text` | NOT NULL, default `'consultation'` | `consultation` \| `nursing` \| `procedure` \| `other` |
+| `subjective` | `text` | nullable | SOAP: patient-reported history |
+| `objective` | `text` | nullable | SOAP: examination findings, vitals |
+| `assessment` | `text` | nullable | SOAP: clinical impression — where the diagnosis narrative goes |
+| `plan` | `text` | nullable | SOAP: treatment plan |
+| `additional_notes` | `text` | nullable | Escape hatch for content outside SOAP |
+| `author_user_id` | `text` | nullable, FK → `user.id` (**set null**) | Nullable so deleting a staff account preserves the note |
+| `author_name` | `text` | nullable | Snapshot at write time; survives rename and deletion |
+| `author_role` | `text` | NOT NULL | Snapshot — "who was this as?" is clinically meaningful |
+| `version` | `integer` | NOT NULL, default `1` | Optimistic lock **and** revision counter |
+| `created_at` | `timestamp` | NOT NULL, default now | |
+| `updated_at` | `timestamp` | NOT NULL, default now | |
+
+**Indexes:**
+| Name | Columns |
+|------|---------|
+| `clinical_notes_patient_idx` | `patient_id`, `created_at` |
+| `clinical_notes_encounter_idx` | `encounter_id`, `created_at` |
+
+**Why every SOAP field is optional:** a note can be saved partially and completed
+later. The value of the structure is not enforcement — it is that `assessment`
+and `plan` are individually addressable, which is what lets a diagnosis narrative
+and a treatment plan have a defined home instead of living in one paragraph.
+
+---
+
+### `clinical_note_revisions`
+
+> **Append-only.** Never update or delete rows. No `updated_at` column.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | `uuid` | PK, default `uuidv7()` | |
+| `note_id` | `uuid` | NOT NULL, FK → `clinical_notes.id` (cascade) | |
+| `revision_number` | `integer` | NOT NULL | The head's `version` at the time this was superseded |
+| `note_type` | `text` | NOT NULL | |
+| `subjective` | `text` | nullable | |
+| `objective` | `text` | nullable | |
+| `assessment` | `text` | nullable | |
+| `plan` | `text` | nullable | |
+| `additional_notes` | `text` | nullable | |
+| `edited_by` | `text` | nullable, FK → `user.id` (**set null**) | Who made the edit that superseded this content |
+| `edited_by_name` | `text` | nullable | Snapshot at write time |
+| `created_at` | `timestamp` | NOT NULL, default now | |
+
+**Indexes:**
+| Name | Columns |
+|------|---------|
+| `clinical_note_revisions_note_idx` | `note_id`, `revision_number` |
+
+**Revision mechanics:** on `PUT /api/clinical-notes/:id` the service, inside a
+transaction, copies the **current head** into this table with
+`revision_number = head.version`, then updates the head with
+`WHERE id = ? AND version = ?` and `version = version + 1`.
+
+So revision 1 is the original content, and revision N is the Nth superseded
+version. This is the head-plus-history pattern: the head is the only row that is
+ever written twice, and no authored content is destroyed.
+
+> **This table is the content trail, which is why `audit_log` never holds
+> clinical text** (see the audit scope rules below). Duplicating note content
+> into audit diffs would leak it onto the encounter timeline, which every role
+> can read.
+
+---
+
+### `patient_problems`
+
+> The longitudinal problem list — diagnoses that persist across visits.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | `uuid` | PK, default `uuidv7()` | |
+| `patient_id` | `uuid` | NOT NULL, FK → `patients.id` (cascade) | |
+| `encounter_id` | `uuid` | nullable, FK → `encounters.id` (**set null**) | Where it was first raised. `set null` so deleting a visit does not erase the diagnosis |
+| `description` | `text` | NOT NULL | Always free text. Prefilled from the catalogue name on pick, but editable |
+| `code` | `text` | nullable | ICD-10 code (e.g. `B54`). Null for off-list entries |
+| `code_system` | `text` | nullable | `'ICD-10'` when `code` is set |
+| `diagnosis_slug` | `text` | nullable | Catalogue slug. No FK — the catalogue is static code, not a table |
+| `status` | `text` | NOT NULL, default `'active'` | `active` \| `resolved` \| `inactive` |
+| `onset_date` | `timestamp` | nullable | |
+| `resolved_date` | `timestamp` | nullable | |
+| `recorded_by` | `text` | nullable, FK → `user.id` (**set null**) | |
+| `recorded_by_name` | `text` | nullable | Snapshot at write time |
+| `notes` | `text` | nullable | |
+| `created_at` | `timestamp` | NOT NULL, default now | |
+| `updated_at` | `timestamp` | NOT NULL, default now | |
+
+**Indexes:**
+| Name | Columns |
+|------|---------|
+| `patient_problems_patient_idx` | `patient_id`, `status` |
+
+**Why `diagnosis_slug` is stored rather than derived from `code`:** it records
+*that the clinician picked from the catalogue*, which is distinguishable from
+free text that happens to read the same. It is also the key a future translation
+lookup would use, so storing it now avoids a data migration later.
+
+**Coding rules:**
+- `description` is **never** constrained server-side.
+- If `code` is supplied it must match an entry in the diagnosis catalogue, and
+  `code_system` / `diagnosis_slug` must agree with it. Rejected with `400`
+  otherwise.
+- A problem with no `code` at all is valid — the catalogue is a 30-item
+  shortlist, not a complete coding system.
+
+> This mirrors how `transport_logistics.modes` is server-validated against a
+> fixed list while `emergency_contact.relation` is UI-only.
+
+---
+
+## Clinical Documentation Visibility
+
+Applies to `clinical_notes`, `clinical_note_revisions` and `patient_problems`.
+These are the most sensitive records in the system, so access is narrower than
+for the patient record itself.
+
+| Capability | admin | provider | clinical_staff | front_desk | pending |
+|------------|:-----:|:--------:|:--------------:|:----------:|:-------:|
+| Read notes / problems | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Create note | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Create problem | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Edit a note | ✓ | ✓ (author only) | ✓ (author only) | ✗ | ✗ |
+| Edit a problem | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Delete note / problem | ✓ | ✗ | ✗ | ✗ | ✗ |
+
+**Edit authority on notes:** the note's author, or `admin`. A clinician who
+disagrees with a colleague's note writes their own note rather than editing it —
+the revision table preserves history, but authorship attribution is the stronger
+guarantee.
+
+**Enforcement:** `@Roles('admin', 'provider', 'clinical_staff')` + `RolesGuard`
+on the controllers, plus CASL subjects `ClinicalNote` and `Problem` in
+`core/auth/ability.ts`. The author check is enforced in the service, since it
+depends on the row rather than the role.
+
+> This matches the existing patient `medical` section rule (ADR 0004), so there
+> is one clinical-visibility concept rather than two.
 
 ---
 
@@ -273,14 +472,24 @@ erDiagram
     user ||--o{ encounters : "assigned_to"
     user ||--o{ tasks : "assigned_user_id"
     user ||--o{ audit_log : "actor_user_id"
+    user ||--o{ clinical_notes : "author_user_id"
+    user ||--o{ patient_problems : "recorded_by"
 
     patients ||--o{ encounters : "has"
+    patients ||--o{ clinical_notes : "has"
+    patients ||--o{ patient_problems : "has"
     encounters ||--o{ tasks : "has"
+    encounters ||--o{ clinical_notes : "documents"
+    clinical_notes ||--o{ clinical_note_revisions : "has"
 
-    audit_log }o--|| patients : "resource_id"
-    audit_log }o--|| encounters : "resource_id"
+    audit_log }o--|| patients : "resource_id / patient_id"
+    audit_log }o--|| encounters : "resource_id / encounter_id"
     audit_log }o--|| tasks : "resource_id"
 ```
+
+> The audit relationships are **logical, not enforced**: `audit_log` holds no
+> foreign keys to the business tables, so an audit row survives the deletion of
+> the entity it describes. `patient_id` / `encounter_id` are plain columns.
 
 ---
 

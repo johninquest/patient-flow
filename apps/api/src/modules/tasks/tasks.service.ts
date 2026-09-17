@@ -9,16 +9,39 @@ import { eq, and, sql, type SQL } from 'drizzle-orm';
 import { CreateTaskDto } from './dto/create-task.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { AuditService } from '../audit/audit.service.js';
+import {
+  taskAuditScope,
+  createdSnapshot,
+  deletedSnapshot,
+} from '../audit/audit-scope.js';
 import type { AppAbility } from '../../core/auth/ability.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
+
+/** Fields tracked for audit diffing on task updates. */
+const TRACKED_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'assigned_user_id',
+  'assigned_role',
+  'blocking',
+  'due_at',
+];
+
+/** Fields snapshotted on create and delete, so those entries are self-describing. */
+const SNAPSHOT_FIELDS = TRACKED_FIELDS;
 
 /**
  * Shared projection for task reads. `patient_name` is resolved through the
  * task's encounter so clients can display a patient without extra requests.
+ * `patient_id` is included so audit entries can be scoped to the patient without
+ * a second query.
  */
 const taskSelect = {
   id: tasks.id,
   encounter_id: tasks.encounter_id,
+  patient_id: encounters.patient_id,
   patient_name: sql<string>`${patients.first_name} || ' ' || ${patients.last_name}`,
   title: tasks.title,
   description: tasks.description,
@@ -36,6 +59,12 @@ const taskSelect = {
 export interface FindTasksFilters {
   encounterId?: string;
   assignedUserId?: string;
+  /**
+   * Filter by the patient the task's encounter belongs to. Lets the patient
+   * detail page load every task for a patient in one request rather than one
+   * request per encounter.
+   */
+  patientId?: string;
 }
 
 @Injectable()
@@ -90,8 +119,9 @@ export class TasksService {
       actor_user_id: userId,
       actor_role: userRole,
       action: 'task.created',
-      resource_type: 'task',
-      resource_id: task.id,
+      // A task has no direct patient link; the patient comes from the encounter.
+      ...taskAuditScope(task, encounter.patient_id),
+      diff: createdSnapshot(task, SNAPSHOT_FIELDS) ?? undefined,
     });
 
     return this.findOne(task.id);
@@ -105,6 +135,10 @@ export class TasksService {
     }
     if (filters.assignedUserId) {
       conditions.push(eq(tasks.assigned_user_id, filters.assignedUserId));
+    }
+    if (filters.patientId) {
+      // Reached through the encounter, which owns the patient link.
+      conditions.push(eq(encounters.patient_id, filters.patientId));
     }
 
     return db
@@ -150,16 +184,7 @@ export class TasksService {
 
     const existing = await this.findOne(id);
 
-    const diff = this.auditService.calculateDiff(existing, dto, [
-      'title',
-      'description',
-      'status',
-      'priority',
-      'assigned_user_id',
-      'assigned_role',
-      'blocking',
-      'due_at',
-    ]);
+    const diff = this.auditService.calculateDiff(existing, dto, TRACKED_FIELDS);
 
     let updated;
     try {
@@ -187,12 +212,10 @@ export class TasksService {
         actor_user_id: userId,
         actor_role: userRole,
         action: 'task.updated',
-        resource_type: 'task',
-        resource_id: id,
+        ...taskAuditScope(existing, existing.patient_id),
         diff,
       });
     }
-
     return this.findOne(id);
   }
 
@@ -207,14 +230,14 @@ export class TasksService {
       throw new ForbiddenException('You are not allowed to delete tasks');
     }
 
-    await this.findOne(id);
+    const existing = await this.findOne(id);
 
     await this.auditService.record({
       actor_user_id: userId,
       actor_role: userRole,
       action: 'task.deleted',
-      resource_type: 'task',
-      resource_id: id,
+      ...taskAuditScope(existing, existing.patient_id),
+      diff: deletedSnapshot(existing, SNAPSHOT_FIELDS) ?? undefined,
     });
 
     await db.delete(tasks).where(eq(tasks.id, id));

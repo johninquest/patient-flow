@@ -17,6 +17,17 @@ export const createAuditLogSchema = z
     // Not `z.uuid()`: this is polymorphic. Business entities use uuidv7, but
     // Better Auth user ids are nanoid text (see ADR 0001).
     resource_id: z.string().describe('Resource ID affected'),
+    // Denormalized scope — see audit-scope.ts for why these exist.
+    patient_id: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Patient this event concerns'),
+    encounter_id: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Encounter this event concerns'),
     diff: z
       .record(z.string(), z.unknown())
       .optional()

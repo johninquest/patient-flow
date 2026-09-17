@@ -552,6 +552,11 @@ export default function PatientForm() {
                   onChange={handleChange('medical_history')}
                   className="w-full px-3 py-2 border border-border-default rounded-(--radius-control) bg-bg-surface text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 />
+                {/* Points at the problem list so narrative history and coded
+                    diagnoses are not confused for one another. */}
+                <p className="mt-1.5 text-sm text-text-secondary">
+                  {t('patients.fields.medicalHistoryHelp')}
+                </p>
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <FormInput

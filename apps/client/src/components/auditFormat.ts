@@ -15,7 +15,7 @@ export interface AuditValueContext {
   t: TFunction;
   locale: string;
   resourceType: string;
-  resolveUserName?: (id: string) => string;
+  resolveUserName?: (id: string | null) => string;
 }
 
 /** Longest value rendered inline before the "show more" toggle kicks in. */
@@ -30,6 +30,12 @@ const KNOWN_ACTIONS = new Set([
   'encounter.updated',
   'encounter.phase_changed',
   'encounter.deleted',
+  'clinical_note.created',
+  'clinical_note.updated',
+  'clinical_note.deleted',
+  'problem.created',
+  'problem.updated',
+  'problem.deleted',
   'task.created',
   'task.updated',
   'task.deleted',
@@ -53,6 +59,18 @@ const DATE_ONLY_FIELDS = new Set(['date_of_birth', 'medical_history_date']);
 
 /** Fields whose values are user IDs (resolve to names where possible). */
 const ASSIGNEE_FIELDS = new Set(['assigned_to', 'assigned_user_id']);
+
+/**
+ * Patient fields recorded in create/delete snapshots. Listed so the labels are
+ * translated rather than falling back to the raw column name.
+ */
+const PATIENT_SNAPSHOT_FIELDS: Record<string, string> = {
+  first_name: 'patients.firstName',
+  last_name: 'patients.lastName',
+  phone: 'patients.phone',
+  email: 'patients.email',
+  notes: 'patients.notes',
+};
 
 /**
  * Sub-keys inside patient JSON objects → their translation keys. Keys absent
@@ -236,7 +254,11 @@ export function formatAuditValue(
     case 'role':
     case 'assigned_role':
       return ctx.t(`staff.roles.${str}`, { defaultValue: str });
-    default:
-      return str;
+    default: {
+      // Patient create/delete snapshots include plain identity fields; map them
+      // to their translated labels instead of printing the column name.
+      const patientKey = PATIENT_SNAPSHOT_FIELDS[field];
+      return patientKey ? ctx.t(patientKey, { defaultValue: str }) : str;
+    }
   }
 }

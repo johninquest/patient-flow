@@ -29,10 +29,23 @@ export function AuditTimeline({ logs, title }: AuditTimelineProps) {
     );
   }
 
-  const resolveUserName = (userId: string): string => {
+  /**
+   * Resolve the actor's display name.
+   *
+   * Prefers the `actor_name` snapshot stored on the entry, which is correct for
+   * every actor: the live staff lookup below only covers active assignable
+   * accounts, so a suspended or deleted actor would otherwise show a truncated
+   * id. The lookup remains as a fallback for rows written before snapshots
+   * existed and not yet backfilled.
+   */
+  const resolveUserName = (userId: string | null): string => {
+    if (!userId) return t('audit.unknownActor');
     const member = staff?.find((m) => m.id === userId);
     return member ? member.name || member.email : `${userId.substring(0, 8)}\u2026`;
   };
+
+  const actorLabel = (log: AuditLog): string =>
+    log.actor_name || resolveUserName(log.actor_user_id);
 
   return (
     <div className="space-y-3">
@@ -43,7 +56,7 @@ export function AuditTimeline({ logs, title }: AuditTimelineProps) {
         <AuditActivityCard
           key={log.id}
           log={log}
-          actorName={resolveUserName(log.actor_user_id)}
+          actorName={actorLabel(log)}
           resolveUserName={resolveUserName}
         />
       ))}

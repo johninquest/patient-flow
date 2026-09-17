@@ -120,6 +120,29 @@ app at all, not what job the person does.
 | Edit | Modifier | Bearbeiten (unreviewed) | |
 | Delete | Supprimer | Löschen (unreviewed) | |
 
+## Clinical documentation
+
+Used by `clinicalNotes.*` and `problems.*`. See ADR 0021 for the model.
+
+| English | French | German | Notes |
+|---|---|---|---|
+| Clinical note | Note clinique | Klinische Notiz (unreviewed) | The SOAP record of a visit. Distinct from `encounters.notes`, which is the non-clinical operational field — do not translate them identically. |
+| Problem list | Liste des problèmes | Problemliste (unreviewed) | The longitudinal diagnosis list. "Problème" here is the clinical sense (an identified condition), not a complaint or an issue. |
+| Diagnosis | Diagnostic | Diagnose (unreviewed) | |
+| Subjective | Subjectif | Subjektiv (unreviewed) | SOAP section: what the patient reports. |
+| Objective | Objectif | Objektiv (unreviewed) | SOAP section: what the clinician observes. Do not confuse with the everyday sense of "objective" (goal) — this is the clinical finding section. |
+| Assessment | Évaluation | Beurteilung (unreviewed) | SOAP section: the clinical impression. **This is where the diagnosis narrative lives** — the translation must read as a clinical judgement, not a generic "evaluation". |
+| Plan | Plan | Plan (unreviewed) | SOAP section: treatment and follow-up. |
+| Revision | Version | Version (unreviewed) | A superseded version of a note. "Version" chosen over "Révision" because French clinical software commonly uses it and it reads less like an amendment process. |
+| Active | Actif | Aktiv (unreviewed) | Problem status. Same term as the account-access state above, but a different namespace (`problems.statuses.*` vs `staff.*`) — the collision is intentional and low-risk since the contexts never appear together. |
+| Resolved | Résolu | Abgeklungen (unreviewed) | Problem status: the condition has cleared. |
+| Inactive | Inactif | Inaktiv (unreviewed) | Problem status: no longer clinically relevant, but not formally resolved. Deliberately distinct from "Resolved" — do not merge the two. |
+| Onset date | Date de début | Beginn (unreviewed) | When the problem began, not when it was recorded. |
+
+> **Diagnosis names are NOT in this glossary.** The 30 ICD-10 catalogue names are
+> English-only and rendered verbatim (ADR 0021). If they are ever translated,
+> they need a `diagnoses.items.<slug>` namespace and their own glossary section.
+
 ## Emergency contact relationships
 
 Used by `patients.relations.*` for the emergency-contact `relation` dropdown.

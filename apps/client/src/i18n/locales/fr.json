@@ -75,10 +75,15 @@
     "activity": "Historique des activités",
     "noEncounters": "Aucune consultation enregistrée",
     "noTasks": "Aucune tâche assignée",
+    "createEncounter": "Nouvelle consultation",
+    "createTask": "Nouvelle tâche",
+    "tasksRequireEncounter": "Les tâches sont enregistrées dans le cadre d'une consultation. Créez d'abord une consultation pour ce patient.",
+    "noTasksDescription": "Les tâches créées pour les consultations de ce patient apparaîtront ici.",
     "tabs": {
       "overview": "Aperçu",
       "encounters": "Consultations",
       "tasks": "Tâches",
+      "clinical": "Clinique",
       "activity": "Activité"
     },
     "status": {
@@ -114,6 +119,7 @@
       "emergencyComments": "Commentaires",
       "medicalHistory": "Antécédents médicaux",
       "medicalHistoryDate": "Date d'enregistrement",
+      "medicalHistoryHelp": "Contexte et antécédents tels que rapportés. Pour les affections diagnostiquées, utilisez la liste des problèmes dans l'onglet Clinique du patient.",
       "attendingPhysician": "Médecin traitant",
       "correspondentPhysician": "Médecin correspondant",
       "otherPhysician": "Autre médecin",
@@ -168,6 +174,7 @@
       "completed": "Terminées",
       "details": "Détails",
       "tasks": "Tâches",
+      "clinical": "Clinique",
       "activity": "Activité"
     },
     "statuses": {
@@ -267,6 +274,17 @@
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordMinLength": "Au moins {{min}} caractères",
+    "passwordTooShort": "Le mot de passe doit contenir au moins {{min}} caractères",
+    "titles": {
+      "doctor": "Médecin",
+      "nurse": "Infirmier/Infirmière",
+      "medicalPhysicist": "Physicien(ne) médical(e)",
+      "labTechnician": "Technicien(ne) de laboratoire",
+      "pharmacist": "Pharmacien/Pharmacienne",
+      "receptionist": "Réceptionniste",
+      "administrator": "Administrateur/Administratrice"
+    },
     "status": "Statut",
     "active": "Actif",
     "suspended": "Suspendu",
@@ -290,6 +308,7 @@
   },
   "audit": {
     "noActivity": "Aucune activité enregistrée",
+    "unknownActor": "Utilisateur inconnu",
     "titles": {
       "patient.created": "Patient créé",
       "patient.updated": "Patient modifié",
@@ -298,6 +317,12 @@
       "encounter.updated": "Consultation modifiée",
       "encounter.phase_changed": "Étape modifiée",
       "encounter.deleted": "Consultation supprimée",
+      "clinical_note.created": "Note clinique ajoutée",
+      "clinical_note.updated": "Note clinique modifiée",
+      "clinical_note.deleted": "Note clinique supprimée",
+      "problem.created": "Diagnostic enregistré",
+      "problem.updated": "Diagnostic modifié",
+      "problem.deleted": "Diagnostic supprimé",
       "task.created": "Tâche créée",
       "task.updated": "Tâche modifiée",
       "task.deleted": "Tâche supprimée",
@@ -320,6 +345,10 @@
       "assigned_to": "Assigné à",
       "scheduled_time": "Heure prévue",
       "notes": "Notes",
+      "version": "Version",
+      "note_type": "Type de note",
+      "code": "Code",
+      "code_system": "Système de codage",
       "title": "Titre",
       "description": "Description",
       "priority": "Priorité",
@@ -329,7 +358,80 @@
       "due_at": "Date d'échéance",
       "role": "Rôle",
       "name": "Nom",
-      "email": "Email"
+      "email": "Email",
+      "first_name": "Prénom",
+      "last_name": "Nom"
+    }
+  },
+  "clinicalNotes": {
+    "title": "Notes cliniques",
+    "create": "Nouvelle note clinique",
+    "edit": "Modifier la note clinique",
+    "patientViewHint": "Les notes sont rédigées depuis la consultation qu'elles documentent. Ouvrez une consultation pour en ajouter une.",
+    "history": "Historique des versions",
+    "noHistory": "Cette note n'a pas été modifiée.",
+    "revisionLabel": "Version {{number}}",
+    "editedVersion": "Modifiée · v{{version}}",
+    "fields": {
+      "noteType": "Type de note"
+    },
+    "noteTypes": {
+      "consultation": "Note de consultation",
+      "nursing": "Note infirmière",
+      "procedure": "Note d'intervention",
+      "other": "Autre note"
+    },
+    "soap": {
+      "subjective": "Subjectif",
+      "subjectiveHint": "Ce que rapporte le patient — antécédents, symptômes, préoccupations.",
+      "objective": "Objectif",
+      "objectiveHint": "Ce que vous observez — examen clinique, constantes, résultats.",
+      "assessment": "Évaluation",
+      "assessmentHint": "Votre impression clinique — le diagnostic ou les hypothèses.",
+      "plan": "Plan",
+      "planHint": "Traitement, examens et suivi.",
+      "additional_notes": "Notes complémentaires",
+      "additional_notesHint": "Tout élément ne correspondant pas aux sections ci-dessus."
+    },
+    "empty": {
+      "title": "Aucune note clinique",
+      "description": "Les notes cliniques rédigées pour les consultations de ce patient apparaîtront ici."
+    }
+  },
+  "problems": {
+    "title": "Liste des problèmes",
+    "add": "Ajouter un diagnostic",
+    "edit": "Modifier le diagnostic",
+    "recordedBy": "Enregistré par",
+    "confirmDelete": "Supprimer ce diagnostic de la liste des problèmes ?",
+    "fields": {
+      "diagnosis": "Diagnostic",
+      "diagnosisPlaceholder": "Sélectionnez un diagnostic ou décrivez-le ci-dessous",
+      "diagnosisHelp": "Choisissez dans la liste pour un diagnostic codé, ou saisissez votre propre description ci-dessous.",
+      "description": "Description",
+      "codedAs": "Codé en {{system}} {{code}}",
+      "status": "Statut",
+      "onsetDate": "Date de début",
+      "resolvedDate": "Date de résolution",
+      "notes": "Notes"
+    },
+    "statuses": {
+      "active": "Actif",
+      "resolved": "Résolu",
+      "inactive": "Inactif"
+    },
+    "empty": {
+      "title": "Aucun diagnostic enregistré",
+      "description": "Les diagnostics enregistrés pour ce patient apparaîtront ici et persisteront d'une consultation à l'autre."
+    }
+  },
+  "diagnoses": {
+    "groups": {
+      "infectious": "Infectieuses et vectorielles",
+      "respiratory": "Respiratoires",
+      "cancer": "Cancers",
+      "chronic": "Maladies chroniques",
+      "other": "Autres"
     }
   },
   "profile": {

@@ -24,7 +24,8 @@
 
 import { and, eq, sql } from 'drizzle-orm';
 import { db, pool } from '../core/db/index.js';
-import { audit_log, user } from '../core/db/schema.js';
+import { user } from '../core/db/schema.js';
+import { AuditService } from '../modules/audit/audit.service.js';
 import { getAuth } from '../core/auth/auth.js';
 
 interface Options {
@@ -188,7 +189,9 @@ async function main(): Promise<void> {
     .set({ emailVerified: true, updatedAt: new Date() })
     .where(eq(user.id, userId));
 
-  await db.insert(audit_log).values({
+  // Routed through AuditService so the entry gets the same actor_name snapshot
+  // and scope columns as every other audit entry.
+  await new AuditService().record({
     actor_user_id: userId,
     actor_role: 'admin',
     action: 'admin.bootstrapped',

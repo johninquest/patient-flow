@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./test/vitest-e2e.config.ts",
     "db:migrate-country": "tsx src/scripts/migrate-country-to-iso.ts",
     "db:create-admin": "tsx src/scripts/create-admin.ts",
+    "db:backfill-audit-scope": "tsx src/scripts/backfill-audit-scope.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

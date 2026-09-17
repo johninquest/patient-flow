@@ -3,16 +3,32 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api/client';
 import { useParams, Link } from 'react-router-dom';
-import { Card, StatusPill, LoadingSpinner, Button, Modal, FormInput, FormSelect, EmptyState } from '../components/ui';
+import { Card, StatusPill, LoadingSpinner, Button, Modal, EmptyState } from '../components/ui';
 import { ArrowLeftIcon, PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { AuditTimeline } from '../components/AuditTimeline';
+import { TaskFormModal, type TaskPayload } from '../components/TaskFormModal';
+import {
+  ClinicalNoteFormModal,
+  type ClinicalNotePayload,
+} from '../components/ClinicalNoteFormModal';
+import { ClinicalNoteList } from '../components/ClinicalNoteList';
+import { ProblemListPanel } from '../components/ProblemListPanel';
+import {
+  ProblemFormModal,
+  type ProblemPayload,
+} from '../components/ProblemFormModal';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  type ClinicalNote,
+  type Problem,
+  type ProblemStatus,
+} from '../lib/types/clinical.types';
 import {
   type Encounter,
   type EncounterPhase,
   type EncounterStatus,
   type Task,
   type TaskStatus,
-  type TaskPriority,
   type AuditLog,
   type AssignableUser,
   ENCOUNTER_PHASES,
@@ -20,31 +36,41 @@ import {
   taskPriorityToDesignSystem,
 } from '../lib/types/flow.types';
 
-type TabType = 'details' | 'tasks' | 'activity';
+type TabType = 'details' | 'tasks' | 'clinical' | 'activity';
+
+/**
+ * Roles permitted to read and write clinical documentation.
+ *
+ * Mirrors the API's `@Roles` on the clinical-notes and problems controllers.
+ * `front_desk` is excluded because a clinical note has no partially-safe subset
+ * — unlike the patient record, where disallowed sections are stripped.
+ */
+const CLINICAL_ROLES = ['admin', 'provider', 'clinical_staff'];
 
 interface EncounterUpdatePayload {
   status?: EncounterStatus;
   phase?: EncounterPhase;
 }
 
-interface TaskPayload {
-  encounter_id?: string;
-  title?: string;
-  description?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  assigned_user_id?: string;
-  blocking?: boolean;
-  due_at?: string;
-}
-
 export default function EncounterDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [editingNote, setEditingNote] = useState<ClinicalNote | undefined>();
+  const [showProblemModal, setShowProblemModal] = useState(false);
+  const [editingProblem, setEditingProblem] = useState<Problem | undefined>();
   const [activeTab, setActiveTab] = useState<TabType>('details');
+
+  const canReadClinical = CLINICAL_ROLES.includes(user?.role ?? '');
+
+  // The Clinical tab is only offered to roles the API will serve.
+  const tabs: TabType[] = canReadClinical
+    ? ['details', 'tasks', 'clinical', 'activity']
+    : ['details', 'tasks', 'activity'];
 
   const { data: encounter, isLoading } = useQuery({
     queryKey: ['encounter', id],
@@ -68,10 +94,95 @@ export default function EncounterDetail() {
     enabled: !!id,
   });
 
+  const { data: notes } = useQuery({
+    queryKey: ['encounter-notes', id],
+    queryFn: () => api.get<ClinicalNote[]>(`/api/clinical-notes?encounter_id=${id}`),
+    enabled: !!id && canReadClinical,
+  });
+
+  // Problems are patient-scoped, not encounter-scoped: a diagnosis outlives the
+  // visit it was raised in, so this reads the patient's full problem list.
+  const { data: problems } = useQuery({
+    queryKey: ['patient-problems', encounter?.patient_id],
+    queryFn: () => api.get<Problem[]>(`/api/problems?patient_id=${encounter?.patient_id}`),
+    enabled: !!encounter?.patient_id && canReadClinical,
+  });
+
+  /** Everything a clinical write can invalidate, on both timelines. */
+  const invalidateClinical = () => {
+    queryClient.invalidateQueries({ queryKey: ['encounter-notes', id] });
+    queryClient.invalidateQueries({ queryKey: ['encounter-audit', id] });
+    queryClient.invalidateQueries({ queryKey: ['encounter', id] });
+    if (encounter?.patient_id) {
+      queryClient.invalidateQueries({
+        queryKey: ['patient-problems', encounter.patient_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['patient-notes', encounter.patient_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['patient-audit', encounter.patient_id],
+      });
+    }
+  };
+
+  const createNoteMutation = useMutation({
+    mutationFn: (data: ClinicalNotePayload) => api.post('/api/clinical-notes', data),
+    onSuccess: () => {
+      invalidateClinical();
+      setShowNoteModal(false);
+    },
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ noteId, data }: { noteId: string; data: ClinicalNotePayload }) =>
+      api.put(`/api/clinical-notes/${noteId}`, data),
+    onSuccess: () => {
+      invalidateClinical();
+      setShowNoteModal(false);
+      setEditingNote(undefined);
+    },
+  });
+
+  const createProblemMutation = useMutation({
+    mutationFn: (data: ProblemPayload) => api.post('/api/problems', data),
+    onSuccess: () => {
+      invalidateClinical();
+      setShowProblemModal(false);
+    },
+  });
+
+  const updateProblemMutation = useMutation({
+    mutationFn: ({ problemId, data }: { problemId: string; data: ProblemPayload }) =>
+      api.put(`/api/problems/${problemId}`, data),
+    onSuccess: () => {
+      invalidateClinical();
+      setShowProblemModal(false);
+      setEditingProblem(undefined);
+    },
+  });
+
+  /** Status-only change from the inline dropdown in the problem list. */
+  const changeProblemStatusMutation = useMutation({
+    mutationFn: ({ problemId, status }: { problemId: string; status: ProblemStatus }) =>
+      api.put(`/api/problems/${problemId}`, { status }),
+    onSuccess: invalidateClinical,
+  });
+
   const invalidateEncounter = () => {
     queryClient.invalidateQueries({ queryKey: ['encounter', id] });
     queryClient.invalidateQueries({ queryKey: ['encounters'] });
     queryClient.invalidateQueries({ queryKey: ['encounter-audit', id] });
+    // This encounter's events are scoped to its patient too, so the patient's
+    // timeline and encounter list are now stale as well.
+    if (encounter?.patient_id) {
+      queryClient.invalidateQueries({
+        queryKey: ['patient-audit', encounter.patient_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['patient-encounters', encounter.patient_id],
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ['flow'] });
   };
 
@@ -89,6 +200,16 @@ export default function EncounterDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['encounter-tasks', id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // A new task is scoped to this encounter's patient, so both timelines move.
+      queryClient.invalidateQueries({ queryKey: ['encounter-audit', id] });
+      if (encounter?.patient_id) {
+        queryClient.invalidateQueries({
+          queryKey: ['patient-audit', encounter.patient_id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['patient-tasks', encounter.patient_id],
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['flow'] });
       setShowTaskModal(false);
     },
@@ -100,6 +221,15 @@ export default function EncounterDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['encounter-tasks', id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['encounter-audit', id] });
+      if (encounter?.patient_id) {
+        queryClient.invalidateQueries({
+          queryKey: ['patient-audit', encounter.patient_id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['patient-tasks', encounter.patient_id],
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['flow'] });
     },
   });
@@ -159,6 +289,11 @@ export default function EncounterDetail() {
   const actions = getActions();
   const isInProgress = encounter.status === 'in_progress';
   const openTasks = (tasks || []).filter((task) => task.status !== 'done');
+  // Counted for the tab badge: a clinician cares how many diagnoses are live,
+  // not how many are historical.
+  const activeProblems = (problems || []).filter(
+    (problem) => problem.status === 'active',
+  );
 
   return (
     <div>
@@ -171,12 +306,12 @@ export default function EncounterDetail() {
 
       {/* Tab Navigation */}
       <div className="border-b border-border-default mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {(['details', 'tasks', 'activity'] as TabType[]).map((tab) => (
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
+          {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === tab
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-default'
@@ -186,6 +321,11 @@ export default function EncounterDetail() {
               {tab === 'tasks' && openTasks.length > 0 && (
                 <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs bg-status-waiting-bg text-status-waiting-text">
                   {openTasks.length}
+                </span>
+              )}
+              {tab === 'clinical' && activeProblems.length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs bg-status-progress-bg text-status-progress-text">
+                  {activeProblems.length}
                 </span>
               )}
             </button>
@@ -337,7 +477,7 @@ export default function EncounterDetail() {
                             data: { status: e.target.value as TaskStatus },
                           })
                         }
-                        className="text-sm border border-border-default rounded-[var(--radius-control)] px-2 py-1 bg-bg-surface text-text-primary"
+                        className="text-sm border border-border-default rounded-(--radius-control) px-2 py-1 bg-bg-surface text-text-primary"
                       >
                         <option value="todo">{t('tasks.statuses.todo')}</option>
                         <option value="in_progress">{t('tasks.statuses.in_progress')}</option>
@@ -358,9 +498,100 @@ export default function EncounterDetail() {
         </div>
       )}
 
+      {activeTab === 'clinical' && (
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-text-primary">
+                {t('clinicalNotes.title')}
+              </h3>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingNote(undefined);
+                  setShowNoteModal(true);
+                }}
+              >
+                <PlusIcon className="w-4 h-4 mr-1.5" />
+                {t('clinicalNotes.create')}
+              </Button>
+            </div>
+
+            <ClinicalNoteList
+              notes={notes || []}
+              currentUserId={user?.id}
+              currentUserRole={user?.role}
+              onEdit={(note) => {
+                setEditingNote(note);
+                setShowNoteModal(true);
+              }}
+            />
+          </div>
+
+          <ProblemListPanel
+            problems={problems || []}
+            isLoading={changeProblemStatusMutation.isPending}
+            onAdd={() => {
+              setEditingProblem(undefined);
+              setShowProblemModal(true);
+            }}
+            onEdit={(problem) => {
+              setEditingProblem(problem);
+              setShowProblemModal(true);
+            }}
+            onStatusChange={(problem, status) =>
+              changeProblemStatusMutation.mutate({ problemId: problem.id, status })
+            }
+          />
+        </div>
+      )}
+
       {activeTab === 'activity' && (
         <AuditTimeline logs={auditLogs || []} title={t('encounters.activity')} />
       )}
+
+      {/* Clinical note create/edit modal */}
+      <ClinicalNoteFormModal
+        key={editingNote?.id ?? 'new-note'}
+        isOpen={showNoteModal}
+        onClose={() => {
+          setShowNoteModal(false);
+          setEditingNote(undefined);
+        }}
+        onSubmit={(data) => {
+          if (editingNote) {
+            updateNoteMutation.mutate({ noteId: editingNote.id, data });
+          } else {
+            createNoteMutation.mutate(data);
+          }
+        }}
+        encounterId={encounter.id}
+        isLoading={createNoteMutation.isPending || updateNoteMutation.isPending}
+        title={editingNote ? t('clinicalNotes.edit') : t('clinicalNotes.create')}
+        initialData={editingNote}
+      />
+
+      {/* Problem create/edit modal */}
+      <ProblemFormModal
+        key={editingProblem?.id ?? 'new-problem'}
+        isOpen={showProblemModal}
+        onClose={() => {
+          setShowProblemModal(false);
+          setEditingProblem(undefined);
+        }}
+        onSubmit={(data) => {
+          if (editingProblem) {
+            updateProblemMutation.mutate({ problemId: editingProblem.id, data });
+          } else {
+            createProblemMutation.mutate(data);
+          }
+        }}
+        patientId={encounter.patient_id}
+        encounterId={encounter.id}
+        isLoading={createProblemMutation.isPending || updateProblemMutation.isPending}
+        title={editingProblem ? t('problems.edit') : t('problems.add')}
+        initialData={editingProblem}
+      />
 
       {/* Cancel Confirmation Modal */}
       <Modal
@@ -384,132 +615,16 @@ export default function EncounterDetail() {
       </Modal>
 
       {/* New Task Modal */}
-      <Modal
+      <TaskFormModal
         isOpen={showTaskModal}
         onClose={() => setShowTaskModal(false)}
+        onSubmit={(data) => createTaskMutation.mutate(data)}
+        encounters={[]}
+        staff={staff || []}
+        isLoading={createTaskMutation.isPending}
         title={t('tasks.create')}
-      >
-        <EncounterTaskForm
-          encounterId={encounter.id}
-          staff={staff || []}
-          isLoading={createTaskMutation.isPending}
-          onCancel={() => setShowTaskModal(false)}
-          onSubmit={(data) => createTaskMutation.mutate(data)}
-        />
-      </Modal>
+        presetEncounterId={encounter.id}
+      />
     </div>
-  );
-}
-
-interface EncounterTaskFormProps {
-  encounterId: string;
-  staff: AssignableUser[];
-  isLoading: boolean;
-  onCancel: () => void;
-  onSubmit: (data: TaskPayload) => void;
-}
-
-/**
- * Task creation form scoped to a single encounter — the encounter is implied,
- * so the user never has to pick one.
- */
-function EncounterTaskForm({
-  encounterId,
-  staff,
-  isLoading,
-  onCancel,
-  onSubmit,
-}: EncounterTaskFormProps) {
-  const { t } = useTranslation();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
-  const [assignedUserId, setAssignedUserId] = useState('');
-  const [blocking, setBlocking] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const payload: TaskPayload = {
-      encounter_id: encounterId,
-      title,
-      priority,
-      blocking,
-    };
-    if (description.trim()) payload.description = description.trim();
-    if (assignedUserId) payload.assigned_user_id = assignedUserId;
-
-    onSubmit(payload);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <FormInput
-        label={t('tasks.title_field')}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
-      />
-
-      <div>
-        <label
-          htmlFor="encounter-task-description"
-          className="block text-sm font-medium text-text-primary mb-1.5"
-        >
-          {t('tasks.description')}
-        </label>
-        <textarea
-          id="encounter-task-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-surface text-text-primary"
-        />
-      </div>
-
-      <FormSelect
-        label={t('tasks.priority')}
-        value={priority}
-        options={[
-          { value: 'low', label: t('tasks.priorities.low') },
-          { value: 'medium', label: t('tasks.priorities.medium') },
-          { value: 'high', label: t('tasks.priorities.high') },
-        ]}
-        onChange={(e) => setPriority(e.target.value as TaskPriority)}
-      />
-
-      <FormSelect
-        label={t('tasks.assignedTo')}
-        value={assignedUserId}
-        placeholder={t('tasks.unassigned')}
-        options={staff.map((member) => ({
-          value: member.id,
-          label: `${member.name || member.email} (${t(`staff.roles.${member.role}`, member.role)})`,
-        }))}
-        onChange={(e) => setAssignedUserId(e.target.value)}
-      />
-
-      <div className="flex items-center gap-2">
-        <input
-          id="encounter-task-blocking"
-          type="checkbox"
-          checked={blocking}
-          onChange={(e) => setBlocking(e.target.checked)}
-          className="h-4 w-4 rounded border-border-default text-primary focus:ring-primary/50"
-        />
-        <label htmlFor="encounter-task-blocking" className="text-sm text-text-primary">
-          {t('tasks.blocking')}
-        </label>
-      </div>
-
-      <div className="flex gap-3 justify-end pt-4">
-        <Button variant="secondary" type="button" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? t('common.saving') : t('common.save')}
-        </Button>
-      </div>
-    </form>
   );
 }

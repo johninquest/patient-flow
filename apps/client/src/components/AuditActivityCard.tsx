@@ -18,7 +18,7 @@ import {
 interface AuditActivityCardProps {
   log: AuditLog;
   actorName: string;
-  resolveUserName: (id: string) => string;
+  resolveUserName: (id: string | null) => string;
 }
 
 export function AuditActivityCard({

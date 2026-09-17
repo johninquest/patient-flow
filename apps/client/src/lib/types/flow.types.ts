@@ -66,11 +66,21 @@ export interface Task {
 
 export interface AuditLog {
   id: string;
-  actor_user_id: string;
+  actor_user_id: string | null;
+  /**
+   * Snapshot of the actor's name at write time. Preferred over resolving
+   * `actor_user_id` through the staff list, which excludes suspended and
+   * deleted accounts and would otherwise render a truncated id.
+   */
+  actor_name: string | null;
   actor_role: string;
   action: string;
   resource_type: string;
   resource_id: string;
+  /** Patient this event concerns. Null for `user.*` / `admin.*` events. */
+  patient_id: string | null;
+  /** Encounter this event concerns. Set for encounter and task events. */
+  encounter_id: string | null;
   diff?: Record<string, { from: unknown; to: unknown }>;
   ip_address?: string;
   created_at: string;

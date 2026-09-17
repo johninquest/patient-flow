@@ -10,6 +10,11 @@ import { eq, and, gte, lte, sql, type SQL } from 'drizzle-orm';
 import { CreateEncounterDto } from './dto/create-encounter.dto.js';
 import { UpdateEncounterDto } from './dto/update-encounter.dto.js';
 import { AuditService } from '../audit/audit.service.js';
+import {
+  encounterAuditScope,
+  createdSnapshot,
+  deletedSnapshot,
+} from '../audit/audit-scope.js';
 import type { AppAbility } from '../../core/auth/ability.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
 
@@ -46,6 +51,9 @@ const TRACKED_FIELDS = [
   'scheduled_time',
   'notes',
 ];
+
+/** Fields snapshotted on create and delete, so those entries are self-describing. */
+const SNAPSHOT_FIELDS = TRACKED_FIELDS;
 
 export interface FindEncountersFilters {
   patientId?: string;
@@ -121,8 +129,10 @@ export class EncountersService {
       actor_user_id: userId,
       actor_role: userRole,
       action: 'encounter.created',
-      resource_type: 'encounter',
-      resource_id: encounter.id,
+      // Scoped to the encounter's patient as well as the encounter, so this
+      // event appears on both the encounter and patient timelines.
+      ...encounterAuditScope(encounter),
+      diff: createdSnapshot(encounter, SNAPSHOT_FIELDS) ?? undefined,
     });
 
     return {
@@ -279,8 +289,7 @@ export class EncountersService {
           actor_user_id: userId,
           actor_role: userRole,
           action: 'encounter.updated',
-          resource_type: 'encounter',
-          resource_id: id,
+          ...encounterAuditScope(updated),
           diff: otherDiff,
         });
       }
@@ -290,8 +299,7 @@ export class EncountersService {
           actor_user_id: userId,
           actor_role: userRole,
           action: 'encounter.phase_changed',
-          resource_type: 'encounter',
-          resource_id: id,
+          ...encounterAuditScope(updated),
           diff: { phase: phaseDiff },
         });
       }
@@ -317,8 +325,10 @@ export class EncountersService {
       actor_user_id: userId,
       actor_role: userRole,
       action: 'encounter.deleted',
-      resource_type: 'encounter',
-      resource_id: id,
+      // Written before the delete, while the values still exist. `existing` is
+      // the joined projection, which carries `patient_id`.
+      ...encounterAuditScope(existing),
+      diff: deletedSnapshot(existing, SNAPSHOT_FIELDS) ?? undefined,
     });
 
     await db.delete(encounters).where(eq(encounters.id, id));

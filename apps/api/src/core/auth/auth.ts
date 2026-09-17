@@ -3,7 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin } from 'better-auth/plugins';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
-import { audit_log } from '../db/schema.js';
+import { AuditService } from '../../modules/audit/audit.service.js';
 import { PENDING_ROLE } from './roles.js';
 
 /**
@@ -93,7 +93,10 @@ function createAuth() {
             if (createdUser.role !== PENDING_ROLE) return;
 
             try {
-              await db.insert(audit_log).values({
+              // Routed through AuditService so the entry gets the same
+              // actor_name snapshot and scope columns as every other audit
+              // entry. The self-registering user is their own actor here.
+              await new AuditService().record({
                 actor_user_id: createdUser.id,
                 actor_role: PENDING_ROLE,
                 action: 'user.registered',

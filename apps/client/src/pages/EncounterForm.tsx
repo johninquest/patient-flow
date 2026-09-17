@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api/client';
 import { Card, Button, FormInput, FormSelect } from '../components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -18,9 +18,18 @@ export default function EncounterForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+
+  /**
+   * Set when arriving from a patient's page. The patient is then implied, so it
+   * is pre-selected and locked — the form becomes "new encounter for this
+   * patient" rather than a clinic-wide create with a picker.
+   */
+  const presetPatientId = searchParams.get('patient_id') ?? '';
+  const patientLocked = presetPatientId.length > 0;
 
   const [formData, setFormData] = useState({
-    patient_id: '',
+    patient_id: presetPatientId,
     scheduled_time: '',
     assigned_to: '',
     notes: '',
@@ -42,10 +51,25 @@ export default function EncounterForm() {
     queryFn: () => api.get<AssignableUser[]>('/api/users/assignable'),
   });
 
+  const selectedPatient = presetPatientId
+    ? patients?.find((patient) => patient.id === presetPatientId)
+    : undefined;
+
   const createMutation = useMutation({
     mutationFn: (data: Record<string, any>) => api.post('/api/encounters', data),
     onSuccess: (encounter: any) => {
       queryClient.invalidateQueries({ queryKey: ['encounters'] });
+      // The patient page caches its encounters and its activity timeline
+      // separately, so both need refreshing for the new encounter to appear.
+      if (presetPatientId) {
+        queryClient.invalidateQueries({
+          queryKey: ['patient-encounters', presetPatientId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['patient-audit', presetPatientId],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['flow'] });
       navigate(`/encounters/${encounter.id}`);
     },
     onError: (error: Error) => {
@@ -107,7 +131,10 @@ export default function EncounterForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Link to="/encounters" className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
+        <Link
+          to={presetPatientId ? `/patients/${presetPatientId}` : '/encounters'}
+          className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80"
+        >
           <ArrowLeftIcon className="w-4 h-4" />
           <span>{t('common.back')}</span>
         </Link>
@@ -125,19 +152,33 @@ export default function EncounterForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Patient Selection */}
-          <FormSelect
-            label={t('encounters.patient')}
-            value={formData.patient_id}
-            placeholder={t('encounters.selectPatient')}
-            options={(patients || []).map((patient) => ({
-              value: patient.id,
-              label: `${patient.first_name} ${patient.last_name}`,
-            }))}
-            onChange={handleChange('patient_id')}
-            error={errors.patient_id}
-            required
-          />
+          {/* Patient Selection — locked when the patient was chosen by arriving
+              from their page. */}
+          {patientLocked ? (
+            <div>
+              <span className="block text-sm font-medium text-text-primary mb-1.5">
+                {t('encounters.patient')}
+              </span>
+              <p className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-canvas text-text-primary">
+                {selectedPatient
+                  ? `${selectedPatient.first_name} ${selectedPatient.last_name}`
+                  : t('common.loading')}
+              </p>
+            </div>
+          ) : (
+            <FormSelect
+              label={t('encounters.patient')}
+              value={formData.patient_id}
+              placeholder={t('encounters.selectPatient')}
+              options={(patients || []).map((patient) => ({
+                value: patient.id,
+                label: `${patient.first_name} ${patient.last_name}`,
+              }))}
+              onChange={handleChange('patient_id')}
+              error={errors.patient_id}
+              required
+            />
+          )}
 
           {/* Scheduled Time */}
           <FormInput

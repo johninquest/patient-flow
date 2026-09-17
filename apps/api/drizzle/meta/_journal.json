@@ -29,6 +29,20 @@
       "when": 1789571781909,
       "tag": "0003_closed_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789678832793,
+      "tag": "0004_careless_chimera",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789684951626,
+      "tag": "0005_pretty_squadron_sinister",
+      "breakpoints": true
     }
   ]
 }

@@ -33,6 +33,53 @@ introduced a new term — see `.github/skills/clinic-i18n/SKILL.md`.
 | `encounters.phases.discharge` | Ready for Discharge | Prêt(e) pour la sortie | Matches existing glossary entry. Confirm the `Prêt(e)` slash form is acceptable in a button label. |
 | `encounters.phases.consultation` | Consultation | Consultation | Identical in both languages — no translation risk, listed for completeness. |
 
+### Clinical documentation (added 2026-09-18)
+
+New namespaces `clinicalNotes.*` and `problems.*`, plus `diagnoses.groups.*`.
+See ADR 0021 for the model.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `clinicalNotes.soap.assessment` | Assessment | Évaluation | **Clinically sensitive.** This section holds the diagnosis narrative. "Évaluation" must read as a clinical judgement, not a generic appraisal. Confirm against how French clinics label the SOAP "A" section. |
+| `clinicalNotes.soap.objective` | Objective | Objectif | **Clinically sensitive.** The clinical-findings sense, not "goal". Verify no ambiguity with the everyday meaning in a form label. |
+| `clinicalNotes.soap.subjective` | Subjective | Subjectif | SOAP section. Confirm French SOAP convention (some systems use "Subjectif" vs "Données subjectives"). |
+| `clinicalNotes.history` | Revision history | Historique des versions | "Version" chosen over "Révision" — see glossary. Confirm the note-versioning sense is clear. |
+| `clinicalNotes.revisionLabel` | Revision {{number}} | Version {{number}} | Placeholder preserved. Confirm numbering reads correctly when there is only one revision. |
+| `problems.title` | Problem List | Liste des problèmes | "Problème" must read as a clinical condition, not a complaint or a system issue. |
+| `problems.statuses.inactive` | Inactive | Inactif | **Must not be merged with `resolved`.** "Inactive" means no longer relevant; "Resolved" means the condition cleared. The distinction is clinically meaningful. |
+| `problems.fields.onsetDate` | Onset Date | Date de début | Confirm this reads as "when the condition began", not "when it was entered". |
+| `diagnoses.groups.infectious` | Infectious & Vector-borne | Infectieuses et vectorielles | Group heading only — the diagnosis names themselves are untranslated by design. |
+| `diagnoses.groups.chronic` | Chronic Conditions | Maladies chroniques | Group heading only. |
+
+### PENDING TRANSLATION — 30 ICD-10 diagnosis names (added 2026-09-18)
+
+**Not a review item — a deliberate gap.** The diagnosis catalogue returns English
+names which the client renders verbatim in all locales, so **French users
+currently see English disease names**. This is decision 10 of the clinical
+catalogue work, recorded in ADR 0021.
+
+`i18n:check` cannot catch this: it compares *key sets* between locale files, and
+these names never become keys.
+
+**If you are a translator reading this:** the 30 names are in
+`apps/api/src/core/common/clinical/diagnoses.ts`. Translating them means adding a
+`diagnoses.items.<slug>` namespace to `en.json`/`fr.json` and resolving by slug on
+the client. No data migration is needed — the `slug` is already persisted on every
+`patient_problems` row.
+
+The list (slug → English name), grouped:
+
+| Group | Slugs |
+|---|---|
+| infectious | malaria, malaria-falciparum, gastroenteritis, typhoid-fever, dengue-fever, typhus-fever, leptospirosis, visceral-leishmaniasis, leprosy, filariasis, tetanus-neonatorum |
+| respiratory | acute-uri, common-cold, influenza, acute-pharyngitis, acute-tonsillitis, pneumonia, asthma |
+| cancer | breast-cancer, cervical-cancer, prostate-cancer, colon-cancer, liver-cell-carcinoma, lung-cancer, acute-lymphoblastic-leukaemia |
+| chronic | hypertension, type-2-diabetes, chronic-ischaemic-heart-disease, chronic-kidney-disease, depressive-episode |
+
+> Clinical terminology review recommended if this is actioned — disease names are
+> high-stakes strings and a mistranslation is worse than an untranslated English
+> name.
+
 ### Role label realignment (added 2026-09-15)
 
 | Key | Source (EN) | Proposed (FR) | Reason flagged |
@@ -117,6 +164,54 @@ re-flagged for a quick confirmation that they still read correctly as options.
 | `patients.fields.transportPublic` | Public Transport | Transport public | Now a checkbox option rather than a field label. |
 | `patients.fields.transportTaxi` | Taxi | Taxi | Identical in EN/FR. |
 | `patients.fields.transportAmbulance` | Ambulance | Ambulance | Identical in EN/FR. |
+
+### Patient-page create actions (added 2026-09-17)
+
+Added so an encounter or task can be created from a patient's page rather than
+only from the clinic-wide Encounters/Tasks pages.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `patients.createEncounter` | New Encounter | Nouvelle consultation | Reuses the glossary "Consultation" term. Note the clinic-wide equivalent is `encounters.create` ("New Encounter" / "Nouvelle consultation") — confirm the duplication is acceptable, since one is scoped to a patient. |
+| `patients.createTask` | New Task | Nouvelle tâche | Mirrors `tasks.create`. Same duplication note as above. |
+| `patients.tasksRequireEncounter` | Tasks are recorded against an encounter. Create an encounter for this patient first. | Les tâches sont enregistrées dans le cadre d'une consultation. Créez d'abord une consultation pour ce patient. | Two full sentences. Explains a data-model constraint (a task always belongs to an encounter) to a non-technical user — confirm the wording is plain enough and not read as an error message. |
+| `patients.noTasksDescription` | Tasks created for this patient's encounters will appear here. | Les tâches créées pour les consultations de ce patient apparaîtront ici. | Empty-state description. Confirm the future tense reads naturally in French. |
+
+### Staff password hints (added 2026-09-17)
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `staff.passwordMinLength` | At least {{min}} characters | Au moins {{min}} caractères | Uses a named `{{min}}` placeholder rather than `{{count}}`, so i18next does not attempt CLDR plural resolution on a length threshold. Confirm "caractères" (m. pl.) is the right noun. |
+| `staff.passwordTooShort` | Password must be at least {{min}} characters | Le mot de passe doit contenir au moins {{min}} caractères | Validation error. Same placeholder note. Confirm the register matches other validation messages. |
+
+### Professional title labels (added 2026-09-17)
+
+`user.title` is stored as its English display string, so these keys translate the
+**display** only — the stored value is unchanged and no data migration is needed.
+An unrecognised (legacy free-text) value renders verbatim.
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `staff.titles.doctor` | Doctor | Médecin | Matches the glossary (Doctor = Médecin). |
+| `staff.titles.nurse` | Nurse | Infirmier/Infirmière | Glossary prefers the neutral "Personnel infirmier" "where space allows" — a title dropdown has more room than a badge, but confirm which form is wanted here, since `staff.roles.clinical_staff` uses the neutral form. |
+| `staff.titles.medicalPhysicist` | Medical Physicist | Physicien(ne) médical(e) | From the glossary. Confirm the slash form in a dropdown option. |
+| `staff.titles.labTechnician` | Lab Technician | Technicien(ne) de laboratoire | From the glossary. Confirm the slash form. |
+| `staff.titles.pharmacist` | Pharmacist | Pharmacien/Pharmacienne | New term, not in the glossary. Confirm this pair (the glossary has no pharmacist entry yet). |
+| `staff.titles.receptionist` | Receptionist | Réceptionniste | New term. Note `staff.roles.front_desk` is "Accueil" (the glossary's Frontdesk term) — confirm "Réceptionniste" (a job title) does not read as conflicting with "Accueil" (a role). |
+| `staff.titles.administrator` | Administrator | Administrateur/Administratrice | From the glossary (IT admin). Confirm the slash form against `staff.roles.admin` = "Administrateur" (unslashed). |
+
+### Audit actor and new diff labels (added 2026-09-17)
+
+| Key | Source (EN) | Proposed (FR) | Reason flagged |
+|---|---|---|---|
+| `audit.unknownActor` | Unknown user | Utilisateur inconnu | Fallback when an audit entry has no actor id at all (the actor's account was deleted before name snapshots existed). Confirm it does not read as an error state. |
+| `audit.fields.first_name` | First Name | Prénom | New field label: patient create/delete snapshots now record identity fields, so these appear in diffs. Reuses `patients.firstName` wording — kept as a separate key because audit field labels are a flat namespace keyed by column name. |
+| `audit.fields.last_name` | Last Name | Nom | As above. |
+
+> **Note on actor attribution:** audit entries now store an `actor_name` snapshot.
+> `audit.unknownActor` should be rare — only for entries written before snapshots
+> existed whose actor row is gone. No new translation key was needed for the
+> snapshot itself, since it holds a person's name, not a label.
 
 ---
 

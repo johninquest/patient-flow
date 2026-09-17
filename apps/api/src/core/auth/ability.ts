@@ -6,7 +6,14 @@ import {
 import { Role } from './roles.js';
 
 export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
-export type Subjects = 'Patient' | 'Encounter' | 'Task' | 'User' | 'all';
+export type Subjects =
+  | 'Patient'
+  | 'Encounter'
+  | 'Task'
+  | 'User'
+  | 'ClinicalNote'
+  | 'Problem'
+  | 'all';
 
 export type AppAbility = MongoAbility<[Actions, Subjects]>;
 
@@ -53,6 +60,20 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Task');
       can('delete', 'Task');
 
+      // Clinical documentation — the provider is the primary author. Note-level
+      // "author only" edit authority is enforced in the service, since it
+      // depends on the row rather than the role.
+      can('create', 'ClinicalNote');
+      can('read', 'ClinicalNote');
+      can('update', 'ClinicalNote');
+      can('create', 'Problem');
+      can('read', 'Problem');
+      can('update', 'Problem');
+      // Only admin may delete clinical records (see the visibility matrix in
+      // docs/contracts/schema.md).
+      cannot('delete', 'ClinicalNote');
+      cannot('delete', 'Problem');
+
       // Providers cannot manage users
       cannot('manage', 'User');
       break;
@@ -79,6 +100,16 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('update', 'Task');
       can('delete', 'Task');
 
+      // Clinical documentation — nursing notes, vitals, problem recording.
+      can('create', 'ClinicalNote');
+      can('read', 'ClinicalNote');
+      can('update', 'ClinicalNote');
+      can('create', 'Problem');
+      can('read', 'Problem');
+      can('update', 'Problem');
+      cannot('delete', 'ClinicalNote');
+      cannot('delete', 'Problem');
+
       // Clinical staff cannot manage users
       cannot('manage', 'User');
       break;
@@ -104,6 +135,10 @@ export function defineAbilitiesFor(user: User): AppAbility {
       can('read', 'Task');
       can('update', 'Task');
       can('delete', 'Task');
+
+      // Front desk gets NO clinical documentation access: clinical notes and
+      // problem-list entries are the most sensitive records in the system.
+      // Nothing is granted here deliberately — see ADR 0021.
 
       // Front desk cannot manage users
       cannot('manage', 'User');

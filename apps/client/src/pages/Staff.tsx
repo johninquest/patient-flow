@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, Button, FormInput, Modal, StatusPill, LoadingSpinner } from '../components/ui';
-import { ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { Card, Button, FormInput, FormSelect, Modal, StatusPill, LoadingSpinner } from '../components/ui';
+import { ExclamationTriangleIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { AuditTimeline } from '../components/AuditTimeline';
 import { ApiError } from '../lib/api/errors';
+import type { AuditLog } from '../lib/types/flow.types';
 
 type TabType = 'list' | 'activity';
 
@@ -18,18 +19,6 @@ interface StaffMember {
   title: string | null;
   status: string;
   createdAt: string;
-}
-
-interface AuditLog {
-  id: string;
-  actor_user_id: string;
-  actor_role: string;
-  action: string;
-  resource_type: string;
-  resource_id: string;
-  diff?: Record<string, { from: any; to: any }>;
-  ip_address?: string;
-  created_at: string;
 }
 
 const ROLES = ['admin', 'provider', 'clinical_staff', 'front_desk'] as const;
@@ -54,6 +43,44 @@ const TITLES = [
   'Administrator',
 ] as const;
 
+/**
+ * Professional titles are stored as their English display string, so these keys
+ * map that stored value to a translation. Deliberately not a data migration:
+ * changing the stored vocabulary would invalidate every existing `user.title`.
+ * An unrecognised value (legacy free text) renders verbatim, matching how
+ * `PatientDetail` treats unknown emergency-contact relations.
+ */
+const TITLE_LABEL_KEYS: Record<string, string> = {
+  Doctor: 'staff.titles.doctor',
+  Nurse: 'staff.titles.nurse',
+  'Medical Physicist': 'staff.titles.medicalPhysicist',
+  'Lab Technician': 'staff.titles.labTechnician',
+  Pharmacist: 'staff.titles.pharmacist',
+  Receptionist: 'staff.titles.receptionist',
+  Administrator: 'staff.titles.administrator',
+};
+
+/** Minimum password length, mirrored by `createUserSchema` on the API. */
+const MIN_PASSWORD_LENGTH = 8;
+
+interface CreateStaffForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: string;
+  title: string;
+}
+
+const EMPTY_CREATE_FORM: CreateStaffForm = {
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  role: ROLES[0],
+  title: '',
+};
+
 export default function Staff() {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
@@ -62,6 +89,38 @@ export default function Staff() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuspendConfirm, setShowSuspendConfirm] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('list');
+
+  // The create form is fully controlled so the confirmation field can be
+  // validated as the user types. Its errors live in their own state and are
+  // rendered *inside* the modal: the page-level `error` banner sits in the page
+  // body behind the overlay, so reporting a mismatch there made the submit
+  // button look like a no-op.
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateStaffForm>(EMPTY_CREATE_FORM);
+
+  /**
+   * Real-time mismatch. Only fires once the user has typed something in the
+   * confirmation field, so the form does not open already showing an error.
+   */
+  const passwordsMismatch =
+    createForm.confirmPassword.length > 0 &&
+    createForm.password !== createForm.confirmPassword;
+
+  const passwordTooShort =
+    createForm.password.length > 0 &&
+    createForm.password.length < MIN_PASSWORD_LENGTH;
+
+  const resetCreateForm = () => {
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateError(null);
+    setShowCreatePassword(false);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    resetCreateForm();
+  };
 
   const { data: staff, isLoading } = useQuery({
     queryKey: ['staff'],
@@ -97,15 +156,10 @@ export default function Staff() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['staff-audit'] });
-      setShowCreateModal(false);
-      setError(null);
+      closeCreateModal();
     },
     onError: (err: Error) => {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError(err.message);
-      }
+      setCreateError(err.message);
     },
   });
 
@@ -137,25 +191,17 @@ export default function Staff() {
 
   const handleCreateStaff = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
-    const role = formData.get('role') as string;
-    const title = formData.get('title') as string;
 
-    if (password !== confirmPassword) {
-      setError(t('staff.passwordMismatch'));
-      return;
-    }
+    // The submit button is disabled in both cases; this guard covers a submit
+    // triggered by pressing Enter in a field.
+    if (passwordsMismatch || passwordTooShort) return;
 
     createMutation.mutate({
-      name,
-      email,
-      password,
-      role,
-      title: title || undefined,
+      name: createForm.name,
+      email: createForm.email,
+      password: createForm.password,
+      role: createForm.role,
+      title: createForm.title || undefined,
     });
   };
 
@@ -216,84 +262,145 @@ export default function Staff() {
       {/* Create Staff Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={closeCreateModal}
         title={t('staff.createStaff')}
       >
         <form onSubmit={handleCreateStaff} className="space-y-4">
+          {createError && (
+            <div
+              role="alert"
+              className="rounded-[var(--radius-control)] bg-status-delayed-bg border border-status-delayed-text/20 p-3"
+            >
+              <p className="text-sm text-status-delayed-text">{createError}</p>
+            </div>
+          )}
+
           <FormInput
             label={t('staff.name')}
             name="name"
             type="text"
             required
+            value={createForm.name}
+            onChange={(e) =>
+              setCreateForm((prev) => ({ ...prev, name: e.target.value }))
+            }
           />
           <FormInput
             label={t('staff.email')}
             name="email"
             type="email"
             required
+            value={createForm.email}
+            onChange={(e) =>
+              setCreateForm((prev) => ({ ...prev, email: e.target.value }))
+            }
           />
-          <FormInput
-            label={t('staff.password')}
-            name="password"
-            type="password"
-            required
-            minLength={8}
-          />
+
+          {/* Both password fields share one toggle: revealing only one of a pair
+              you are trying to compare is not useful. */}
+          <div className="relative">
+            <FormInput
+              label={t('staff.password')}
+              name="password"
+              type={showCreatePassword ? 'text' : 'password'}
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              value={createForm.password}
+              onChange={(e) =>
+                setCreateForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              error={
+                passwordTooShort
+                  ? t('staff.passwordTooShort', { min: MIN_PASSWORD_LENGTH })
+                  : undefined
+              }
+              helpText={t('staff.passwordMinLength', {
+                min: MIN_PASSWORD_LENGTH,
+              })}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCreatePassword((prev) => !prev)}
+              aria-label={
+                showCreatePassword
+                  ? t('auth.hidePassword')
+                  : t('auth.showPassword')
+              }
+              className="absolute right-3 top-9.5 text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-(--radius-control) p-0.5"
+            >
+              {showCreatePassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+
           <FormInput
             label={t('staff.confirmPassword')}
             name="confirmPassword"
-            type="password"
+            type={showCreatePassword ? 'text' : 'password'}
             required
-            minLength={8}
+            minLength={MIN_PASSWORD_LENGTH}
+            value={createForm.confirmPassword}
+            onChange={(e) =>
+              setCreateForm((prev) => ({
+                ...prev,
+                confirmPassword: e.target.value,
+              }))
+            }
+            error={passwordsMismatch ? t('staff.passwordMismatch') : undefined}
           />
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1.5">
-              {t('staff.role')}
-            </label>
-            <select
-              name="role"
-              required
-              className="w-full px-3 py-2 border border-border-default rounded-[var(--radius-control)] bg-bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+
+          <FormSelect
+            label={t('staff.role')}
+            name="role"
+            required
+            value={createForm.role}
+            options={ROLES.map((role) => ({
+              value: role,
+              label: t(`staff.roles.${role}`),
+            }))}
+            onChange={(e) =>
+              setCreateForm((prev) => ({ ...prev, role: e.target.value }))
+            }
+          />
+
+          <FormSelect
+            label={t('staff.title_field')}
+            name="title"
+            value={createForm.title}
+            placeholder={t('staff.noTitle')}
+            options={TITLES.map((title) => ({
+              value: title,
+              label: t(TITLE_LABEL_KEYS[title], title),
+            }))}
+            onChange={(e) =>
+              setCreateForm((prev) => ({ ...prev, title: e.target.value }))
+            }
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCreateModal}
             >
-              {ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {t(`staff.roles.${role}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">{t('staff.title_field')}</label>
-                    <select
-                      name="title"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                    >
-                      <option value="">{t('staff.noTitle')}</option>
-                      {TITLES.map((title) => (
-                        <option key={title} value={title}>
-                          {title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setShowCreateModal(false)}
-                    >
-                      {t('common.cancel')}
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createMutation.isPending}
-                      loading={createMutation.isPending}
-                    >
-                      {t('common.create')}
-                    </Button>
-                  </div>
-                </form>
-              </Modal>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                createMutation.isPending || passwordsMismatch || passwordTooShort
+              }
+              loading={createMutation.isPending}
+            >
+              {t('common.create')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Suspend Confirmation Modal */}
       <Modal
@@ -406,7 +513,7 @@ export default function Staff() {
                         <option value="">{t('staff.noTitle')}</option>
                         {TITLES.map((title) => (
                           <option key={title} value={title}>
-                            {title}
+                            {t(TITLE_LABEL_KEYS[title], title)}
                           </option>
                         ))}
                       </select>

@@ -9,6 +9,11 @@ import { eq } from 'drizzle-orm';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
 import { UpdatePatientDto } from './dto/update-patient.dto.js';
 import { AuditService } from '../audit/audit.service.js';
+import {
+  patientAuditScope,
+  createdSnapshot,
+  deletedSnapshot,
+} from '../audit/audit-scope.js';
 import type { AppAbility } from '../../core/auth/ability.js';
 import type { Role as AppRole } from '../../core/auth/roles.js';
 import { translateDatabaseError } from '../../core/common/utils/database-error.util.js';
@@ -155,8 +160,8 @@ export class PatientsService {
       actor_user_id: userId,
       actor_role: userRole,
       action: 'patient.created',
-      resource_type: 'patient',
-      resource_id: patient.id,
+      ...patientAuditScope(patient),
+      diff: createdSnapshot(patient, PATIENT_FIELDS_TO_TRACK) ?? undefined,
     });
 
     return this.filterByRole(patient, userRole);
@@ -241,8 +246,7 @@ export class PatientsService {
         actor_user_id: userId,
         actor_role: userRole,
         action: 'patient.updated',
-        resource_type: 'patient',
-        resource_id: id,
+        ...patientAuditScope(updated),
         diff,
       });
     }
@@ -256,7 +260,7 @@ export class PatientsService {
     userRole: string,
     ability: AppAbility,
   ) {
-    await this.findOneInternal(id);
+    const existing = await this.findOneInternal(id);
 
     // Check CASL permission
     if (!ability.can('delete', 'Patient')) {
@@ -267,8 +271,10 @@ export class PatientsService {
       actor_user_id: userId,
       actor_role: userRole,
       action: 'patient.deleted',
-      resource_type: 'patient',
-      resource_id: id,
+      // Written before the delete, while the values still exist. Patient removal
+      // cascades to encounters and tasks, so this is the last record of them.
+      ...patientAuditScope(existing),
+      diff: deletedSnapshot(existing, PATIENT_FIELDS_TO_TRACK) ?? undefined,
     });
 
     await db.delete(patients).where(eq(patients.id, id));

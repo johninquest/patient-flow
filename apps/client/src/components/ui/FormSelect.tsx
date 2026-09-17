@@ -5,16 +5,34 @@ export interface SelectOption {
   label: string;
 }
 
+/**
+ * A labelled group of options, rendered as an `<optgroup>`.
+ *
+ * Used for lists long enough that a flat ordering is hard to scan — notably the
+ * ICD-10 diagnosis picker. Groups render in the order given, and each group's
+ * options in the order given, so the caller controls the reading order.
+ */
+export interface SelectGroup {
+  label: string;
+  options: SelectOption[];
+}
+
 interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   error?: string;
   helpText?: string;
-  options: SelectOption[];
+  /** Flat options. Ignored when `groups` is provided. */
+  options?: SelectOption[];
+  /** Grouped options, rendered as `<optgroup>` elements. */
+  groups?: SelectGroup[];
   placeholder?: string;
 }
 
 export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
-  ({ label, error, helpText, options, placeholder, className = '', id, ...props }, ref) => {
+  (
+    { label, error, helpText, options, groups, placeholder, className = '', id, ...props },
+    ref,
+  ) => {
     const selectId = id || label.toLowerCase().replace(/\s+/g, '-');
     
     return (
@@ -36,11 +54,22 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           {placeholder && (
             <option value="">{placeholder}</option>
           )}
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {/* `groups` takes precedence: a caller supplies one or the other. */}
+          {groups
+            ? groups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            : options?.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
         </select>
         {error && (
           <p className="mt-1.5 text-sm text-status-delayed-text">{error}</p>

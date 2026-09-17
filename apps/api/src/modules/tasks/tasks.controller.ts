@@ -56,6 +56,11 @@ export class TasksController {
     required: false,
     description: 'Filter by assignee',
   })
+  @ApiQuery({
+    name: 'patient_id',
+    required: false,
+    description: 'Filter by the patient the task\'s encounter belongs to',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of tasks',
@@ -64,8 +69,9 @@ export class TasksController {
   findAll(
     @Query('encounter_id') encounterId?: string,
     @Query('assigned_user_id') assignedUserId?: string,
+    @Query('patient_id') patientId?: string,
   ) {
-    return this.tasksService.findAll({ encounterId, assignedUserId });
+    return this.tasksService.findAll({ encounterId, assignedUserId, patientId });
   }
 
   @Get(':id')

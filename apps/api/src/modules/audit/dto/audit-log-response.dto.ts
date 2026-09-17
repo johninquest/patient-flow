@@ -10,6 +10,13 @@ export class AuditLogResponseDto {
   @ApiProperty({ description: 'User ID of the actor' })
   actor_user_id: string;
 
+  @ApiPropertyOptional({
+    description:
+      "Snapshot of the actor's name at write time; null if it could not be resolved",
+    example: 'Dr Amina Bello',
+  })
+  actor_name: string | null;
+
   @ApiProperty({
     description: 'Role of the actor',
     example: 'admin',
@@ -33,6 +40,18 @@ export class AuditLogResponseDto {
     example: '0192a3f4-1b2c-7d8e-9f0a-1b2c3d4e5f61',
   })
   resource_id: string;
+
+  @ApiPropertyOptional({
+    description: 'Patient this event concerns (denormalized scope)',
+    example: '0192a3f4-1b2c-7d8e-9f0a-1b2c3d4e5f62',
+  })
+  patient_id: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Encounter this event concerns (denormalized scope)',
+    example: '0192a3f4-1b2c-7d8e-9f0a-1b2c3d4e5f63',
+  })
+  encounter_id: string | null;
 
   @ApiPropertyOptional({
     description: 'Change diff (field → { from, to })',

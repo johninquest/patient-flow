@@ -14,25 +14,39 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get('patient/:id')
-  @ApiOperation({ summary: 'Get audit logs for a patient' })
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'provider', 'clinical_staff')
+  @ApiOperation({
+    summary: 'Get audit logs concerning a patient (clinical roles only)',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Audit logs for the patient',
+    description:
+      "The patient's own events, plus every encounter and task event concerning them",
     type: [AuditLogResponseDto],
   })
+  @ApiResponse({ status: 403, description: 'Forbidden — clinical role required' })
   async getPatientAuditLogs(@Param('id') id: string) {
-    return this.auditService.findByResource('patient', id);
+    // Scoped by the denormalized `patient_id` column, not by `resource_type`:
+    // an encounter or task event names itself as the target and carries no
+    // reference to the patient, so a type match can never return it.
+    //
+    // Restricted to clinical roles because the diffs can include fields from the
+    // patient `medical` section, which `front_desk` cannot read on the patient
+    // record itself.
+    return this.auditService.findByPatient(id);
   }
 
   @Get('encounter/:id')
-  @ApiOperation({ summary: 'Get audit logs for an encounter' })
+  @ApiOperation({ summary: 'Get audit logs concerning an encounter' })
   @ApiResponse({
     status: 200,
-    description: 'Audit logs for the encounter',
+    description: "The encounter's own events, plus every task event on it",
     type: [AuditLogResponseDto],
   })
   async getEncounterAuditLogs(@Param('id') id: string) {
-    return this.auditService.findByResource('encounter', id);
+    // Scoped by `encounter_id` so task events on this encounter are included.
+    return this.auditService.findByEncounter(id);
   }
 
   @Get('task/:id')

@@ -75,10 +75,15 @@
     "activity": "Activity History",
     "noEncounters": "No encounters recorded",
     "noTasks": "No tasks assigned",
+    "createEncounter": "New Encounter",
+    "createTask": "New Task",
+    "tasksRequireEncounter": "Tasks are recorded against an encounter. Create an encounter for this patient first.",
+    "noTasksDescription": "Tasks created for this patient's encounters will appear here.",
     "tabs": {
       "overview": "Overview",
       "encounters": "Encounters",
       "tasks": "Tasks",
+      "clinical": "Clinical",
       "activity": "Activity"
     },
     "status": {
@@ -114,6 +119,7 @@
       "emergencyComments": "Comments",
       "medicalHistory": "Medical History",
       "medicalHistoryDate": "History Recorded Date",
+      "medicalHistoryHelp": "Background and past history as reported. For diagnosed conditions, use the Problem List on the patient's Clinical tab.",
       "attendingPhysician": "Attending Physician",
       "correspondentPhysician": "Correspondent Physician",
       "otherPhysician": "Other Physician",
@@ -168,6 +174,7 @@
       "completed": "Completed",
       "details": "Details",
       "tasks": "Tasks",
+      "clinical": "Clinical",
       "activity": "Activity"
     },
     "statuses": {
@@ -267,6 +274,17 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "passwordMismatch": "Passwords do not match",
+    "passwordMinLength": "At least {{min}} characters",
+    "passwordTooShort": "Password must be at least {{min}} characters",
+    "titles": {
+      "doctor": "Doctor",
+      "nurse": "Nurse",
+      "medicalPhysicist": "Medical Physicist",
+      "labTechnician": "Lab Technician",
+      "pharmacist": "Pharmacist",
+      "receptionist": "Receptionist",
+      "administrator": "Administrator"
+    },
     "status": "Status",
     "active": "Active",
     "suspended": "Suspended",
@@ -290,6 +308,7 @@
   },
   "audit": {
     "noActivity": "No activity recorded yet",
+    "unknownActor": "Unknown user",
     "titles": {
       "patient.created": "Patient created",
       "patient.updated": "Patient updated",
@@ -298,6 +317,12 @@
       "encounter.updated": "Encounter updated",
       "encounter.phase_changed": "Phase changed",
       "encounter.deleted": "Encounter deleted",
+      "clinical_note.created": "Clinical note added",
+      "clinical_note.updated": "Clinical note edited",
+      "clinical_note.deleted": "Clinical note deleted",
+      "problem.created": "Diagnosis recorded",
+      "problem.updated": "Diagnosis updated",
+      "problem.deleted": "Diagnosis removed",
       "task.created": "Task created",
       "task.updated": "Task updated",
       "task.deleted": "Task deleted",
@@ -320,6 +345,10 @@
       "assigned_to": "Assigned To",
       "scheduled_time": "Scheduled Time",
       "notes": "Notes",
+      "version": "Version",
+      "note_type": "Note Type",
+      "code": "Code",
+      "code_system": "Coding System",
       "title": "Title",
       "description": "Description",
       "priority": "Priority",
@@ -329,7 +358,80 @@
       "due_at": "Due Date",
       "role": "Role",
       "name": "Name",
-      "email": "Email"
+      "email": "Email",
+      "first_name": "First Name",
+      "last_name": "Last Name"
+    }
+  },
+  "clinicalNotes": {
+    "title": "Clinical Notes",
+    "create": "New Clinical Note",
+    "edit": "Edit Clinical Note",
+    "patientViewHint": "Notes are written from the encounter they document. Open an encounter to add one.",
+    "history": "Revision history",
+    "noHistory": "This note has not been edited.",
+    "revisionLabel": "Revision {{number}}",
+    "editedVersion": "Edited · v{{version}}",
+    "fields": {
+      "noteType": "Note Type"
+    },
+    "noteTypes": {
+      "consultation": "Consultation Note",
+      "nursing": "Nursing Note",
+      "procedure": "Procedure Note",
+      "other": "Other Note"
+    },
+    "soap": {
+      "subjective": "Subjective",
+      "subjectiveHint": "What the patient reports — history, symptoms, concerns.",
+      "objective": "Objective",
+      "objectiveHint": "What you observe — examination findings, vitals, results.",
+      "assessment": "Assessment",
+      "assessmentHint": "Your clinical impression — the diagnosis or differential.",
+      "plan": "Plan",
+      "planHint": "Treatment, investigations and follow-up.",
+      "additional_notes": "Additional Notes",
+      "additional_notesHint": "Anything that does not fit the sections above."
+    },
+    "empty": {
+      "title": "No clinical notes",
+      "description": "Clinical notes written for this patient's encounters will appear here."
+    }
+  },
+  "problems": {
+    "title": "Problem List",
+    "add": "Add Diagnosis",
+    "edit": "Edit Diagnosis",
+    "recordedBy": "Recorded by",
+    "confirmDelete": "Delete this diagnosis from the problem list?",
+    "fields": {
+      "diagnosis": "Diagnosis",
+      "diagnosisPlaceholder": "Select a diagnosis, or describe one below",
+      "diagnosisHelp": "Pick from the list for a coded diagnosis, or type your own description below.",
+      "description": "Description",
+      "codedAs": "Coded as {{system}} {{code}}",
+      "status": "Status",
+      "onsetDate": "Onset Date",
+      "resolvedDate": "Resolved Date",
+      "notes": "Notes"
+    },
+    "statuses": {
+      "active": "Active",
+      "resolved": "Resolved",
+      "inactive": "Inactive"
+    },
+    "empty": {
+      "title": "No diagnoses recorded",
+      "description": "Diagnoses recorded for this patient will appear here and persist across visits."
+    }
+  },
+  "diagnoses": {
+    "groups": {
+      "infectious": "Infectious & Vector-borne",
+      "respiratory": "Respiratory",
+      "cancer": "Cancers",
+      "chronic": "Chronic Conditions",
+      "other": "Other"
     }
   },
   "profile": {

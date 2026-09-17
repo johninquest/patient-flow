@@ -1,6 +1,7 @@
 import { db } from '../db/index.js';
-import { user, audit_log } from '../db/schema.js';
+import { user } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { AuditService } from '../../modules/audit/audit.service.js';
 
 /**
  * Seed the admin user from the ADMIN_EMAIL environment variable.
@@ -47,8 +48,10 @@ export async function seedAdmin(): Promise<void> {
       .set({ role: 'admin', updatedAt: new Date() })
       .where(eq(user.id, existingUser.id));
 
-    // Record the promotion in the audit log
-    await db.insert(audit_log).values({
+    // Record the promotion in the audit log. Goes through AuditService rather
+    // than a raw insert so the entry gets the same actor_name snapshot and
+    // scope columns as every other audit entry.
+    await new AuditService().record({
       actor_user_id: existingUser.id,
       actor_role: previousRole,
       action: 'admin.seeded',
